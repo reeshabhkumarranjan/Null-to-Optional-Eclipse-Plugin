@@ -8,6 +8,7 @@
   <modules>
     <module>edu.cuny.hunter.optionalrefactoring.ui</module>
     <module>edu.cuny.hunter.optionalrefactoring.core</module>
+    <module>edu.cuny.hunter.optionalrefactoring.eval</module>
     <module>edu.cuny.hunter.optionalrefactoring.tests</module>
   </modules>
   <properties>
