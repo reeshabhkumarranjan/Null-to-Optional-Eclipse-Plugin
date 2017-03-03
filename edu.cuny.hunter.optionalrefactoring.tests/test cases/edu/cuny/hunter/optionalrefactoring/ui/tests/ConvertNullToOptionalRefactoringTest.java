@@ -110,4 +110,7 @@ public class ConvertNullToOptionalRefactoringTest extends org.eclipse.jdt.ui.tes
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		return compiler.run(null, null, null, sourceFile.getPath()) == 0;
 	}
+	
+	public void testNothing() {
+	}
 }
