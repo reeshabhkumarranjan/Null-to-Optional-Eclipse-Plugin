@@ -1,48 +1,30 @@
-# Null to Optional Eclipse Plugin
+# Convert Null to Optional Refactoring
 
-<!--
-![https://raw.githubusercontent.com/khatchad/constants-to-enum-eclipse-plugin/master/edu.ohio_state.khatchad.refactoring/icons/full/wizban/constantstoenum_wiz.png](https://raw.githubusercontent.com/khatchad/constants-to-enum-eclipse-plugin/master/edu.ohio_state.khatchad.refactoring/icons/full/wizban/constantstoenum_wiz.png) A research prototype Eclipse plugin that refactors Java legacy code to make use of the new enum program construct that was introduced in Java 5.
+## Screenshot
 
-The Convert Constants to Enum refactoring for Eclipse provides an automated approach for transforming legacy Java code to use the new enumeration construct. This semantics-preserving tool increases type safety, produces code that is easier to comprehend, removes unnecessary complexity, and eliminates brittleness problems that normally prevent separate compilation.
+## Introduction
 
-![https://raw.githubusercontent.com/khatchad/constants-to-enum-eclipse-plugin/master/wizard.png](https://raw.githubusercontent.com/khatchad/constants-to-enum-eclipse-plugin/master/wizard.png)![https://raw.githubusercontent.com/khatchad/constants-to-enum-eclipse-plugin/master/preview.png](https://raw.githubusercontent.com/khatchad/constants-to-enum-eclipse-plugin/master/preview.png)
+This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents ongoing work in developing an automated refactoring tool that would assist developers in optimizing their Java 8 code.
 
-The plugin refactors Java legacy code to make use of the new enum program construct which was introduced in Java 5. This construct, which provides language support for enumerated types, is one of many new features of Java that offer significant improvements over older Java technology. Prior to Java 5, programmers were required to employ various design patterns (e.g., static final int ...) to compensate for the absence of enumerated types in Java. Unfortunately, these compensation patterns lack several highly-desirable properties of the enum construct, most notably, type safety.
+## Usage
 
-## Update Site #
+### Installation for Usage
 
-https://raw.githubusercontent.com/khatchad/constants-to-enum-eclipse-plugin/master/edu.ohio_state.cse.khatchad.refactoring.updatesite
+### Limitations
 
-## News #
-There are several features currently lacking in the plugin which are obstacles to wide distribution including a robust graphical user interface, a full test suite with regression tests, and complete undo functionality.
+## Contributing
 
-## Getting started #
+### Installation for Development
 
-In short, install the plugin via the update site, select a set of constants explicitly through the package explorer or outline view, and select the "Convert Constants to Enum" option from the context menu. A wizard will then display with further instructions and customizations. In future versions, we hope to have the command available at multiple levels (e.g., projects) and from the editor and drop down menu.
+The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on https://github.com/khatchad/edu.cuny.citytech.refactoring.common, the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. The latter three can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
 
-### Alternate instructions
+### Running the Evaluator
 
-Go to the Outline View (Window -> Show View -> Outline), then in the Outline View select (using Ctrl + Click) all the constants you want to convert. Right click on them, and select Refactor -> Convert Constants to Enum... from the right-click menu.
+The plug-in edu.cuny.hunter.optionalrefactoring.eval is the evaluation plug-in. Note that it is not included in the standard update site as that it user focused. To run the evaluator, clone the repository and build and run the plug-in from within Eclipse. This will load the plug-in edu.cuny.hunter.optionalrefactoring.eval (verify in "installation details.").
 
-## Getting help #
+There is no UI menu options for the evaluator, however, there is an Eclipse command, which is available from the quick execution dialog in Eclipse. Please follow these steps:
 
-Please feel free to post to the [General Development Discussion](http://groups.google.com/group/convert-constants-to-enum-dev) list with any comments, questions, or concerns.
-
-## Development
-
-Note that this plugin depends on https://github.com/khatchad/edu.cuny.citytech.refactoring.common.
-
-## External links
-- [Original Eclipse bugzilla page](http://bugs.eclipse.org/bugs/show_bug.cgi?id=200152)
-- [Original author's website](http://openlab.citytech.cuny.edu/khatchad)
-- [ICSM '07 conference paper](http://www.cse.ohio-state.edu/~rountev/presto/pubs/icsm07.pdf)
-- [Full technical report](http://www.cse.ohio-state.edu/~rountev/presto/pubs/tr26.pdf)
-- [Article on Eclipse refactoring](http://www.eclipse.org/articles/article.php?file=Article-Unleashing-the-Power-of-Refactoring/index.html)
-- [API for refactoring wizards](http://tinyurl.com/298vzvr)
-- [Update site](https://raw.githubusercontent.com/khatchad/constants-to-enum-eclipse-plugin/master/edu.ohio_state.cse.khatchad.refactoring.updatesite)
-
-## Groups
-- [Development discussion](http://groups.google.com/group/convert-constants-to-enum-dev)
-- [Issue updates](http://groups.google.com/group/convert-constants-to-enum-issues)
-- [Commits](http://groups.google.com/group/convert-constants-to-enum-commits)
--->
+1. Select a group of projects.
+2. Press CMD-3 or CTRL-3 (command dialog).
+3. Search for "evaluate." You'll see an option to run the migration evaluator. Choose it.
+4. Once the evaluator completes, a set of `.csv` files will appear in the working directory.

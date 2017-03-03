@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+  <extension point="org.eclipse.ui.commands">
+    <command
+          defaultHandler="edu.cuny.hunter.optionalrefactoring.eval.handlers.EvaluateConvertNullToOptionalRefactoringHandler"
+          description="Evaluates the Convert Null to Optional refactoring"
+          id="edu.cuny.hunter.evaluate.convert.null.to.optional.refactoring.command"
+          name="Evaluate Convert Null To Optional Refactoring"/>
+  </extension>
+  <extension point="org.eclipse.ui.handlers">
+    <handler
+          class="edu.cuny.hunter.optionalrefactoring.eval.handlers.EvaluateConvertNullToOptionalRefactoringHandler"
+          commandId="edu.cuny.hunter.evaluate.convert.null.to.optional.refactoring.command">
+      <activeWhen>
+        <with variable="selection">
+          <iterate ifEmpty="false" operator="or">
+            <instanceof value="org.eclipse.jdt.core.IJavaProject"></instanceof>
+          </iterate>
+        </with>
+      </activeWhen>
+    </handler>
+  </extension>
+</plugin>

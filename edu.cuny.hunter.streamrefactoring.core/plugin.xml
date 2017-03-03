@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ltk.core.refactoring.refactoringContributions">
+      <contribution
+            class="edu.cuny.hunter.optionalrefactoring.core.contributions.ConvertStreamToParallelRefactoringContribution"
+            id="org.eclipse.convergt.null.to.optional.contribution">
+      </contribution>
+   </extension>
+
+</plugin>
