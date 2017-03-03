@@ -1,5 +1,7 @@
 # Convert Null to Optional Refactoring
 
+[![Build Status](https://travis-ci.com/ponder-lab/Null-to-Optional-Eclipse-Plugin.svg?token=ysqq4ZuxzD688KNytWSA&branch=master)](https://travis-ci.com/ponder-lab/Null-to-Optional-Eclipse-Plugin)
+
 ## Screenshot
 
 ## Introduction
