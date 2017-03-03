@@ -6,3 +6,5 @@ target
 *.class
 myimport.cfg
 mysql_backup.cfg
+*.swo
+*.swp
