@@ -43,9 +43,6 @@ import org.osgi.framework.FrameworkUtil;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
-import net.sourceforge.metrics.core.Metric;
-import net.sourceforge.metrics.core.sources.AbstractMetricSource;
-import net.sourceforge.metrics.core.sources.Dispatcher;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -141,19 +138,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 		ITypeHierarchy typeHierarchy = declaringType.newTypeHierarchy(new NullProgressMonitor());
 		IType[] allSubtypes = typeHierarchy.getAllSubtypes(declaringType);
 		return allSubtypes;
-	}
-
-	private static int getMethodLinesOfCode(IMethod method) {
-		AbstractMetricSource metricSource = Dispatcher.getAbstractMetricSource(method);
-
-		if (metricSource != null) {
-			Metric value = metricSource.getValue("MLOC");
-			int mLOC = value.intValue();
-			return mLOC;
-		} else {
-			System.err.println("WARNING: Could not retrieve metric source for method: " + method);
-			return 0;
-		}
 	}
 
 	private boolean shouldPerformChange() {
