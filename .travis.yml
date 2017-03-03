@@ -11,3 +11,5 @@ before_install:
   - "sh -e /etc/init.d/xvfb start"
 after_success:
   - mvn clean install jacoco:report coveralls:report
+notifications:
+  slack: optionalsresearch:iHeeR4q0TOsQpPCCFsfF1T2P
