@@ -12,4 +12,4 @@ before_install:
 after_success:
   - mvn clean install jacoco:report coveralls:report
 notifications:
-  slack: optionalsresearch:iHeeR4q0TOsQpPCCFsfF1T2P
+  slack: cunyponder:3OfGEYTotEt5lUkewK49szDE
