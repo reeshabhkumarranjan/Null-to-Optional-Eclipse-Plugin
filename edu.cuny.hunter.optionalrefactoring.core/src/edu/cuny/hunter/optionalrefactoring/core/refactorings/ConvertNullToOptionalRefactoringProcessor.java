@@ -142,7 +142,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 				// these are the nulls passing preconditions. 
 //				Set<NullLiteral> passingNullSet = null; //TODO: this.getRefactorableNulls();
 
-				// add a fatal error if there are no passing streams.
+				// add a fatal error if there are no passing nulls.
 //				if (passingNullSet.isEmpty())
 //					status.addFatalError(Messages.NoNullsHavePassedThePreconditions);
 //				else {
