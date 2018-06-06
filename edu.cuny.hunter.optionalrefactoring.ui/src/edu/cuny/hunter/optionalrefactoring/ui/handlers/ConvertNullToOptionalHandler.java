@@ -27,7 +27,7 @@ import edu.cuny.hunter.optionalrefactoring.ui.wizards.ConvertNullToOptionalRefac
 public class ConvertNullToOptionalHandler extends AbstractHandler {
 
 	/**
-	 * Gather all the streams from the user's selection.
+	 * Gather all the nulls from the user's selection.
 	 */
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
