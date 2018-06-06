@@ -80,7 +80,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 
-	private IJavaProject[] javaProjects;
+	private IJavaElement[] javaElements;
 
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
 		this(null, null, false, Optional.empty());
@@ -94,7 +94,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	public ConvertNullToOptionalRefactoringProcessor(IJavaProject[] javaProjects, final CodeGenerationSettings settings,
 			boolean layer, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		try {
-			this.javaProjects = javaProjects;
+			this.javaElements = javaProjects;
 			this.settings = settings;
 			this.layer = layer;
 
@@ -117,39 +117,31 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			throws CoreException, OperationCanceledException {
 		try {
 			SubMonitor subMonitor = SubMonitor.convert(monitor, Messages.CheckingPreconditions,
-					this.getJavaProjects().length * 1000);
+					this.getJavaElements().length * 1000);
 			final RefactoringStatus status = new RefactoringStatus();
 
-			for (IJavaProject jproj : this.getJavaProjects()) {
-				IPackageFragmentRoot[] roots = jproj.getPackageFragmentRoots();
-				for (IPackageFragmentRoot root : roots) {
-					IJavaElement[] children = root.getChildren();
-					for (IJavaElement child : children) {
-						if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-							IPackageFragment fragment = (IPackageFragment) child;
-							ICompilationUnit[] units = fragment.getCompilationUnits();
-							for (ICompilationUnit unit : units) {
-								CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
-								// TODO: compilationUnit.accept(visitor);
-							}
-						}
-					}
+			for (IJavaElement elem : this.getJavaElements()) {
+				switch (elem.getElementType()) {
+				case IJavaElement.JAVA_PROJECT:
+					processJavaProject((IJavaProject) elem, subMonitor);
+				case IJavaElement.PACKAGE_FRAGMENT_ROOT:
+					processPackageFragmentRoot((IPackageFragmentRoot) elem, subMonitor);
 				}
 			}
 
 			// if there are no fatal errors.
 			if (!status.hasFatalError()) {
-				// these are the nulls passing preconditions. 
-//				Set<NullLiteral> passingNullSet = null; //TODO: this.getRefactorableNulls();
+				// these are the nulls passing preconditions.
+				// Set<NullLiteral> passingNullSet = null; //TODO: this.getRefactorableNulls();
 
 				// add a fatal error if there are no passing nulls.
-//				if (passingNullSet.isEmpty())
-//					status.addFatalError(Messages.NoNullsHavePassedThePreconditions);
-//				else {
-					// TODO:
-					// Checks.addModifiedFilesToChecker(ResourceUtil.getFiles(fChangeManager.getAllCompilationUnits()),
-					// context);
-//				}
+				// if (passingNullSet.isEmpty())
+				// status.addFatalError(Messages.NoNullsHavePassedThePreconditions);
+				// else {
+				// TODO:
+				// Checks.addModifiedFilesToChecker(ResourceUtil.getFiles(fChangeManager.getAllCompilationUnits()),
+				// context);
+				// }
 			}
 			return status;
 		} catch (Exception e) {
@@ -157,6 +149,29 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			throw e;
 		} finally {
 			monitor.done();
+		}
+	}
+
+	private void processJavaProject(IJavaProject project, SubMonitor subMonitor) throws JavaModelException {
+		IPackageFragmentRoot[] roots = project.getPackageFragmentRoots();
+		for (IPackageFragmentRoot root : roots) {
+			processPackageFragmentRoot(root, subMonitor);
+		}
+	}
+
+	private void processPackageFragmentRoot(IPackageFragmentRoot root, SubMonitor subMonitor)
+			throws JavaModelException {
+		IJavaElement[] children = root.getChildren();
+		for (IJavaElement child : children) {
+			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
+				IPackageFragment fragment = (IPackageFragment) child;
+				ICompilationUnit[] units = fragment.getCompilationUnits();
+				for (ICompilationUnit unit : units) {
+					CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
+//					ASTVisitor visitor = new FieldDeclationPrinter...
+//					compilationUnit.accept(visitor);
+				}
+			}
 		}
 	}
 
@@ -311,8 +326,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		return ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID;
 	}
 
-	protected IJavaProject[] getJavaProjects() {
-		return javaProjects;
+	protected IJavaElement[] getJavaElements() {
+		return javaElements;
 	}
 
 	@Override
