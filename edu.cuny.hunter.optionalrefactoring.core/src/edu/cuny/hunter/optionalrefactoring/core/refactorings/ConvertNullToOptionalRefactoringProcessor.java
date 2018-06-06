@@ -124,8 +124,10 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 				switch (elem.getElementType()) {
 				case IJavaElement.JAVA_PROJECT:
 					processJavaProject((IJavaProject) elem, subMonitor);
+					break;
 				case IJavaElement.PACKAGE_FRAGMENT_ROOT:
 					processPackageFragmentRoot((IPackageFragmentRoot) elem, subMonitor);
+					break;
 				}
 			}
 
