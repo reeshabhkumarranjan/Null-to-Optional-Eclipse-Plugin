@@ -35,7 +35,7 @@ public class ConvertNullToOptionalHandler extends AbstractHandler {
 		ISelection currentSelection = HandlerUtil.getCurrentSelectionChecked(event);
 		List<?> list = SelectionUtil.toList(currentSelection);
 		
-		Set<IJavaProject> javaProjectSet = new HashSet<>();
+		Set<IJavaElement> javaElementSet = new HashSet<>();
 
 		if (list != null) {
 			try {
@@ -48,13 +48,16 @@ public class ConvertNullToOptionalHandler extends AbstractHandler {
 						case IJavaElement.TYPE:
 							break;
 						case IJavaElement.COMPILATION_UNIT:
+							javaElementSet.add((ICompilationUnit)jElem);
 							break;
 						case IJavaElement.PACKAGE_FRAGMENT:
+							javaElementSet.add((IPackageFragment)jElem);
 							break;
 						case IJavaElement.PACKAGE_FRAGMENT_ROOT:
+							javaElementSet.add((IPackageFragmentRoot)jElem);
 							break;
 						case IJavaElement.JAVA_PROJECT:
-							javaProjectSet.add((IJavaProject)jElem);
+							javaElementSet.add((IJavaProject)jElem);
 							break;
 						}
 					}
@@ -62,7 +65,7 @@ public class ConvertNullToOptionalHandler extends AbstractHandler {
 
 				Shell shell = HandlerUtil.getActiveShellChecked(event);
 				ConvertNullToOptionalRefactoringWizard
-						.startRefactoring(javaProjectSet.toArray(new IJavaProject[javaProjectSet.size()]), shell, Optional.empty());
+						.startRefactoring(javaElementSet.toArray(new IJavaElement[javaElementSet.size()]), shell, Optional.empty());
 			} catch (JavaModelException e) {
 				JavaPlugin.log(e);
 				throw new ExecutionException("Failed to start refactoring", e);
@@ -73,63 +76,63 @@ public class ConvertNullToOptionalHandler extends AbstractHandler {
 		return null;
 	}
 
-	private Set<IMethod> extractMethodsFromJavaProject(IJavaProject jProj, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		Set<IMethod> methodSet = new HashSet<>();
-
-		IPackageFragmentRoot[] roots = jProj.getPackageFragmentRoots();
-		for (IPackageFragmentRoot iPackageFragmentRoot : roots)
-			methodSet.addAll(extractMethodsFromPackageFragmentRoot(iPackageFragmentRoot, monitor));
-
-		return methodSet;
-	}
-
-	private Set<IMethod> extractMethodsFromPackageFragmentRoot(IPackageFragmentRoot root,
-			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		Set<IMethod> methodSet = new HashSet<>();
-
-		IJavaElement[] children = root.getChildren();
-		for (IJavaElement child : children)
-			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
-				methodSet.addAll(extractMethodsFromPackageFragment((IPackageFragment) child, monitor));
-
-		return methodSet;
-	}
-
-	private Set<IMethod> extractMethodsFromPackageFragment(IPackageFragment frag, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		Set<IMethod> methodSet = new HashSet<>();
-		ICompilationUnit[] units = frag.getCompilationUnits();
-
-		for (ICompilationUnit iCompilationUnit : units)
-			methodSet.addAll(extractMethodsFromCompilationUnit(iCompilationUnit, monitor));
-
-		return methodSet;
-	}
-
-	private Set<IMethod> extractMethodsFromCompilationUnit(ICompilationUnit cu, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		Set<IMethod> methodSet = new HashSet<>();
-		IType[] types = cu.getTypes();
-
-		for (IType iType : types)
-			methodSet.addAll(extractMethodsFromClass(iType, monitor));
-
-		return methodSet;
-	}
-
-	private Set<IMethod> extractMethodsFromClass(IType type, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
-		Set<IMethod> methodSet = new HashSet<>();
-
-		if (type.isClass()) {
-			for (IMethod method : type.getMethods())
-//				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor)) {
-				if (true) {
-					methodSet.add(method);
-				} 
-		}
-
-		return methodSet;
-	}
+//	private Set<IMethod> extractMethodsFromJavaProject(IJavaProject jProj, Optional<IProgressMonitor> monitor)
+//			throws JavaModelException {
+//		Set<IMethod> methodSet = new HashSet<>();
+//
+//		IPackageFragmentRoot[] roots = jProj.getPackageFragmentRoots();
+//		for (IPackageFragmentRoot iPackageFragmentRoot : roots)
+//			methodSet.addAll(extractMethodsFromPackageFragmentRoot(iPackageFragmentRoot, monitor));
+//
+//		return methodSet;
+//	}
+//
+//	private Set<IMethod> extractMethodsFromPackageFragmentRoot(IPackageFragmentRoot root,
+//			Optional<IProgressMonitor> monitor) throws JavaModelException {
+//		Set<IMethod> methodSet = new HashSet<>();
+//
+//		IJavaElement[] children = root.getChildren();
+//		for (IJavaElement child : children)
+//			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
+//				methodSet.addAll(extractMethodsFromPackageFragment((IPackageFragment) child, monitor));
+//
+//		return methodSet;
+//	}
+//
+//	private Set<IMethod> extractMethodsFromPackageFragment(IPackageFragment frag, Optional<IProgressMonitor> monitor)
+//			throws JavaModelException {
+//		Set<IMethod> methodSet = new HashSet<>();
+//		ICompilationUnit[] units = frag.getCompilationUnits();
+//
+//		for (ICompilationUnit iCompilationUnit : units)
+//			methodSet.addAll(extractMethodsFromCompilationUnit(iCompilationUnit, monitor));
+//
+//		return methodSet;
+//	}
+//
+//	private Set<IMethod> extractMethodsFromCompilationUnit(ICompilationUnit cu, Optional<IProgressMonitor> monitor)
+//			throws JavaModelException {
+//		Set<IMethod> methodSet = new HashSet<>();
+//		IType[] types = cu.getTypes();
+//
+//		for (IType iType : types)
+//			methodSet.addAll(extractMethodsFromClass(iType, monitor));
+//
+//		return methodSet;
+//	}
+//
+//	private Set<IMethod> extractMethodsFromClass(IType type, Optional<IProgressMonitor> monitor)
+//			throws JavaModelException {
+//		Set<IMethod> methodSet = new HashSet<>();
+//
+//		if (type.isClass()) {
+//			for (IMethod method : type.getMethods())
+////				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor)) {
+//				if (true) {
+//					methodSet.add(method);
+//				} 
+//		}
+//
+//		return methodSet;
+//	}
 }

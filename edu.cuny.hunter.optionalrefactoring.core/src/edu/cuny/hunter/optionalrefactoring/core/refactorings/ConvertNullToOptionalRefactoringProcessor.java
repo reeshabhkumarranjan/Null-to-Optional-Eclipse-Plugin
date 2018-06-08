@@ -23,6 +23,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
@@ -91,10 +92,10 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		this(null, settings, false, monitor);
 	}
 
-	public ConvertNullToOptionalRefactoringProcessor(IJavaProject[] javaProjects, final CodeGenerationSettings settings,
+	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, final CodeGenerationSettings settings,
 			boolean layer, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		try {
-			this.javaElements = javaProjects;
+			this.javaElements = javaElements;
 			this.settings = settings;
 			this.layer = layer;
 
@@ -103,9 +104,9 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	public ConvertNullToOptionalRefactoringProcessor(IJavaProject[] javaProjects, final CodeGenerationSettings settings,
+	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, final CodeGenerationSettings settings,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		this(javaProjects, settings, false, monitor);
+		this(javaElements, settings, false, monitor);
 	}
 
 	public ConvertNullToOptionalRefactoringProcessor(Optional<IProgressMonitor> monitor) throws JavaModelException {
@@ -127,6 +128,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 					break;
 				case IJavaElement.PACKAGE_FRAGMENT_ROOT:
 					processPackageFragmentRoot((IPackageFragmentRoot) elem, subMonitor);
+					break;
+				case IJavaElement.PACKAGE_FRAGMENT:
+					processPackageFragment((IPackageFragment)elem, subMonitor);
+					break;
+				case IJavaElement.COMPILATION_UNIT:
+					processCompilationUnit((ICompilationUnit)elem, subMonitor);
 					break;
 				}
 			}
@@ -161,20 +168,25 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	private void processPackageFragmentRoot(IPackageFragmentRoot root, SubMonitor subMonitor)
+	private void processPackageFragmentRoot(IPackageFragmentRoot root, SubMonitor subMonitor) 
 			throws JavaModelException {
 		IJavaElement[] children = root.getChildren();
 		for (IJavaElement child : children) {
-			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-				IPackageFragment fragment = (IPackageFragment) child;
-				ICompilationUnit[] units = fragment.getCompilationUnits();
-				for (ICompilationUnit unit : units) {
-					CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
-//					ASTVisitor visitor = new FieldDeclationPrinter...
-//					compilationUnit.accept(visitor);
-				}
-			}
+			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
+				processPackageFragment((IPackageFragment)child, subMonitor);
 		}
+	}
+
+	private void processPackageFragment(IPackageFragment fragment, SubMonitor subMonitor) 
+			throws JavaModelException {
+		ICompilationUnit[] units = fragment.getCompilationUnits();
+		for (ICompilationUnit unit : units) processCompilationUnit(unit, subMonitor);
+	}
+
+	private void processCompilationUnit(ICompilationUnit unit, SubMonitor subMonitor) {
+		CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
+		ASTVisitor visitor = new TypeDeclarationPrinter();
+		compilationUnit.accept(visitor);
 	}
 
 	@Override

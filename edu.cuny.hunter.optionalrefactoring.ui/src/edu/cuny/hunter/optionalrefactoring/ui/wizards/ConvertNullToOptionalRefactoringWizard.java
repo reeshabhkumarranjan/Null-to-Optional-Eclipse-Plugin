@@ -6,6 +6,7 @@ package edu.cuny.hunter.optionalrefactoring.ui.wizards;
 import java.util.Optional;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.refactoring.RefactoringMessages;
@@ -31,10 +32,10 @@ public class ConvertNullToOptionalRefactoringWizard extends RefactoringWizard {
 		this.setWindowTitle(Messages.Name);
 	}
 
-	public static void startRefactoring(IJavaProject[] javaProjects, Shell shell, Optional<IProgressMonitor> monitor)
+	public static void startRefactoring(IJavaElement[] javaElements, Shell shell, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		// TODO: Will need to set the target type at some point but see #23.
-		Refactoring refactoring = Util.createRefactoring(javaProjects, monitor);
+		Refactoring refactoring = Util.createRefactoring(javaElements, monitor);
 		RefactoringWizard wizard = new ConvertNullToOptionalRefactoringWizard(refactoring);
 
 		new RefactoringStarter().activate(wizard, shell, RefactoringMessages.OpenRefactoringWizardAction_refactoring,
