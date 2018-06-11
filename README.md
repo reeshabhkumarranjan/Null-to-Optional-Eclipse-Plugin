@@ -22,7 +22,7 @@ The project includes a maven configuration file using the tycho plug-in, which i
 - https://github.com/khatchad/edu.cuny.citytech.refactoring.common (which can be imported as a git repository)
 - the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. 
   - These can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
-  - Use the 'Update Site': [The Eclipse Project Updates](http://download.eclipse.org/eclipse/updates/4.7)
+  - Choose the 'update site': [The Eclipse Project Updates](http://download.eclipse.org/eclipse/updates/4.7) in 'Work With' field.
 
 #### Optionally, you may also install:
 JDT UI contributes some useful plugins for working with AST's and the Java Model that are not part of the Eclipse SDK but can be downloaded from this update site: http://www.eclipse.org/jdt/ui/update-site.
