@@ -18,7 +18,17 @@ This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents 
 
 ### Installation for Development
 
-The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on https://github.com/khatchad/edu.cuny.citytech.refactoring.common, the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. The latter three can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
+The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on the following projects and plugins being present in the workspace:
+- https://github.com/khatchad/edu.cuny.citytech.refactoring.common (which can be imported as a git repository)
+- the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. 
+  - These can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
+  - Choose the 'update site': [The Eclipse Project Updates](http://download.eclipse.org/eclipse/updates/4.7) in 'Work With' field.
+
+#### Optionally, you may also install:
+JDT UI contributes some useful plugins for working with AST's and the Java Model that are not part of the Eclipse SDK but can be downloaded from this update site: http://www.eclipse.org/jdt/ui/update-site.
+- org.eclipse.jdt.astview - ASTView
+- org.eclipse.jdt.jeview - JavaElement View
+
 
 ### Running the Evaluator
 

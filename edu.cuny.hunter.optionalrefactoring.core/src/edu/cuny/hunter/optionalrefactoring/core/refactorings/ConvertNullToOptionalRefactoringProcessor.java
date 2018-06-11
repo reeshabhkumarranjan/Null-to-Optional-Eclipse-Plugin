@@ -14,15 +14,20 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
@@ -80,7 +85,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 
-	private IJavaProject[] javaProjects;
+	private IJavaElement[] javaElements;
 
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
 		this(null, null, false, Optional.empty());
@@ -91,10 +96,10 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		this(null, settings, false, monitor);
 	}
 
-	public ConvertNullToOptionalRefactoringProcessor(IJavaProject[] javaProjects, final CodeGenerationSettings settings,
+	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, final CodeGenerationSettings settings,
 			boolean layer, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		try {
-			this.javaProjects = javaProjects;
+			this.javaElements = javaElements;
 			this.settings = settings;
 			this.layer = layer;
 
@@ -103,9 +108,9 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	public ConvertNullToOptionalRefactoringProcessor(IJavaProject[] javaProjects, final CodeGenerationSettings settings,
+	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, final CodeGenerationSettings settings,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		this(javaProjects, settings, false, monitor);
+		this(javaElements, settings, false, monitor);
 	}
 
 	public ConvertNullToOptionalRefactoringProcessor(Optional<IProgressMonitor> monitor) throws JavaModelException {
@@ -117,46 +122,116 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			throws CoreException, OperationCanceledException {
 		try {
 			SubMonitor subMonitor = SubMonitor.convert(monitor, Messages.CheckingPreconditions,
-					this.getJavaProjects().length * 1000);
+					this.getJavaElements().length * 1000);
 			final RefactoringStatus status = new RefactoringStatus();
 
-			for (IJavaProject jproj : this.getJavaProjects()) {
-				IPackageFragmentRoot[] roots = jproj.getPackageFragmentRoots();
-				for (IPackageFragmentRoot root : roots) {
-					IJavaElement[] children = root.getChildren();
-					for (IJavaElement child : children) {
-						if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-							IPackageFragment fragment = (IPackageFragment) child;
-							ICompilationUnit[] units = fragment.getCompilationUnits();
-							for (ICompilationUnit unit : units) {
-								CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
-								// TODO: compilationUnit.accept(visitor);
-							}
-						}
-					}
+			for (IJavaElement elem : this.getJavaElements()) {
+				switch (elem.getElementType()) {
+				case IJavaElement.JAVA_PROJECT:
+					process((IJavaProject) elem, subMonitor);
+					break;
+				case IJavaElement.PACKAGE_FRAGMENT_ROOT:
+					process((IPackageFragmentRoot) elem, subMonitor);
+					break;
+				case IJavaElement.PACKAGE_FRAGMENT:
+					process((IPackageFragment) elem, subMonitor);
+					break;
+				case IJavaElement.COMPILATION_UNIT:
+					process((ICompilationUnit) elem, subMonitor);
+					break;
+				case IJavaElement.TYPE:
+					process((IType) elem, subMonitor);
+					break;
+				case IJavaElement.FIELD:
+					process((IField) elem, subMonitor);
+					break;
+				case IJavaElement.METHOD:
+					process((IMethod) elem, subMonitor);
+					break;
+				case IJavaElement.INITIALIZER:
+					process((IInitializer) elem, subMonitor);
+					break;
 				}
 			}
 
 			// if there are no fatal errors.
 			if (!status.hasFatalError()) {
-				// these are the nulls passing preconditions. 
-//				Set<NullLiteral> passingNullSet = null; //TODO: this.getRefactorableNulls();
+				// these are the nulls passing preconditions.
+				// Set<NullLiteral> passingNullSet = null; //TODO: this.getRefactorableNulls();
 
 				// add a fatal error if there are no passing nulls.
-//				if (passingNullSet.isEmpty())
-//					status.addFatalError(Messages.NoNullsHavePassedThePreconditions);
-//				else {
-					// TODO:
-					// Checks.addModifiedFilesToChecker(ResourceUtil.getFiles(fChangeManager.getAllCompilationUnits()),
-					// context);
-//				}
+				// if (passingNullSet.isEmpty())
+				// status.addFatalError(Messages.NoNullsHavePassedThePreconditions);
+				// else {
+				// TODO:
+				// Checks.addModifiedFilesToChecker(ResourceUtil.getFiles(fChangeManager.getAllCompilationUnits()),
+				// context);
+				// }
 			}
 			return status;
-		} catch (Exception e) {
+		} catch (
+
+		Exception e) {
 			JavaPlugin.log(e);
 			throw e;
 		} finally {
 			monitor.done();
+		}
+	}
+
+	private void process(IInitializer elem, SubMonitor subMonitor) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void process(IMethod elem, SubMonitor subMonitor) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void process(IField elem, SubMonitor subMonitor) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void process(IJavaProject project, SubMonitor subMonitor) throws JavaModelException {
+		IPackageFragmentRoot[] roots = project.getPackageFragmentRoots();
+		for (IPackageFragmentRoot root : roots) {
+			process(root, subMonitor);
+		}
+	}
+
+	private void process(IPackageFragmentRoot root, SubMonitor subMonitor)
+			throws JavaModelException {
+		IJavaElement[] children = root.getChildren();
+		for (IJavaElement child : children) {
+			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
+				process((IPackageFragment) child, subMonitor);
+		}
+	}
+
+	private void process(IPackageFragment fragment, SubMonitor subMonitor) throws JavaModelException {
+		ICompilationUnit[] units = fragment.getCompilationUnits();
+		for (ICompilationUnit unit : units)
+			process(unit, subMonitor);
+	}
+
+	private void process(ICompilationUnit unit, SubMonitor subMonitor) {
+		CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
+		ASTVisitor visitor = new TypeDeclarationPrinter();
+		compilationUnit.accept(visitor);
+	}
+	
+	private void process(IType elem, SubMonitor subMonitor) {
+		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
+		for (Object obj : compilationUnit.types()) {
+			AbstractTypeDeclaration typeDecl = (AbstractTypeDeclaration) obj;
+			
+			// if the current type is equal to the selected type
+			if (typeDecl.resolveBinding().getJavaElement().equals(elem)) {
+				ASTVisitor visitor = new TypeDeclarationPrinter();
+				typeDecl.accept(visitor);
+			}
 		}
 	}
 
@@ -311,8 +386,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		return ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID;
 	}
 
-	protected IJavaProject[] getJavaProjects() {
-		return javaProjects;
+	protected IJavaElement[] getJavaElements() {
+		return javaElements;
 	}
 
 	@Override

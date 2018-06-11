@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
@@ -36,7 +37,7 @@ public final class Util {
 	private Util() {
 	}
 
-	public static ProcessorBasedRefactoring createRefactoring(IJavaProject[] projects,
+	public static ProcessorBasedRefactoring createRefactoring(IJavaElement[] projects,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		ConvertNullToOptionalRefactoringProcessor processor = createConvertToParallelStreamRefactoringProcessor(
 				projects, monitor);
@@ -44,9 +45,9 @@ public final class Util {
 	}
 
 	public static ConvertNullToOptionalRefactoringProcessor createConvertToParallelStreamRefactoringProcessor(
-			IJavaProject[] projects, Optional<IProgressMonitor> monitor) throws JavaModelException {
-		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(projects[0]);
-		ConvertNullToOptionalRefactoringProcessor processor = new ConvertNullToOptionalRefactoringProcessor(projects,
+			IJavaElement[] elements, Optional<IProgressMonitor> monitor) throws JavaModelException {
+		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(elements[0].getJavaProject());
+		ConvertNullToOptionalRefactoringProcessor processor = new ConvertNullToOptionalRefactoringProcessor(elements,
 				settings, monitor);
 		return processor;
 	}
