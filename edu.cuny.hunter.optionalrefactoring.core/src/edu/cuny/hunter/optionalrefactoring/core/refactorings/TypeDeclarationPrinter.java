@@ -6,9 +6,9 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 public class TypeDeclarationPrinter extends ASTVisitor {
 
 	@Override
-	public void endVisit(TypeDeclaration node) {
+	public boolean visit(TypeDeclaration node) {
 		System.out.println(node.getName());
-		super.endVisit(node);
+		return super.visit(node);
 	}
 	
 	

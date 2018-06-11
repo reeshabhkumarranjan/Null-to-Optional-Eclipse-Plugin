@@ -34,7 +34,7 @@ public class ConvertNullToOptionalHandler extends AbstractHandler {
 		Optional<IProgressMonitor> monitor = Optional.empty();
 		ISelection currentSelection = HandlerUtil.getCurrentSelectionChecked(event);
 		List<?> list = SelectionUtil.toList(currentSelection);
-		
+
 		Set<IJavaElement> javaElementSet = new HashSet<>();
 
 		if (list != null) {
@@ -42,30 +42,13 @@ public class ConvertNullToOptionalHandler extends AbstractHandler {
 				for (Object obj : list) {
 					if (obj instanceof IJavaElement) {
 						IJavaElement jElem = (IJavaElement) obj;
-						switch (jElem.getElementType()) {
-						case IJavaElement.METHOD:
-							break;
-						case IJavaElement.TYPE:
-							break;
-						case IJavaElement.COMPILATION_UNIT:
-							javaElementSet.add((ICompilationUnit)jElem);
-							break;
-						case IJavaElement.PACKAGE_FRAGMENT:
-							javaElementSet.add((IPackageFragment)jElem);
-							break;
-						case IJavaElement.PACKAGE_FRAGMENT_ROOT:
-							javaElementSet.add((IPackageFragmentRoot)jElem);
-							break;
-						case IJavaElement.JAVA_PROJECT:
-							javaElementSet.add((IJavaProject)jElem);
-							break;
-						}
+						javaElementSet.add(jElem);
 					}
 				}
 
 				Shell shell = HandlerUtil.getActiveShellChecked(event);
-				ConvertNullToOptionalRefactoringWizard
-						.startRefactoring(javaElementSet.toArray(new IJavaElement[javaElementSet.size()]), shell, Optional.empty());
+				ConvertNullToOptionalRefactoringWizard.startRefactoring(
+						javaElementSet.toArray(new IJavaElement[javaElementSet.size()]), shell, Optional.empty());
 			} catch (JavaModelException e) {
 				JavaPlugin.log(e);
 				throw new ExecutionException("Failed to start refactoring", e);
@@ -75,64 +58,4 @@ public class ConvertNullToOptionalHandler extends AbstractHandler {
 		// message?
 		return null;
 	}
-
-//	private Set<IMethod> extractMethodsFromJavaProject(IJavaProject jProj, Optional<IProgressMonitor> monitor)
-//			throws JavaModelException {
-//		Set<IMethod> methodSet = new HashSet<>();
-//
-//		IPackageFragmentRoot[] roots = jProj.getPackageFragmentRoots();
-//		for (IPackageFragmentRoot iPackageFragmentRoot : roots)
-//			methodSet.addAll(extractMethodsFromPackageFragmentRoot(iPackageFragmentRoot, monitor));
-//
-//		return methodSet;
-//	}
-//
-//	private Set<IMethod> extractMethodsFromPackageFragmentRoot(IPackageFragmentRoot root,
-//			Optional<IProgressMonitor> monitor) throws JavaModelException {
-//		Set<IMethod> methodSet = new HashSet<>();
-//
-//		IJavaElement[] children = root.getChildren();
-//		for (IJavaElement child : children)
-//			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
-//				methodSet.addAll(extractMethodsFromPackageFragment((IPackageFragment) child, monitor));
-//
-//		return methodSet;
-//	}
-//
-//	private Set<IMethod> extractMethodsFromPackageFragment(IPackageFragment frag, Optional<IProgressMonitor> monitor)
-//			throws JavaModelException {
-//		Set<IMethod> methodSet = new HashSet<>();
-//		ICompilationUnit[] units = frag.getCompilationUnits();
-//
-//		for (ICompilationUnit iCompilationUnit : units)
-//			methodSet.addAll(extractMethodsFromCompilationUnit(iCompilationUnit, monitor));
-//
-//		return methodSet;
-//	}
-//
-//	private Set<IMethod> extractMethodsFromCompilationUnit(ICompilationUnit cu, Optional<IProgressMonitor> monitor)
-//			throws JavaModelException {
-//		Set<IMethod> methodSet = new HashSet<>();
-//		IType[] types = cu.getTypes();
-//
-//		for (IType iType : types)
-//			methodSet.addAll(extractMethodsFromClass(iType, monitor));
-//
-//		return methodSet;
-//	}
-//
-//	private Set<IMethod> extractMethodsFromClass(IType type, Optional<IProgressMonitor> monitor)
-//			throws JavaModelException {
-//		Set<IMethod> methodSet = new HashSet<>();
-//
-//		if (type.isClass()) {
-//			for (IMethod method : type.getMethods())
-////				if (RefactoringAvailabilityTester.isInterfaceMigrationAvailable(method, monitor)) {
-//				if (true) {
-//					methodSet.add(method);
-//				} 
-//		}
-//
-//		return methodSet;
-//	}
 }

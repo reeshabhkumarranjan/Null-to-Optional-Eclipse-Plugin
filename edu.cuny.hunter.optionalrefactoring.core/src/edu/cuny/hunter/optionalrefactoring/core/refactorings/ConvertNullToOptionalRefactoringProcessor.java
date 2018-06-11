@@ -14,9 +14,12 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
@@ -24,6 +27,7 @@ import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
@@ -124,16 +128,28 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			for (IJavaElement elem : this.getJavaElements()) {
 				switch (elem.getElementType()) {
 				case IJavaElement.JAVA_PROJECT:
-					processJavaProject((IJavaProject) elem, subMonitor);
+					process((IJavaProject) elem, subMonitor);
 					break;
 				case IJavaElement.PACKAGE_FRAGMENT_ROOT:
-					processPackageFragmentRoot((IPackageFragmentRoot) elem, subMonitor);
+					process((IPackageFragmentRoot) elem, subMonitor);
 					break;
 				case IJavaElement.PACKAGE_FRAGMENT:
-					processPackageFragment((IPackageFragment)elem, subMonitor);
+					process((IPackageFragment) elem, subMonitor);
 					break;
 				case IJavaElement.COMPILATION_UNIT:
-					processCompilationUnit((ICompilationUnit)elem, subMonitor);
+					process((ICompilationUnit) elem, subMonitor);
+					break;
+				case IJavaElement.TYPE:
+					process((IType) elem, subMonitor);
+					break;
+				case IJavaElement.FIELD:
+					process((IField) elem, subMonitor);
+					break;
+				case IJavaElement.METHOD:
+					process((IMethod) elem, subMonitor);
+					break;
+				case IJavaElement.INITIALIZER:
+					process((IInitializer) elem, subMonitor);
 					break;
 				}
 			}
@@ -153,7 +169,9 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 				// }
 			}
 			return status;
-		} catch (Exception e) {
+		} catch (
+
+		Exception e) {
 			JavaPlugin.log(e);
 			throw e;
 		} finally {
@@ -161,32 +179,60 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	private void processJavaProject(IJavaProject project, SubMonitor subMonitor) throws JavaModelException {
+	private void process(IInitializer elem, SubMonitor subMonitor) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void process(IMethod elem, SubMonitor subMonitor) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void process(IField elem, SubMonitor subMonitor) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void process(IJavaProject project, SubMonitor subMonitor) throws JavaModelException {
 		IPackageFragmentRoot[] roots = project.getPackageFragmentRoots();
 		for (IPackageFragmentRoot root : roots) {
-			processPackageFragmentRoot(root, subMonitor);
+			process(root, subMonitor);
 		}
 	}
 
-	private void processPackageFragmentRoot(IPackageFragmentRoot root, SubMonitor subMonitor) 
+	private void process(IPackageFragmentRoot root, SubMonitor subMonitor)
 			throws JavaModelException {
 		IJavaElement[] children = root.getChildren();
 		for (IJavaElement child : children) {
 			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
-				processPackageFragment((IPackageFragment)child, subMonitor);
+				process((IPackageFragment) child, subMonitor);
 		}
 	}
 
-	private void processPackageFragment(IPackageFragment fragment, SubMonitor subMonitor) 
-			throws JavaModelException {
+	private void process(IPackageFragment fragment, SubMonitor subMonitor) throws JavaModelException {
 		ICompilationUnit[] units = fragment.getCompilationUnits();
-		for (ICompilationUnit unit : units) processCompilationUnit(unit, subMonitor);
+		for (ICompilationUnit unit : units)
+			process(unit, subMonitor);
 	}
 
-	private void processCompilationUnit(ICompilationUnit unit, SubMonitor subMonitor) {
+	private void process(ICompilationUnit unit, SubMonitor subMonitor) {
 		CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
 		ASTVisitor visitor = new TypeDeclarationPrinter();
 		compilationUnit.accept(visitor);
+	}
+	
+	private void process(IType elem, SubMonitor subMonitor) {
+		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
+		for (Object obj : compilationUnit.types()) {
+			AbstractTypeDeclaration typeDecl = (AbstractTypeDeclaration) obj;
+			
+			// if the current type is equal to the selected type
+			if (typeDecl.resolveBinding().getJavaElement().equals(elem)) {
+				ASTVisitor visitor = new TypeDeclarationPrinter();
+				typeDecl.accept(visitor);
+			}
+		}
 	}
 
 	@Override
