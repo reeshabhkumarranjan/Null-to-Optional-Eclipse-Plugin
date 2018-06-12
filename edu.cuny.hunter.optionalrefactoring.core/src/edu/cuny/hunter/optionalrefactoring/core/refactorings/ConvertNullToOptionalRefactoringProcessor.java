@@ -5,8 +5,11 @@ import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -26,6 +29,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -179,21 +183,6 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	private void process(IInitializer elem, SubMonitor subMonitor) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	private void process(IMethod elem, SubMonitor subMonitor) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	private void process(IField elem, SubMonitor subMonitor) {
-		// TODO Auto-generated method stub
-		
-	}
-
 	private void process(IJavaProject project, SubMonitor subMonitor) throws JavaModelException {
 		IPackageFragmentRoot[] roots = project.getPackageFragmentRoots();
 		for (IPackageFragmentRoot root : roots) {
@@ -216,23 +205,45 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			process(unit, subMonitor);
 	}
 
-	private void process(ICompilationUnit unit, SubMonitor subMonitor) {
+	private void process(ICompilationUnit unit, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
-		ASTVisitor visitor = new TypeDeclarationPrinter();
+		CompilationUnitSeeder visitor = ASTSeeder.of(unit);
 		compilationUnit.accept(visitor);
+		List<ASTNode> candidates = visitor.getCandidates();
 	}
 	
 	private void process(IType elem, SubMonitor subMonitor) {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
+		TypeDeclarationSeeder visitor = ASTSeeder.of(elem);
 		for (Object obj : compilationUnit.types()) {
-			AbstractTypeDeclaration typeDecl = (AbstractTypeDeclaration) obj;
-			
+			AbstractTypeDeclaration typeDecl = (AbstractTypeDeclaration) obj;			
 			// if the current type is equal to the selected type
-			if (typeDecl.resolveBinding().getJavaElement().equals(elem)) {
-				ASTVisitor visitor = new TypeDeclarationPrinter();
+			if (typeDecl.resolveBinding().getJavaElement().equals(elem))
 				typeDecl.accept(visitor);
-			}
 		}
+		List<ASTNode> candidates = visitor.getCandidates();
+	}
+
+	private void process(IInitializer elem, SubMonitor subMonitor) {
+		// TODO Auto-generated method stub
+		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
+		InitializerSeeder visitor = ASTSeeder.of(elem);
+		compilationUnit.accept(visitor);
+		List<ASTNode> candidates = visitor.getCandidates();
+	}
+
+	private void process(IMethod elem, SubMonitor subMonitor) {
+		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
+		MethodSeeder visitor = ASTSeeder.of(elem);
+		compilationUnit.accept(visitor);
+		List<ASTNode> candidates = visitor.getCandidates();
+	}
+
+	private void process(IField elem, SubMonitor subMonitor) {
+		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
+		FieldSeeder visitor = ASTSeeder.of(elem);
+		compilationUnit.accept(visitor);
+		List<ASTNode> candidates = visitor.getCandidates();
 	}
 
 	@Override
