@@ -1,22 +1,22 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
-public class FieldSeeder extends ASTVisitor implements ASTSeeder {
+public class FieldDeclSeeder extends ASTVisitor implements ASTSeeder {
 	
-	private final List<ASTNode> candidates = Collections.emptyList();
+	private final Set<IVariableBinding> candidates = Collections.emptySet();
 
-	private FieldSeeder() { super(); }
+	private FieldDeclSeeder() { super(); }
 	
-	public static FieldSeeder make() { return new FieldSeeder(); }
+	public static FieldDeclSeeder make() { return new FieldDeclSeeder(); }
 	
 	/* (non-Javadoc)
 	 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core.dom.FieldDeclaration)
@@ -25,9 +25,10 @@ public class FieldSeeder extends ASTVisitor implements ASTSeeder {
 	public boolean visit(FieldDeclaration node) {
 		// TODO: Not Type Safe?
 		for (Object o : node.fragments()) {
-			Expression e = ((VariableDeclarationFragment) o).getInitializer();
-			if (e == null || e.getNodeType() == ASTNode.NULL_LITERAL) {// uninitialized / initialized to null
-				candidates.add(node);
+			VariableDeclarationFragment f = (VariableDeclarationFragment)o;
+			Expression e = f.getInitializer();
+			if (e == null || e.getNodeType() == ASTNode.NULL_LITERAL) {// uninitialized or initialized to null
+				candidates.add(f.resolveBinding());
 				break;
 			}
 		}
@@ -35,6 +36,6 @@ public class FieldSeeder extends ASTVisitor implements ASTSeeder {
 	}
 
 	@Override
-	public List<ASTNode> getCandidates() { return candidates; }
+	public Set<IVariableBinding> getCandidates() { return candidates; }
 	
 }

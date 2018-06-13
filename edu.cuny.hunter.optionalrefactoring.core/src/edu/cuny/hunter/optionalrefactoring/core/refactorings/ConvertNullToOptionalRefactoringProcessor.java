@@ -5,10 +5,9 @@ import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -29,10 +28,11 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
@@ -209,19 +209,19 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
 		CompilationUnitSeeder visitor = ASTSeeder.of(unit);
 		compilationUnit.accept(visitor);
-		List<ASTNode> candidates = visitor.getCandidates();
+		Set<ITypeBinding> candidates = visitor.getCandidates();
 	}
 	
 	private void process(IType elem, SubMonitor subMonitor) {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		TypeDeclarationSeeder visitor = ASTSeeder.of(elem);
+		TypeDeclSeeder visitor = ASTSeeder.of(elem);
 		for (Object obj : compilationUnit.types()) {
 			AbstractTypeDeclaration typeDecl = (AbstractTypeDeclaration) obj;			
 			// if the current type is equal to the selected type
 			if (typeDecl.resolveBinding().getJavaElement().equals(elem))
 				typeDecl.accept(visitor);
 		}
-		List<ASTNode> candidates = visitor.getCandidates();
+		Set<ITypeBinding> candidates = visitor.getCandidates();
 	}
 
 	private void process(IInitializer elem, SubMonitor subMonitor) {
@@ -229,21 +229,21 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		InitializerSeeder visitor = ASTSeeder.of(elem);
 		compilationUnit.accept(visitor);
-		List<ASTNode> candidates = visitor.getCandidates();
+		Set<ITypeBinding> candidates = visitor.getCandidates();
 	}
 
 	private void process(IMethod elem, SubMonitor subMonitor) {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		MethodSeeder visitor = ASTSeeder.of(elem);
+		MethodDeclSeeder visitor = ASTSeeder.of(elem);
 		compilationUnit.accept(visitor);
-		List<ASTNode> candidates = visitor.getCandidates();
+		Set<IMethodBinding> candidates = visitor.getCandidates();
 	}
 
 	private void process(IField elem, SubMonitor subMonitor) {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		FieldSeeder visitor = ASTSeeder.of(elem);
+		FieldDeclSeeder visitor = ASTSeeder.of(elem);
 		compilationUnit.accept(visitor);
-		List<ASTNode> candidates = visitor.getCandidates();
+		Set<IVariableBinding> candidates = visitor.getCandidates();
 	}
 
 	@Override

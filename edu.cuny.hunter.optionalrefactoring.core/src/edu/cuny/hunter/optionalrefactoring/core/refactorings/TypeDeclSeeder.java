@@ -5,15 +5,15 @@ import java.util.Set;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 
-public class InitializerSeeder extends ASTVisitor implements ASTSeeder {
+public class TypeDeclSeeder extends ASTVisitor implements ASTSeeder {
 
 	private final Set<ITypeBinding> candidates = Collections.emptySet();
 	
-	private InitializerSeeder() { super(); }
+	private TypeDeclSeeder() { super(); }
 	
-	public static InitializerSeeder make() { return new InitializerSeeder(); }
+	public static TypeDeclSeeder make() { return new TypeDeclSeeder(); }
 
-	// TODO: override visit(Initializer)
+	// TODO: override visit(TypeDeclaration)
 	
 	@Override
 	public Set<ITypeBinding> getCandidates() { return candidates; }

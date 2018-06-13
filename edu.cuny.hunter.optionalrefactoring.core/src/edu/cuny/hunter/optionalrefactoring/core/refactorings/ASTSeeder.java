@@ -1,13 +1,13 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.List;
+import java.util.Set;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.IBinding;
 
 public interface ASTSeeder {
 	
@@ -15,21 +15,21 @@ public interface ASTSeeder {
 		return CompilationUnitSeeder.make();
 	}
 	
-	static TypeDeclarationSeeder of(IType type) {
-		return TypeDeclarationSeeder.make();
+	static TypeDeclSeeder of(IType type) {
+		return TypeDeclSeeder.make();
 	}
 	
 	static InitializerSeeder of(IInitializer initializer) {
 		return InitializerSeeder.make();
 	}
 	
-	static MethodSeeder of(IMethod method) {
-		return MethodSeeder.make();
+	static MethodDeclSeeder of(IMethod method) {
+		return MethodDeclSeeder.make();
 	}
 	
-	static FieldSeeder of(IField field) {
-		return FieldSeeder.make();
+	static FieldDeclSeeder of(IField field) {
+		return FieldDeclSeeder.make();
 	}
 	
-	List<ASTNode> getCandidates();
+	Set<? extends IBinding> getCandidates();
 }

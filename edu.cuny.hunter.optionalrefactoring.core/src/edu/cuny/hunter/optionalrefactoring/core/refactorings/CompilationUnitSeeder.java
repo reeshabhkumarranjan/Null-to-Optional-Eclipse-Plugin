@@ -1,15 +1,14 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.Collections;
-import java.util.List;
-
-import org.eclipse.jdt.core.dom.ASTNode;
+import java.util.Set;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 
 public class CompilationUnitSeeder extends ASTVisitor implements ASTSeeder {
 	
-	private final List<ASTNode> candidates = Collections.emptyList();
+	private final Set<ITypeBinding> candidates = Collections.emptySet();
 
 	private CompilationUnitSeeder() { super(); }
 	
@@ -22,6 +21,6 @@ public class CompilationUnitSeeder extends ASTVisitor implements ASTSeeder {
 	}
 
 	@Override
-	public List<ASTNode> getCandidates() { return candidates; }
+	public Set<ITypeBinding> getCandidates() { return candidates; }
 	
 }
