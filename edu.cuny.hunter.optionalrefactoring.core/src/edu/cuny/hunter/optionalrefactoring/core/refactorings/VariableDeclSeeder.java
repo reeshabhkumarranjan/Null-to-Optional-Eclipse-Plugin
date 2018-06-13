@@ -6,10 +6,8 @@ import java.util.Set;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 
@@ -26,7 +24,10 @@ public class VariableDeclSeeder extends ASTVisitor implements ASTSeeder {
 	 */
 	@Override
 	public boolean visit(SingleVariableDeclaration node) {
-		// TODO Auto-generated method stub
+		Expression e = node.getInitializer();
+		if (e == null || e.getNodeType() == ASTNode.NULL_LITERAL) {
+			candidates.add(node.resolveBinding());
+		}
 		return super.visit(node);
 	}
 

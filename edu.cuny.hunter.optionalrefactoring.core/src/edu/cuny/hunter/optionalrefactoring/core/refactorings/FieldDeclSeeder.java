@@ -25,10 +25,10 @@ public class FieldDeclSeeder extends ASTVisitor implements ASTSeeder {
 	public boolean visit(FieldDeclaration node) {
 		// TODO: Not Type Safe?
 		for (Object o : node.fragments()) {
-			VariableDeclarationFragment f = (VariableDeclarationFragment)o;
-			Expression e = f.getInitializer();
+			VariableDeclarationFragment vardeffrag = (VariableDeclarationFragment)o;
+			Expression e = vardeffrag.getInitializer();
 			if (e == null || e.getNodeType() == ASTNode.NULL_LITERAL) {// uninitialized or initialized to null
-				candidates.add(f.resolveBinding());
+				candidates.add(vardeffrag.resolveBinding());
 				break;
 			}
 		}
