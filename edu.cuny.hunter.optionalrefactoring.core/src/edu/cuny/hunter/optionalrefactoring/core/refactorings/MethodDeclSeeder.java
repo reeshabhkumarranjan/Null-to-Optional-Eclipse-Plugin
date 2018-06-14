@@ -1,13 +1,15 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.IBinding;
 
 public class MethodDeclSeeder extends ASTVisitor implements ASTSeeder {
 
-	private final Set<IMethodBinding> candidates = Collections.emptySet();
+	private final Set<IBinding> candidates = new HashSet<>();
 	
 	private MethodDeclSeeder() { super(); }
 	
@@ -16,6 +18,6 @@ public class MethodDeclSeeder extends ASTVisitor implements ASTSeeder {
 	// TODO: override visit(MethodDeclaration);
 	
 	@Override
-	public Set<IMethodBinding> getCandidates() { return candidates; }
+	public Set<IBinding> getCandidates() { return candidates; }
 	
 }

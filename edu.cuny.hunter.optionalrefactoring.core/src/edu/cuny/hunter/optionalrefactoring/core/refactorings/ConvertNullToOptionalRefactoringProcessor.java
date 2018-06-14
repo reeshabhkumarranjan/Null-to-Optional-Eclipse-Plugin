@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -30,6 +31,7 @@ import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
@@ -209,7 +211,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
 		CompilationUnitSeeder visitor = ASTSeeder.of(unit);
 		compilationUnit.accept(visitor);
-		Set<ITypeBinding> candidates = visitor.getCandidates();
+		Set<IBinding> candidates = visitor.getCandidates();
+		candidatePrinter(candidates);
 	}
 	
 	private void process(IType elem, SubMonitor subMonitor) {
@@ -221,7 +224,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			if (typeDecl.resolveBinding().getJavaElement().equals(elem))
 				typeDecl.accept(visitor);
 		}
-		Set<ITypeBinding> candidates = visitor.getCandidates();
+		Set<IBinding> candidates = visitor.getCandidates();
+		candidatePrinter(candidates);
 	}
 
 	private void process(IInitializer elem, SubMonitor subMonitor) {
@@ -229,21 +233,30 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		InitializerSeeder visitor = ASTSeeder.of(elem);
 		compilationUnit.accept(visitor);
-		Set<ITypeBinding> candidates = visitor.getCandidates();
+		Set<IBinding> candidates = visitor.getCandidates();
+		candidatePrinter(candidates);
 	}
 
 	private void process(IMethod elem, SubMonitor subMonitor) {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		MethodDeclSeeder visitor = ASTSeeder.of(elem);
 		compilationUnit.accept(visitor);
-		Set<IMethodBinding> candidates = visitor.getCandidates();
+		Set<IBinding> candidates = visitor.getCandidates();
+		candidatePrinter(candidates);
 	}
 
 	private void process(IField elem, SubMonitor subMonitor) {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		FieldDeclSeeder visitor = ASTSeeder.of(elem);
 		compilationUnit.accept(visitor);
-		Set<IVariableBinding> candidates = visitor.getCandidates();
+		Set<IBinding> candidates = visitor.getCandidates();
+		candidatePrinter(candidates);
+	}
+	
+	private void candidatePrinter(Set<IBinding> candidates) {
+		Logger logger = Logger.getLogger(this.toString());
+		candidates.forEach(x ->
+				logger.info(x.toString()));
 	}
 
 	@Override

@@ -31,5 +31,5 @@ public interface ASTSeeder {
 		return FieldDeclSeeder.make();
 	}
 	
-	Set<? extends IBinding> getCandidates();
+	Set<IBinding> getCandidates();
 }

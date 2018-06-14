@@ -1,13 +1,13 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IBinding;
 
 public class InitializerSeeder extends ASTVisitor implements ASTSeeder {
 
-	private final Set<ITypeBinding> candidates = Collections.emptySet();
+	private final Set<IBinding> candidates = new HashSet<>();
 	
 	private InitializerSeeder() { super(); }
 	
@@ -16,6 +16,6 @@ public class InitializerSeeder extends ASTVisitor implements ASTSeeder {
 	// TODO: override visit(Initializer)
 	
 	@Override
-	public Set<ITypeBinding> getCandidates() { return candidates; }
+	public Set<IBinding> getCandidates() { return candidates; }
 	
 }

@@ -1,18 +1,15 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.IBinding;
 
 public class FieldDeclSeeder extends ASTVisitor implements ASTSeeder {
 	
-	private final Set<IVariableBinding> candidates = Collections.emptySet();
+	private final Set<IBinding> candidates = new HashSet<>();
 
 	private FieldDeclSeeder() { super(); }
 	
@@ -23,19 +20,13 @@ public class FieldDeclSeeder extends ASTVisitor implements ASTSeeder {
 	 */
 	@Override
 	public boolean visit(FieldDeclaration node) {
-		// TODO: Not Type Safe?
 		for (Object o : node.fragments()) {
-			VariableDeclarationFragment vardeffrag = (VariableDeclarationFragment)o;
-			Expression e = vardeffrag.getInitializer();
-			if (e == null || e.getNodeType() == ASTNode.NULL_LITERAL) {// uninitialized or initialized to null
-				candidates.add(vardeffrag.resolveBinding());
-				break;
-			}
+			//TODO: inplement with NullExprSeeder
 		}
 		return super.visit(node);
 	}
 
 	@Override
-	public Set<IVariableBinding> getCandidates() { return candidates; }
+	public Set<IBinding> getCandidates() { return candidates; }
 	
 }

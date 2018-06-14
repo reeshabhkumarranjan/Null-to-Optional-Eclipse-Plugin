@@ -1,11 +1,13 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -13,7 +15,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 
 public class VariableDeclSeeder extends ASTVisitor implements ASTSeeder {
 	
-	private final Set<IVariableBinding> candidates = Collections.emptySet();
+	private final Set<IBinding> candidates = new HashSet<>();
 	
 	private VariableDeclSeeder() { super(); }
 	
@@ -48,9 +50,8 @@ public class VariableDeclSeeder extends ASTVisitor implements ASTSeeder {
 	}
 
 	@Override
-	public Set<IVariableBinding> getCandidates() {
-		// TODO Auto-generated method stub
-		return null;
+	public Set<IBinding> getCandidates() {
+		return candidates;
 	}
 
 }
