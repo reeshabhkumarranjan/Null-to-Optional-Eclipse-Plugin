@@ -1,7 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;

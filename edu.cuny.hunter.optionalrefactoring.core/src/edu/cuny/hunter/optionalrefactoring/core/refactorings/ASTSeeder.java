@@ -30,6 +30,6 @@ public interface ASTSeeder {
 	static FieldDeclSeeder of(IField field) {
 		return FieldDeclSeeder.make();
 	}
-	
+		
 	Set<IBinding> getCandidates();
 }
