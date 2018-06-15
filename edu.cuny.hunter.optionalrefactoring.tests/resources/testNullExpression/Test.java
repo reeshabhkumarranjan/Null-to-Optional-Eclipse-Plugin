@@ -1,4 +1,4 @@
-package edu.cuny.hunter.optionalrefactoring.core.refactorings;
+package testNullExpression;
 
 public class Test {
 	{
