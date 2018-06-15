@@ -207,53 +207,38 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			process(unit, subMonitor);
 	}
 
-	private void process(ICompilationUnit unit, SubMonitor subMonitor) throws JavaModelException {
-		CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
-		CompilationUnitSeeder visitor = ASTSeeder.of(unit);
-		compilationUnit.accept(visitor);
-		Set<IBinding> candidates = visitor.getCandidates();
+	private void process(ICompilationUnit icu, SubMonitor subMonitor) throws JavaModelException {
+		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
+		Set<IJavaElement> candidates = NullExprSeeder.of(icu, compilationUnit).getCandidates();
 		candidatePrinter(candidates);
 	}
 	
-	private void process(IType elem, SubMonitor subMonitor) {
+	private void process(IType elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		TypeDeclSeeder visitor = ASTSeeder.of(elem);
-		for (Object obj : compilationUnit.types()) {
-			AbstractTypeDeclaration typeDecl = (AbstractTypeDeclaration) obj;			
-			// if the current type is equal to the selected type
-			if (typeDecl.resolveBinding().getJavaElement().equals(elem))
-				typeDecl.accept(visitor);
-		}
-		Set<IBinding> candidates = visitor.getCandidates();
+		Set<IJavaElement> candidates = NullExprSeeder.of(elem, compilationUnit).getCandidates();
 		candidatePrinter(candidates);
 	}
 
-	private void process(IInitializer elem, SubMonitor subMonitor) {
+	private void process(IInitializer elem, SubMonitor subMonitor) throws JavaModelException {
 		// TODO Auto-generated method stub
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		InitializerSeeder visitor = ASTSeeder.of(elem);
-		compilationUnit.accept(visitor);
-		Set<IBinding> candidates = visitor.getCandidates();
+		Set<IJavaElement> candidates = NullExprSeeder.of(elem, compilationUnit).getCandidates();
 		candidatePrinter(candidates);
 	}
 
-	private void process(IMethod elem, SubMonitor subMonitor) {
+	private void process(IMethod elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		MethodDeclSeeder visitor = ASTSeeder.of(elem);
-		compilationUnit.accept(visitor);
-		Set<IBinding> candidates = visitor.getCandidates();
+		Set<IJavaElement> candidates = NullExprSeeder.of(elem, compilationUnit).getCandidates();
 		candidatePrinter(candidates);
 	}
 
-	private void process(IField elem, SubMonitor subMonitor) {
+	private void process(IField elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		FieldDeclSeeder visitor = ASTSeeder.of(elem);
-		compilationUnit.accept(visitor);
-		Set<IBinding> candidates = visitor.getCandidates();
+		Set<IJavaElement> candidates = NullExprSeeder.of(elem, compilationUnit).getCandidates();
 		candidatePrinter(candidates);
 	}
 	
-	private void candidatePrinter(Set<IBinding> candidates) {
+	private void candidatePrinter(Set<IJavaElement> candidates) {
 		Logger logger = Logger.getLogger(this.toString());
 		candidates.forEach(x ->
 				logger.info(x.toString()));

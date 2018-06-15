@@ -2,32 +2,38 @@ package edu.cuny.hunter.optionalrefactoring.core.utils;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.IBinding;
 
-public class BindingSet<S extends IBinding> implements Set<S> {
+public class BindingSet implements Set<IBinding> {
 
-	private final Map<Class<IBinding>, Set<Object>> map = new HashMap<>();
+	private final Map<Class<?>, Set<Object>> map = new HashMap<>();
 
 	@Override
-	public boolean add(S e) {
-		// TODO Auto-generated method stub
+	public boolean add(IBinding b) {
+		if (map.containsKey(b.getClass()))
+			map.get(b.getClass()).add(b);
+		else {
+			HashSet<Object> h = new HashSet<>();
+			h.add(b);
+			map.put(b.getClass(), h);
+		}
 		return false;
 	}
 
 	@Override
-	public boolean addAll(Collection<? extends S> c) {
+	public boolean addAll(Collection<? extends IBinding> c) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public void clear() {
-		// TODO Auto-generated method stub
-		
+		map.clear();
 	}
 
 	@Override
@@ -49,7 +55,7 @@ public class BindingSet<S extends IBinding> implements Set<S> {
 	}
 
 	@Override
-	public Iterator<S> iterator() {
+	public Iterator<IBinding> iterator() {
 		// TODO Auto-generated method stub
 		return null;
 	}
