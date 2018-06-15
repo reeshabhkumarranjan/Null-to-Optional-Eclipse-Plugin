@@ -1,6 +1,7 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -50,6 +51,7 @@ public class NullExprSeeder {
 	static NullExprSeeder of(IInitializer i, CompilationUnit c) throws JavaModelException {
 		NullExprSeeder seeder = new NullExprSeeder();
 		Initializer initializer = ASTNodeSearchUtil.getInitializerNode(i, c);
+		Logger.getAnonymousLogger().info("got Initializer node");
 		NullExprHarvester visitor = NullExprHarvester.make();
 		initializer.accept(visitor);
 		seeder.harvestVariableBindings(visitor);

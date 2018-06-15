@@ -222,6 +222,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private void process(IInitializer elem, SubMonitor subMonitor) throws JavaModelException {
 		// TODO Auto-generated method stub
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
+		Logger.getLogger(this.toString()).info("made it to start seeding");
 		Set<IJavaElement> candidates = NullExprSeeder.of(elem, compilationUnit).getCandidates();
 		candidatePrinter(candidates);
 	}

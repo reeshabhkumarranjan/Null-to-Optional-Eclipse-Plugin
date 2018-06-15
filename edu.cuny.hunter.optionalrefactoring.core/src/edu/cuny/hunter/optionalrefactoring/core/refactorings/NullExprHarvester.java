@@ -2,6 +2,7 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -26,8 +27,7 @@ public class NullExprHarvester extends ASTVisitor {
 	@Override
 	public boolean visit(NullLiteral nl) {
 		ASTNode node = nl.getParent();
-		while (node != null) {
-			Class<? extends ASTNode> c = node.getClass();
+		Class<? extends ASTNode> c = node.getClass();
 			if (c.equals(Assignment.class)) 
 				inferBinding((Assignment)node);
 			else if (c.equals(MethodInvocation.class)) 
@@ -39,7 +39,6 @@ public class NullExprHarvester extends ASTVisitor {
 			else if (c.equals(VariableDeclarationFragment.class))
 				inferBinding((VariableDeclarationFragment)node);
 			else node = node.getParent();
-		}
 		return super.visit(nl);
 	}
 	
