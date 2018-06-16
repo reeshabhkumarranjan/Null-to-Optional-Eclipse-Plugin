@@ -1,6 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -10,6 +9,8 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ILocalVariable;
+import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -18,20 +19,23 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 
 public class NullExprHarvester {
 
-	private final Set<ASTNode> candidates = new HashSet<>();
+	private final Set<ASTNode> candidates;
 	private ASTNode scopeRoot;
 	
 	private NullExprHarvester(ASTNode s) {
 		this.scopeRoot = s;
+		this.candidates = new LinkedHashSet<>();
 	}
 
 	static NullExprHarvester of(ICompilationUnit i, CompilationUnit c) {
@@ -83,7 +87,7 @@ public class NullExprHarvester {
 	
 	private void processExpression(ASTNode node) {
 		switch (node.getNodeType()) {
-		case ASTNode.ASSIGNMENT : candidates.add((Name)((Assignment)node).getLeftHandSide());
+		case ASTNode.ASSIGNMENT : candidates.add(((Assignment)node).getLeftHandSide());
 			break;
 		case ASTNode.RETURN_STATEMENT : // TODO: 
 			break;
@@ -93,7 +97,7 @@ public class NullExprHarvester {
 			break;
 		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : // TODO:
 			break;
-		case ASTNode.VARIABLE_DECLARATION_FRAGMENT : // TODO:
+		case ASTNode.VARIABLE_DECLARATION_FRAGMENT : candidates.add(((VariableDeclarationFragment)node).getName());
 			break;
 		}
 	}
@@ -118,6 +122,8 @@ public class NullExprHarvester {
 				curr = curr.getParent();
 		return false;
 	};
+	
+	private Predicate<ASTNode> isName = node -> node.getClass().equals(Name.class);
  
 	private Set<IJavaElement> harvestMethodInvocations() {
 		return null;
@@ -129,11 +135,25 @@ public class NullExprHarvester {
 
 	}
 
-	private Set<IJavaElement> harvestLocalVariables() {
+	private Set<ILocalVariable> harvestLocalVariables() {
 		return candidates.stream()
+				//.filter(isName)
 				.map(Name.class::cast)
-				.filter(inScope)
-				.map(candidate -> candidate.resolveBinding().getJavaElement())
+				.map(candidate -> candidate.resolveBinding())
+				.filter(candidate -> (!(candidate == null)))
+				.map(IVariableBinding.class::cast)
+				.filter(candidate -> {
+					if (candidate.isField()) return false;
+					IMethod declaring = (IMethod)candidate.getDeclaringMethod().getJavaElement();
+					IJavaElement curr = candidate.getJavaElement();
+					while (curr != null)
+						if (declaring.equals(curr.getParent())) return true;
+						else
+							curr = curr.getParent();
+					return false;
+				})
+				.map(candidate -> candidate.getJavaElement())
+				.map(ILocalVariable.class::cast)
 				.collect(Collectors.toSet());
 	}
 }
