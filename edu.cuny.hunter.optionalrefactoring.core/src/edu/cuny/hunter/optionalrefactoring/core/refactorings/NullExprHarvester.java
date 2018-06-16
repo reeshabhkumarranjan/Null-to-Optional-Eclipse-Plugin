@@ -1,6 +1,7 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -72,6 +73,14 @@ public class NullExprHarvester {
 		return seeder;
 	}
 	
+	public Set<IJavaElement> getCandidates() { 
+		Set<IJavaElement> candidates = new LinkedHashSet<>();
+		candidates.addAll(this.harvestLocalVariables());
+		// TODO: candidates.addAll(this.harvestMethodInvocations());
+		// TODO: candidates.addAll(this.harvestReturnStatements());
+		return candidates;
+	}
+	
 	private void processExpression(ASTNode node) {
 		switch (node.getNodeType()) {
 		case ASTNode.ASSIGNMENT : candidates.add((Name)((Assignment)node).getLeftHandSide());
@@ -109,28 +118,18 @@ public class NullExprHarvester {
 				curr = curr.getParent();
 		return false;
 	};
-
-	public Set<IType> harvestTypeDeclarations() {
-		return null;
-	}
-
-	public Set<IInitializer> harvestInitializers() {
+ 
+	private Set<IJavaElement> harvestMethodInvocations() {
 		return null;
 	}
 	
-	public Set<IField> harvestFieldDeclarations() {
+	private Set<IJavaElement> harvestReturnStatements() {
 		return null;
 		// TODO Auto-generated method stub
 
 	}
 
-	public Set<IMethod> harvestMethodDeclarations() {
-		return null;
-		// TODO Auto-generated method stub
-
-	}
-
-	public Set<IJavaElement> harvestLocalVariables() {
+	private Set<IJavaElement> harvestLocalVariables() {
 		return candidates.stream()
 				.map(Name.class::cast)
 				.filter(inScope)

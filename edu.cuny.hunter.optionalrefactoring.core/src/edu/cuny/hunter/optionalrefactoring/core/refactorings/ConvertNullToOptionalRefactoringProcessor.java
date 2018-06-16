@@ -5,6 +5,7 @@ import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -209,40 +210,32 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private void process(ICompilationUnit icu, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
-		Set<IType> candidates = NullExprHarvester.of(icu, compilationUnit).harvestTypeDeclarations();
-		candidatePrinter(candidates);
+		NullExprHarvester harvester = NullExprHarvester.of(icu, compilationUnit);
+		candidatePrinter(harvester.getCandidates());
 	}
 	
 	private void process(IType elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		// TODO: Set<IInitializer> initializerCandidates = harvester.harvestInitializers();
-		// candidatePrinter(initializerCandidates);
-		// TODO: Set<IMethod> methodCandidates = harvester.harvestMethodDeclarations();
-		// candidatePrinter(methodCandidates);
-		// TODO: Set<IField> fieldCandidates = harvester.harvestFieldDeclarations();
-		// candidatePrinter(fieldCandidates);
+		candidatePrinter(harvester.getCandidates());
 	}
 
 	private void process(IInitializer elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		Set<IJavaElement> candidates = NullExprHarvester.of(elem, compilationUnit).harvestLocalVariables();
-		candidatePrinter(candidates);
+		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
+		candidatePrinter(harvester.getCandidates());
 	}
 
 	private void process(IMethod elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		// TODO: Set<IMethod> self = harvester.harvestMethodDeclarations();
-		// candidatePrinter(self);
-		Set<IJavaElement> candidates = harvester.harvestLocalVariables();
-		candidatePrinter(candidates);
+		candidatePrinter(harvester.getCandidates());
 	}
 
 	private void process(IField elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		Set<IJavaElement> candidates = NullExprHarvester.of(elem, compilationUnit).harvestLocalVariables();
-		candidatePrinter(candidates);
+		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
+		candidatePrinter(harvester.getCandidates());
 	}
 	
 	private void candidatePrinter(Set<? extends IJavaElement> candidates) {
