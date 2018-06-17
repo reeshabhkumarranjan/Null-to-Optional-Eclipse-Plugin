@@ -12,6 +12,8 @@ import org.eclipse.osgi.util.NLS;
 public class Messages extends NLS {
 	private static final String BUNDLE_NAME = "edu.cuny.hunter.optionalrefactoring.core.messages.messages"; //$NON-NLS-1$
 
+	public static final String ConvertNullToOptionalTypePage_Description = "Select the Java Model Elements to convert nulls to optionals.";
+
 	public static String Name;
 	public static String CategoryName;
 	public static String CategoryDescription;
