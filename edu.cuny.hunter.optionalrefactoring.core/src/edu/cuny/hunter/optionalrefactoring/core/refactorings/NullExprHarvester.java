@@ -91,6 +91,17 @@ public class NullExprHarvester {
 		return candidates;
 	}
 
+	private ASTVisitor initHarvester() {
+		return new ASTVisitor() {
+
+			@Override
+			public boolean visit(NullLiteral nl) {
+				process(nl.getParent());
+				return super.visit(nl);
+			}
+		};
+	}
+	
 	private void process(ASTNode node) {
 		try {
 			switch (node.getNodeType()) {
@@ -148,24 +159,14 @@ public class NullExprHarvester {
 		}
 	}
 
-	private IBinding processArrayAccess(Expression node) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private ASTVisitor initHarvester() {
-		return new ASTVisitor() {
-
-			@Override
-			public boolean visit(NullLiteral nl) {
-				process(nl.getParent());
-				return super.visit(nl);
-			}
-		};
+	private IBinding processArrayAccess(Expression node) throws UndeterminedChildExpression {
+		switch (node.getNodeType()) {
+		default : throw new UndeterminedChildExpression(node);
+		}
 	}
 
 	private Predicate<IBinding> isLocalVariable = binding -> {
-		if (!(IVariableBinding.class.isAssignableFrom(binding.getClass()))) return false;
+		if (!(binding instanceof IVariableBinding)) return false;
 		IVariableBinding variableBinding = (IVariableBinding)binding;
 		if (((IVariableBinding) variableBinding).isField()) return false;
 		IMethod declaring = (IMethod)variableBinding.getDeclaringMethod().getJavaElement();
@@ -176,6 +177,8 @@ public class NullExprHarvester {
 				curr = curr.getParent();
 		return false;
 	};
+	
+	private Predicate<IBinding> isField;
 
 	private Set<IJavaElement> harvestMethodInvocations() {
 		return null;
