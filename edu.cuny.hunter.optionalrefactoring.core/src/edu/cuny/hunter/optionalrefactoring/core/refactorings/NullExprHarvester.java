@@ -1,6 +1,9 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
@@ -28,8 +31,11 @@ import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 
 public class NullExprHarvester {
@@ -115,8 +121,11 @@ public class NullExprHarvester {
 				break;
 			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : // TODO:
 				break;
-			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : candidates.add(processVariableDeclarationFragment((VariableDeclarationFragment)node));
+			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : candidates.addAll(processVariableDeclarationFragment((VariableDeclarationFragment)node));
 				break;
+			case ASTNode.SINGLE_VARIABLE_DECLARATION : candidates.add(processSingleVariableDeclaration((SingleVariableDeclaration)node));
+				break;
+			default : throw new UndeterminedChildExpression(node, "While trying to process the parent of an encountered NullLiteral: ");
 			}
 		} catch (UndeterminedChildExpression e) {
 			// TODO: save the ambiguous nodes ?
@@ -141,12 +150,6 @@ public class NullExprHarvester {
 		throw new UndeterminedChildExpression(node);
 	}
 
-	private IBinding processVariableDeclarationFragment(VariableDeclarationFragment node) throws UndeterminedChildExpression {
-		switch (node.getNodeType()) {
-		default : throw new UndeterminedChildExpression(node);
-		}
-	}
-
 	private IBinding processSuperFieldAccess(Expression node) throws UndeterminedChildExpression {
 		switch (node.getNodeType()) {
 		default : throw new UndeterminedChildExpression(node);
@@ -163,6 +166,30 @@ public class NullExprHarvester {
 		switch (node.getNodeType()) {
 		default : throw new UndeterminedChildExpression(node);
 		}
+	}
+	
+	private Set<IBinding> processVariableDeclarationFragment(VariableDeclarationFragment vdf) throws UndeterminedChildExpression {
+		ASTNode node = vdf.getParent();
+		List fragments;
+		switch (node.getNodeType()) {
+		case ASTNode.VARIABLE_DECLARATION_EXPRESSION :	fragments = ((VariableDeclarationExpression)node).fragments();
+		case ASTNode.VARIABLE_DECLARATION_STATEMENT : fragments = ((VariableDeclarationStatement)node).fragments();
+		break;
+		default : throw new UndeterminedChildExpression(node, "While trying to process the parent of a Variable Declaration Fragment: ");
+		}
+		Set<IBinding> bindings = new LinkedHashSet<>();
+		for (Object o : fragments) {
+			IBinding ib = ((VariableDeclarationFragment)o).resolveBinding();
+			if (ib != null) bindings.add(ib);
+			else throw new UndeterminedChildExpression(vdf, "While trying to process the fragments in a Variable Declaration Expression: ");
+		}
+		return bindings;
+	}
+	
+	private IBinding processSingleVariableDeclaration(SingleVariableDeclaration node) throws UndeterminedChildExpression {
+		IBinding b = node.resolveBinding();
+		if (b != null) return b;
+		throw new UndeterminedChildExpression(node, "While trying to process a Single Variable Declaration: ");
 	}
 
 	private Predicate<IBinding> isLocalVariable = binding -> {
