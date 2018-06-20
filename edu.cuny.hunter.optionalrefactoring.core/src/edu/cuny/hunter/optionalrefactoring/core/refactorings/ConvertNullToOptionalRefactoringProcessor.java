@@ -5,6 +5,7 @@ import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -62,9 +63,6 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 @SuppressWarnings({ "restriction", "deprecation" })
 public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProcessor {
 
-	// private Set<IMethod> unmigratableMethods = new
-	// UnmigratableMethodSet(sourceMethods);
-
 	@SuppressWarnings("unused")
 	private static final GroupCategorySet SET_CONVERT_NULL_TO_OPTIONAL = new GroupCategorySet(
 			new GroupCategory("edu.cuny.hunter.optionalrefactoring", //$NON-NLS-1$
@@ -92,7 +90,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
 		this(null, null, false, Optional.empty());
 	}
-
+	
 	public ConvertNullToOptionalRefactoringProcessor(final CodeGenerationSettings settings,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		this(null, settings, false, monitor);
@@ -206,31 +204,48 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private void process(ICompilationUnit icu, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(icu, compilationUnit);
-		candidatePrinter(harvester.getCandidates());
+		Set<IJavaElement> workList = new LinkedHashSet<>();
+		workList.addAll(harvester.harvestFields());
+		workList.addAll(harvester.harvestLocalVariables());
+		workList.addAll(harvester.harvestMethods());
+		candidatePrinter(workList);
 	}
 	
 	private void process(IType elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		candidatePrinter(harvester.getCandidates());
+		Set<IJavaElement> workList = new LinkedHashSet<>();
+		workList.addAll(harvester.harvestFields());
+		workList.addAll(harvester.harvestLocalVariables());
+		workList.addAll(harvester.harvestMethods());
+		candidatePrinter(workList);
 	}
 
 	private void process(IInitializer elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		candidatePrinter(harvester.getCandidates());
+		Set<IJavaElement> workList = new LinkedHashSet<>();
+		workList.addAll(harvester.harvestFields());
+		workList.addAll(harvester.harvestLocalVariables());
+		workList.addAll(harvester.harvestMethods());
+		candidatePrinter(workList);
 	}
 
 	private void process(IMethod elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		candidatePrinter(harvester.getCandidates());
+		Set<IJavaElement> workList = new LinkedHashSet<>();
+		workList.addAll(harvester.harvestLocalVariables());
+		workList.addAll(harvester.harvestMethods());
+		candidatePrinter(workList);
 	}
 
 	private void process(IField elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		candidatePrinter(harvester.getCandidates());
+		Set<IJavaElement> workList = new LinkedHashSet<>();
+		workList.addAll(harvester.harvestFields());
+		candidatePrinter(workList);	
 	}
 	
 	private void candidatePrinter(Set<? extends IJavaElement> candidates) {

@@ -9,13 +9,24 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
+import java.util.Set;
+import java.util.logging.Logger;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.ILocalVariable;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
+import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.NullExprHarvester;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -25,7 +36,11 @@ import junit.framework.TestSuite;
  *
  */
 @SuppressWarnings("restriction")
-public class ConvertNullToOptionalRefactoringTest extends org.eclipse.jdt.ui.tests.refactoring.RefactoringTest {
+public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
+
+	private static final Class<ConvertNullToOptionalRefactoringTest> clazz = ConvertNullToOptionalRefactoringTest.class;
+
+	private static final String REFACTORING_PATH = "ConvertNullToOptional/";
 
 	/**
 	 * The name of the directory containing resources under the project
@@ -33,9 +48,7 @@ public class ConvertNullToOptionalRefactoringTest extends org.eclipse.jdt.ui.tes
 	 */
 	private static final String RESOURCE_PATH = "resources";
 
-	private static final Class<ConvertNullToOptionalRefactoringTest> clazz = ConvertNullToOptionalRefactoringTest.class;
-
-	private static final String REFACTORING_PATH = "ConvertStreamToParallel/";
+	private static final Logger LOGGER = Logger.getLogger(clazz.getName());
 
 	public static Test setUpTest(Test test) {
 		return new Java18Setup(test);
@@ -110,7 +123,49 @@ public class ConvertNullToOptionalRefactoringTest extends org.eclipse.jdt.ui.tes
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		return compiler.run(null, null, null, sourceFile.getPath()) == 0;
 	}
-	
-	public void testNothing() {
+
+	private void helper(NullToOptionalExpectedResult... expectedResults) throws Exception {
+
+		// compute the actual results.
+		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+		ASTParser parser = ASTParser.newParser(AST.JLS10);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(icu);
+		parser.setResolveBindings(true);
+		CompilationUnit c = (CompilationUnit)parser.createAST(null);
+		NullExprHarvester harvester = NullExprHarvester.of(icu, c);
+
+		Set<IMethod> actualMethods = harvester.harvestMethods();
+		assertNotNull(actualMethods);
+		Set<IField> actualFields = harvester.harvestFields();
+		assertNotNull(actualFields);
+		Set<ILocalVariable> actualLocalVariables = harvester.harvestLocalVariables();
+		assertNotNull(actualLocalVariables);
+
+		// compare them with the expected results.
+		// for each expected result.
+		for (NullToOptionalExpectedResult result : expectedResults) {
+			// find the corresponding stream in the actual results.
+			Set<IField> expectedFields = result.getFields();
+			Set<ILocalVariable> expectedLocalVariables = result.getLocalVariables();
+			Set<IMethod> expectedMethods = result.getMethods();
+
+			String errorMessage = "Can't find any JavaElements for seeding ";
+			assertNotNull(errorMessage+"Fields.", expectedFields);
+			assertFalse(errorMessage+"Fields.", expectedFields.isEmpty());
+			assertNotNull(errorMessage+"Local Variables.", expectedLocalVariables);
+			assertFalse(errorMessage+"Local Variables.", expectedFields.isEmpty());
+			assertNotNull(errorMessage+"Methods.", expectedMethods);
+			assertFalse(errorMessage+"Methods.", expectedMethods.isEmpty());
+
+			assertEquals("Harvested Fields are the same: ", actualFields, expectedFields);
+			assertEquals("Harvested Local Variables are the same: ", actualLocalVariables, expectedLocalVariables);
+			assertEquals("Harvested Methods are the same: ", actualMethods, expectedMethods);
+		}
 	}
+	
+	public void testNoResult() throws Exception {
+		this.helper(NullToOptionalExpectedResult.of(Optional.empty(), Optional.empty(), Optional.empty()));
+	}
+	
 }

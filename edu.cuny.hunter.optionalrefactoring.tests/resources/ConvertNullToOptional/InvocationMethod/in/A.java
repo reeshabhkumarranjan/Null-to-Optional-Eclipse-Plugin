@@ -1,6 +1,6 @@
-package testNullExpression;
+package p;
 
-public class MethodInvocation {
+public class A {
 	
 	public Object testMethod0(Object o) {
 		return o;

@@ -39,12 +39,12 @@ public final class Util {
 
 	public static ProcessorBasedRefactoring createRefactoring(IJavaElement[] projects,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		ConvertNullToOptionalRefactoringProcessor processor = createConvertToParallelStreamRefactoringProcessor(
+		ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
 				projects, monitor);
 		return new ProcessorBasedRefactoring(processor);
 	}
 
-	public static ConvertNullToOptionalRefactoringProcessor createConvertToParallelStreamRefactoringProcessor(
+	public static ConvertNullToOptionalRefactoringProcessor createNullToOptionalRefactoringProcessor(
 			IJavaElement[] elements, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(elements[0].getJavaProject());
 		ConvertNullToOptionalRefactoringProcessor processor = new ConvertNullToOptionalRefactoringProcessor(elements,

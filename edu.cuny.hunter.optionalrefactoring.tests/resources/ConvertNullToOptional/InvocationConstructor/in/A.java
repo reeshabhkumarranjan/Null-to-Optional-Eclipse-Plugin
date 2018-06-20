@@ -1,6 +1,6 @@
-package testNullExpression;
+package p;
 
-public class ConstructorInvocation {
+public class A {
 	
 	public ConstructorInvocation(Object o) {
 		System.out.println(o);
