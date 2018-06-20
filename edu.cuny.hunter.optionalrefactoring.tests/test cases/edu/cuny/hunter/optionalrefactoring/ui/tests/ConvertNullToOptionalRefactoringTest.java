@@ -113,7 +113,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		
 		// compute the actual results.
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
-		ASTParser parser = ASTParser.newParser(AST.JLS10);
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(icu);
 		parser.setResolveBindings(true);
