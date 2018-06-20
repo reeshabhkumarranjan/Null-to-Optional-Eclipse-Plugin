@@ -1,7 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,9 +23,9 @@ import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -44,7 +43,7 @@ public class NullExprHarvester {
 	private final Set<IBinding> candidates;
 	private final ASTNode scopeRoot;
 	private final Set<IBinding> ambiguousCandidates;
-	
+
 	private NullExprHarvester(ASTNode s) {
 		this.scopeRoot = s;
 		this.candidates = new LinkedHashSet<>();
@@ -90,6 +89,15 @@ public class NullExprHarvester {
 		return seeder;
 	}
 
+	public Set<IJavaElement> getCandidates() { 
+		Set<IJavaElement> candidates = new LinkedHashSet<>();
+		candidates.addAll(this.harvestLocalVariables());
+		candidates.addAll(this.harvestFields());
+		// TODO: candidates.addAll(this.harvestMethodInvocations());
+		// TODO: candidates.addAll(this.harvestReturnStatements());
+		return candidates;
+	}
+
 	private ASTVisitor initHarvester() {
 		return new ASTVisitor() {
 
@@ -100,7 +108,7 @@ public class NullExprHarvester {
 			}
 		};
 	}
-	
+
 	private void process(ASTNode node) {
 		try {
 			switch (node.getNodeType()) {
@@ -115,11 +123,11 @@ public class NullExprHarvester {
 			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : // TODO:
 				break;
 			case ASTNode.CLASS_INSTANCE_CREATION : candidates.add(processClassInstanceCreation((ClassInstanceCreation)node));
-				break;
+			break;
 			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : candidates.addAll(processVariableDeclarationFragment((VariableDeclarationFragment)node));
-				break;
+			break;
 			case ASTNode.SINGLE_VARIABLE_DECLARATION : candidates.add(processSingleVariableDeclaration((SingleVariableDeclaration)node));
-				break;
+			break;
 			default : throw new UndeterminedNodeBinding(node, "While trying to process the parent of an encountered NullLiteral: ");
 			}
 		} catch (UndeterminedNodeBinding e) {
@@ -138,11 +146,11 @@ public class NullExprHarvester {
 		default : throw new UndeterminedNodeBinding(node, "While trying to process left side of assignment: ");
 		}
 	}
-	
+
 	private IBinding processName(Name node) throws UndeterminedNodeBinding {
 		IBinding b = node.resolveBinding();
 		if (b != null) return b;
-		throw new UndeterminedNodeBinding(node);
+		throw new UndeterminedNodeBinding(node, "While trying to process a Name node: ");
 	}
 
 	private IBinding processSuperFieldAccess(Expression node) throws UndeterminedNodeBinding {
@@ -154,24 +162,30 @@ public class NullExprHarvester {
 
 	private IBinding processFieldAccess(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
-		// TODO: implement
-		default : throw new UndeterminedNodeBinding(node);
+		case ASTNode.FIELD_ACCESS : {
+			IBinding ib = ((FieldAccess)node).resolveFieldBinding();
+			if (ib != null) return ib;
+		}
+		default : throw new UndeterminedNodeBinding(node, "While trying to process a Field Access node: ");
 		}
 	}
 
 	private IBinding processArrayAccess(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
-		// TODO: implement
-		default : throw new UndeterminedNodeBinding(node);
+		case ASTNode.ARRAY_ACCESS : {
+			Expression e = ((ArrayAccess)node).getArray();
+			return processLeftSideOfAssignment(e);
+		}
+		default : throw new UndeterminedNodeBinding(node, "While trying to process an Array Access node: ");
 		}
 	}
-	
+
 	private IBinding processClassInstanceCreation(ClassInstanceCreation cic) throws UndeterminedNodeBinding {
 		IBinding binding = cic.resolveConstructorBinding();
 		if (binding != null) return binding;
 		throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
 	}
-	
+
 	private Set<IBinding> processVariableDeclarationFragment(VariableDeclarationFragment vdf) throws UndeterminedNodeBinding {
 		ASTNode node = vdf.getParent();
 		List fragments;
@@ -192,9 +206,9 @@ public class NullExprHarvester {
 		}
 		return bindings;
 	}
-	
+
 	private IBinding processSingleVariableDeclaration(SingleVariableDeclaration node) throws UndeterminedNodeBinding {
-	// Single variable declaration nodes are used in a limited number of places, including formal parameter lists and catch clauses. They are not used for field declarations and regular variable declaration statements. 
+		// Single variable declaration nodes are used in a limited number of places, including formal parameter lists and catch clauses. They are not used for field declarations and regular variable declaration statements. 
 		IBinding b = node.resolveBinding();
 		if (b != null) return b;
 		throw new UndeterminedNodeBinding(node, "While trying to process a Single Variable Declaration: ");
@@ -212,7 +226,7 @@ public class NullExprHarvester {
 				curr = curr.getParent();
 		return false;
 	};
-	
+
 	private Predicate<IBinding> isField = binding -> {
 		if (!(binding instanceof IVariableBinding)) return false;
 		IVariableBinding variableBinding = (IVariableBinding)binding;
@@ -226,11 +240,15 @@ public class NullExprHarvester {
 		return false;
 	};
 
-	private Predicate<IBinding> isMethod;
-	
-	public Set<IMethod> harvestMethods() {	return Collections.emptySet(); }
+	private Predicate<IBinding> isMethodDeclaration;
 
-	public Set<IField> harvestFields() {
+	private Predicate<IBinding> isConstructorDeclaration;
+
+	private Set<IJavaElement> harvestMethods() {
+		return null;
+	}
+
+	private Set<IField> harvestFields() {
 		return candidates.stream()
 				.filter(isField)
 				.map(IVariableBinding.class::cast)
@@ -239,7 +257,7 @@ public class NullExprHarvester {
 				.collect(Collectors.toSet());
 	}
 
-	public Set<ILocalVariable> harvestLocalVariables() {
+	private Set<ILocalVariable> harvestLocalVariables() {
 		return candidates.stream()
 				.filter(isLocalVariable)
 				.map(IVariableBinding.class::cast)

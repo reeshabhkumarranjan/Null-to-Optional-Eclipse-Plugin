@@ -204,47 +204,35 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private void process(ICompilationUnit icu, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(icu, compilationUnit);
-		Set<IJavaElement> workList = new LinkedHashSet<>();
-		workList.addAll(harvester.harvestFields());
-		workList.addAll(harvester.harvestLocalVariables());
-		workList.addAll(harvester.harvestMethods());
+		Set<IJavaElement> workList = harvester.getCandidates();
 		candidatePrinter(workList);
 	}
 	
 	private void process(IType elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		Set<IJavaElement> workList = new LinkedHashSet<>();
-		workList.addAll(harvester.harvestFields());
-		workList.addAll(harvester.harvestLocalVariables());
-		workList.addAll(harvester.harvestMethods());
+		Set<IJavaElement> workList = harvester.getCandidates();
 		candidatePrinter(workList);
 	}
 
 	private void process(IInitializer elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		Set<IJavaElement> workList = new LinkedHashSet<>();
-		workList.addAll(harvester.harvestFields());
-		workList.addAll(harvester.harvestLocalVariables());
-		workList.addAll(harvester.harvestMethods());
+		Set<IJavaElement> workList = harvester.getCandidates();
 		candidatePrinter(workList);
 	}
 
 	private void process(IMethod elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		Set<IJavaElement> workList = new LinkedHashSet<>();
-		workList.addAll(harvester.harvestLocalVariables());
-		workList.addAll(harvester.harvestMethods());
+		Set<IJavaElement> workList = harvester.getCandidates();
 		candidatePrinter(workList);
 	}
 
 	private void process(IField elem, SubMonitor subMonitor) throws JavaModelException {
 		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
 		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		Set<IJavaElement> workList = new LinkedHashSet<>();
-		workList.addAll(harvester.harvestFields());
+		Set<IJavaElement> workList = harvester.getCandidates();
 		candidatePrinter(workList);	
 	}
 	

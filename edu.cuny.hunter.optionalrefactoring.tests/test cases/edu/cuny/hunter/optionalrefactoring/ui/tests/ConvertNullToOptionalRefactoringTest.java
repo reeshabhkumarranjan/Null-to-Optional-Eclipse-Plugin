@@ -3,22 +3,17 @@
  */
 package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.logging.Logger;
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
+import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IField;
-import org.eclipse.jdt.core.ILocalVariable;
-import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -112,20 +107,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			return unit;
 	}
 
-	private static boolean compiles(String source) throws IOException {
-		// Save source in .java file.
-		Path root = Files.createTempDirectory(null);
-		File sourceFile = new File(root.toFile(), "p/A.java");
-		sourceFile.getParentFile().mkdirs();
-		Files.write(sourceFile.toPath(), source.getBytes());
+	private void helper(String... _expectedElements) throws Exception {
 
-		// Compile source file.
-		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-		return compiler.run(null, null, null, sourceFile.getPath()) == 0;
-	}
-
-	private void helper(NullToOptionalExpectedResult... expectedResults) throws Exception {
-
+		Set<String> expectedElements = Arrays.asList(_expectedElements).stream().collect(Collectors.toSet());
+		
 		// compute the actual results.
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 		ASTParser parser = ASTParser.newParser(AST.JLS10);
@@ -135,37 +120,39 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		CompilationUnit c = (CompilationUnit)parser.createAST(null);
 		NullExprHarvester harvester = NullExprHarvester.of(icu, c);
 
-		Set<IMethod> actualMethods = harvester.harvestMethods();
-		assertNotNull(actualMethods);
-		Set<IField> actualFields = harvester.harvestFields();
-		assertNotNull(actualFields);
-		Set<ILocalVariable> actualLocalVariables = harvester.harvestLocalVariables();
-		assertNotNull(actualLocalVariables);
+		Set<String> actualElements = harvester.getCandidates().stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet());
+		assertNotNull(actualElements);		
 
 		// compare them with the expected results.
-		// for each expected result.
-		for (NullToOptionalExpectedResult result : expectedResults) {
-			// find the corresponding stream in the actual results.
-			Set<IField> expectedFields = result.getFields();
-			Set<ILocalVariable> expectedLocalVariables = result.getLocalVariables();
-			Set<IMethod> expectedMethods = result.getMethods();
+		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
+				expectedElements.containsAll(actualElements));
+	}
 
-			String errorMessage = "Can't find any JavaElements for seeding ";
-			assertNotNull(errorMessage+"Fields.", expectedFields);
-			assertFalse(errorMessage+"Fields.", expectedFields.isEmpty());
-			assertNotNull(errorMessage+"Local Variables.", expectedLocalVariables);
-			assertFalse(errorMessage+"Local Variables.", expectedFields.isEmpty());
-			assertNotNull(errorMessage+"Methods.", expectedMethods);
-			assertFalse(errorMessage+"Methods.", expectedMethods.isEmpty());
+	public void testAssignmentLocalVariable() throws Exception {
+		this.helper("a");
+	}
 
-			assertEquals("Harvested Fields are the same: ", actualFields, expectedFields);
-			assertEquals("Harvested Local Variables are the same: ", actualLocalVariables, expectedLocalVariables);
-			assertEquals("Harvested Methods are the same: ", actualMethods, expectedMethods);
-		}
+	public void testAssignmentLocalVariableArrayAccess() throws Exception {
+		this.helper("a");
 	}
 	
-	public void testNoResult() throws Exception {
-		this.helper(NullToOptionalExpectedResult.of(Optional.empty(), Optional.empty(), Optional.empty()));
+	public void testAssignmentLocalVariableFieldAccess() throws Exception {
+		this.helper("a");
 	}
 	
+	public void testAssignmentLocalVariableArrayAccessFieldAccess() throws Exception {
+		this.helper("a");
+	}
+	
+	public void testAssignmentLocalVariableFieldAccessArrayAccess() throws Exception {
+		this.helper("a");
+	}
+	
+	public void testDeclarationLocalVariable() throws Exception {
+		this.helper("a");
+	}
+	
+	public void testDeclarationLocalVariableArray() throws Exception {
+		this.helper("a");
+	}
 }

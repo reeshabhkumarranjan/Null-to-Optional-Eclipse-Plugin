@@ -1,8 +1,8 @@
 package p;
 
 public class A {
-
-	{
-		Object o = null;
+	
+	void m() {
+		A[] a = null;
 	}
 }
