@@ -1,6 +1,7 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -48,7 +49,6 @@ public class RefactorableHarvester {
 	private final WorkList workList = new WorkList();
 	private final Set<IJavaElement> notN2ORefactorable = new LinkedHashSet<>();
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
-	private final Map<IJavaElement, Set<ISourceRange>> elemToRefactorableSourceRangeMap = new LinkedHashMap<>();
 
 	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope, IProgressMonitor m) {
 		this.refactoringRootElement = rootElement;
@@ -91,37 +91,49 @@ public class RefactorableHarvester {
 	}
 
 	public Map<IJavaElement, Set<ISourceRange>> harvestRefactorableContexts() throws CoreException {
+		// this worklist starts with the immediate type-dependent entities on null expressions. 
+		Set<IJavaElement> seedNulls = new ASTAscender(refactoringRootNode, monitor).seedNulls();
 
-		this.workList.addAll(new ASTAscender(refactoringRootNode, monitor).seedNulls());
+		this.workList.addAll(seedNulls);
 
+		// while there's more work to do.
 		while (this.workList.hasNext()) {
+			// grab the next element.
 			final IJavaElement element = (IJavaElement) this.workList.next();
+			
+			// build a search pattern to find all occurrences of the java element.
 			final SearchPattern pattern = SearchPattern.createPattern(element, 
 					IJavaSearchConstants.ALL_OCCURRENCES, 
 					SearchPattern.R_EXACT_MATCH);
+			
 			final SearchRequestor requestor = new SearchRequestor() {
 				public void acceptSearchMatch(SearchMatch match)
 						throws CoreException {
 					if (match.getAccuracy() == SearchMatch.A_ACCURATE
 							&& !match.isInsideDocComment()) {
+						// here, we have search match. 
+						
+						// convert the match to an ASTNode.
 						ASTNode node = Util.getExactASTNode(match,
 								RefactorableHarvester.this.monitor);
+						
+						// now we have the ASTNode corresponding to the match.
+						// process the matching ASTNode.
 						ASTDescender processor = new ASTDescender(node,
 								Collections.singleton(RefactorableHarvester.this.refactoringRootElement),
 								RefactorableHarvester.this.scopeRoot,
 								RefactorableHarvester.this.monitor);
+						
+						// this is a "black box" right now.
 						processor.process();
+						
+						// add to the worklist all of the type-dependent stuff we found.
 						RefactorableHarvester.this.workList.addAll(processor.getFound());
-						if (RefactorableHarvester.this.elemToRefactorableSourceRangeMap.putIfAbsent(
-								element,
-								(Set<ISourceRange>) processor.getN2ORefactorableSourceLocations()) 
-								!= null)
-							RefactorableHarvester.this.elemToRefactorableSourceRangeMap.get(element)
-							.addAll(processor.getN2ORefactorableSourceLocations());
 					}
 				}
 			};
 
+			// here, we're actually doing the search.
 			try {
 				this.searchEngine.search(pattern,
 						new SearchParticipant[] { SearchEngine
@@ -132,13 +144,14 @@ public class RefactorableHarvester {
 				// Work around for bug 164121. Force match for formal
 				// parameters.
 				if (element.getElementType() == IJavaElement.LOCAL_VARIABLE) {
-					final ISourceRange isr = ((ILocalVariable) element)
-							.getNameRange();
-					final SearchMatch match = new SearchMatch(element,
+					ISourceRange isr = ((ILocalVariable) element).getNameRange();
+					
+					SearchMatch match = new SearchMatch(element,
 							SearchMatch.A_ACCURATE, isr.getOffset(), isr
 							.getLength(), SearchEngine
 							.getDefaultSearchParticipant(), element
 							.getResource());
+					
 					requestor.acceptSearchMatch(match);
 				}
 			} catch (final NotOptionizableException e) {
@@ -147,22 +160,25 @@ public class RefactorableHarvester {
 				this.notRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
-				for (IJavaElement elem : this.workList.getCurrentComputationTreeElements()) {
-					this.elemToRefactorableSourceRangeMap.remove(elem);
-				}
+				
 				continue;
-			}
-
-			catch (final RefactoringException e) {
+			} catch (final RefactoringException e) {
 				this.notRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
-				for (IJavaElement elem : this.workList.getCurrentComputationTreeElements()) {
-					this.elemToRefactorableSourceRangeMap.remove(elem);
-				}
 				continue;
 			}
 		}
-		return elemToRefactorableSourceRangeMap;
+		
+		this.notN2ORefactorable.retainAll(seedNulls);
+		
+		final Collection computationForest = Util.trimForest(this.workList
+				.getComputationForest(), this.notRefactorable);
+		
+		final Collection candidateSets = Util
+				.getElementForest(computationForest);
+		
+		// this should be Set<Set<IJavaElement>>. It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
+		return candidateSets;
 	}
 }

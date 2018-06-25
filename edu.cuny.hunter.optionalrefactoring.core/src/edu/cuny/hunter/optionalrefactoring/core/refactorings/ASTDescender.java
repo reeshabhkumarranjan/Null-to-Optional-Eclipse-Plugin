@@ -155,9 +155,9 @@ public class ASTDescender {
 					.getAnonymousClassDeclaration();
 			final ITypeBinding binding = acd.resolveBinding();
 			final ITypeBinding superBinding = binding.getSuperclass();
-			for (final Iterator it = Arrays.asList(
+			for (final Iterator<IMethodBinding> it = Arrays.asList(
 					superBinding.getDeclaredMethods()).iterator(); it.hasNext();) {
-				final IMethodBinding imb = (IMethodBinding) it.next();
+				final IMethodBinding imb = it.next();
 				if (imb.isConstructor()) {
 					final ITypeBinding[] itb = imb.getParameterTypes();
 					if (itb.length > paramNumber) {
