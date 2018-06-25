@@ -4,7 +4,7 @@
    <extension
          point="org.eclipse.ltk.core.refactoring.refactoringContributions">
       <contribution
-            class="edu.cuny.hunter.optionalrefactoring.core.contributions.ConvertStreamToParallelRefactoringContribution"
+            class="edu.cuny.hunter.optionalrefactoring.core.contributions.ConvertNullToOptionalRefactoringContribution"
             id="org.eclipse.convergt.null.to.optional.contribution">
       </contribution>
    </extension>

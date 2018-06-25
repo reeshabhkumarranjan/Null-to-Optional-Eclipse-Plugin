@@ -58,7 +58,7 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 import org.eclipse.jdt.core.SourceRange;
 
-public class N2OASTDescender {
+public class ASTDescender {
 
 	private static boolean containedIn(ASTNode node, Name name) {
 		ASTNode curr = name;
@@ -116,7 +116,7 @@ public class N2OASTDescender {
 
 	private final IJavaSearchScope scope;
 
-	public N2OASTDescender(ASTNode node, Set<IJavaElement> constFields,
+	public ASTDescender(ASTNode node, Set<IJavaElement> constFields,
 			IJavaSearchScope scope, IProgressMonitor monitor) {
 		this.name = (Name) node;
 		this.constFields = constFields;
@@ -128,7 +128,9 @@ public class N2OASTDescender {
 		return this.found;
 	}
 
-	public Set<ISourceRange> getLegalEncounteredInfixExpressionSourceLocations() {
+
+	public Set<ISourceRange> getN2ORefactorableSourceLocations() {
+		// TODO Auto-generated method stub
 		return this.legalEncounteredN2ORefactorableSourceLocations;
 	}
 
@@ -254,16 +256,16 @@ public class N2OASTDescender {
 						&& !match.isInsideDocComment()) {
 					IJavaElement elem = (IJavaElement) match.getElement();
 					ASTNode node = Util.getASTNode(elem,
-							N2OASTDescender.this.monitor);
+							ASTDescender.this.monitor);
 					ParameterProcessingVisitor visitor = new ParameterProcessingVisitor(
 							paramNumber, match.getOffset());
 					node.accept(visitor);
-					N2OASTDescender.this.found.addAll(visitor.getElements());
+					ASTDescender.this.found.addAll(visitor.getElements());
 
 					for (Iterator it = visitor.getExpressions().iterator(); it
 							.hasNext();) {
 						Expression exp = (Expression) it.next();
-						N2OASTDescender.this.processExpression(exp);
+						ASTDescender.this.processExpression(exp);
 					}
 				}
 			}
@@ -491,7 +493,7 @@ public class N2OASTDescender {
 			final ASTVisitor visitor = new ASTVisitor() {
 				public boolean visit(ReturnStatement node) {
 					try {
-						N2OASTDescender.this.processExpression(node
+						ASTDescender.this.processExpression(node
 								.getExpression());
 					} catch (JavaModelException E) {
 						throw new RuntimeException(E);

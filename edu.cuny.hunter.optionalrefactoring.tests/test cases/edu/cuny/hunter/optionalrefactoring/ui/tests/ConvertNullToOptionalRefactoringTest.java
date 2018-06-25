@@ -18,10 +18,12 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.search.IJavaSearchScope;
+import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.N2ORefactorableHarvester;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -118,7 +120,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		parser.setSource(icu);
 		parser.setResolveBindings(true);
 		CompilationUnit c = (CompilationUnit)parser.createAST(null);
-		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(icu, c, null, null);
+		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
+				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), null);
 
 		Set<String> actualElements = harvester.harvestRefactorableContexts().keySet().stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet());
 		assertNotNull(actualElements);		

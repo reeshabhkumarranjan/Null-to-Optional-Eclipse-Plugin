@@ -210,7 +210,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private void process(ICompilationUnit icu, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
-		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(icu, 
+		RefactorableHarvester harvester = RefactorableHarvester.of(icu, 
 				compilationUnit, refactoringScope, subMonitor);
 		refactorableContexts = harvester.harvestRefactorableContexts();
 		candidatePrinter(refactorableContexts);
@@ -218,7 +218,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	
 	private void process(IType type, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
-		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(type, 
+		RefactorableHarvester harvester = RefactorableHarvester.of(type, 
 				compilationUnit, refactoringScope, subMonitor);
 		refactorableContexts = harvester.harvestRefactorableContexts();
 		candidatePrinter(refactorableContexts);
@@ -226,7 +226,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private void process(IInitializer initializer, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
-		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(initializer, 
+		RefactorableHarvester harvester = RefactorableHarvester.of(initializer, 
 				compilationUnit, refactoringScope, subMonitor);
 		refactorableContexts = harvester.harvestRefactorableContexts();
 		candidatePrinter(refactorableContexts);
@@ -234,7 +234,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private void process(IMethod method, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
-		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(method, 
+		RefactorableHarvester harvester = RefactorableHarvester.of(method, 
 				compilationUnit, refactoringScope, subMonitor);
 		refactorableContexts = harvester.harvestRefactorableContexts();
 		candidatePrinter(refactorableContexts);
@@ -242,7 +242,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private void process(IField field, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
-		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(field, 
+		RefactorableHarvester harvester = RefactorableHarvester.of(field, 
 				compilationUnit, refactoringScope, subMonitor);
 		refactorableContexts = harvester.harvestRefactorableContexts();
 		candidatePrinter(refactorableContexts);

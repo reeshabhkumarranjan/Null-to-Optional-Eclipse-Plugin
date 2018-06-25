@@ -38,7 +38,7 @@ import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import edu.cuny.hunter.optionalrefactoring.core.utils.WorkList;
 
-public class N2ORefactorableHarvester {
+public class RefactorableHarvester {
 
 	private final IJavaElement refactoringRootElement;
 	private final ASTNode refactoringRootNode;
@@ -50,49 +50,49 @@ public class N2ORefactorableHarvester {
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
 	private final Map<IJavaElement, Set<ISourceRange>> elemToRefactorableSourceRangeMap = new LinkedHashMap<>();
 
-	private N2ORefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope, IProgressMonitor m) {
+	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope, IProgressMonitor m) {
 		this.refactoringRootElement = rootElement;
 		this.refactoringRootNode = rootNode;
 		this.monitor = m;
 		this.scopeRoot = scope;
 	}
 
-	public static N2ORefactorableHarvester of(ICompilationUnit i, CompilationUnit c, 
+	public static RefactorableHarvester of(ICompilationUnit i, CompilationUnit c, 
 			IJavaSearchScope scope, SubMonitor monitor) {
-		return new N2ORefactorableHarvester(i, c, scope, monitor);
+		return new RefactorableHarvester(i, c, scope, monitor);
 	}
 
-	public static N2ORefactorableHarvester of(IType t, CompilationUnit c, 
+	public static RefactorableHarvester of(IType t, CompilationUnit c, 
 			IJavaSearchScope scope, SubMonitor monitor) throws JavaModelException {
 		TypeDeclaration typeDecl = Util.findASTNode(t, c);
-		N2ORefactorableHarvester harvester = new N2ORefactorableHarvester(t, typeDecl, scope, monitor);
+		RefactorableHarvester harvester = new RefactorableHarvester(t, typeDecl, scope, monitor);
 		return harvester;
 	}
 
-	public static N2ORefactorableHarvester of(IInitializer i, CompilationUnit c, 
+	public static RefactorableHarvester of(IInitializer i, CompilationUnit c, 
 			IJavaSearchScope scope, SubMonitor monitor) throws JavaModelException {
 		Initializer initializer = Util.findASTNode(i,c);
-		N2ORefactorableHarvester harvester = new N2ORefactorableHarvester(i, initializer, scope, monitor);
+		RefactorableHarvester harvester = new RefactorableHarvester(i, initializer, scope, monitor);
 		return harvester;
 	}
 
-	public static N2ORefactorableHarvester of(IMethod m, CompilationUnit c, 
+	public static RefactorableHarvester of(IMethod m, CompilationUnit c, 
 			IJavaSearchScope scope, SubMonitor monitor) throws JavaModelException {
 		MethodDeclaration methodDecl = Util.findASTNode(m, c); 
-		N2ORefactorableHarvester harvester = new N2ORefactorableHarvester(m, methodDecl, scope, monitor);
+		RefactorableHarvester harvester = new RefactorableHarvester(m, methodDecl, scope, monitor);
 		return harvester;
 	}
 
-	public static N2ORefactorableHarvester of(IField f, CompilationUnit c, 
+	public static RefactorableHarvester of(IField f, CompilationUnit c, 
 			IJavaSearchScope scope, SubMonitor monitor) throws JavaModelException {
 		FieldDeclaration fieldDecl = Util.findASTNode(f, c);
-		N2ORefactorableHarvester harvester = new N2ORefactorableHarvester(f, fieldDecl, scope, monitor);
+		RefactorableHarvester harvester = new RefactorableHarvester(f, fieldDecl, scope, monitor);
 		return harvester;
 	}
 
 	public Map<IJavaElement, Set<ISourceRange>> harvestRefactorableContexts() throws CoreException {
 
-		this.workList.addAll(new N2OASTAscender(refactoringRootNode, monitor).seedNulls());
+		this.workList.addAll(new ASTAscender(refactoringRootNode, monitor).seedNulls());
 
 		while (this.workList.hasNext()) {
 			final IJavaElement element = (IJavaElement) this.workList.next();
@@ -105,19 +105,19 @@ public class N2ORefactorableHarvester {
 					if (match.getAccuracy() == SearchMatch.A_ACCURATE
 							&& !match.isInsideDocComment()) {
 						ASTNode node = Util.getExactASTNode(match,
-								N2ORefactorableHarvester.this.monitor);
-						N2OASTDescender processor = new N2OASTDescender(node,
-								Collections.singleton(N2ORefactorableHarvester.this.refactoringRootElement),
-								N2ORefactorableHarvester.this.scopeRoot,
-								N2ORefactorableHarvester.this.monitor);
+								RefactorableHarvester.this.monitor);
+						ASTDescender processor = new ASTDescender(node,
+								Collections.singleton(RefactorableHarvester.this.refactoringRootElement),
+								RefactorableHarvester.this.scopeRoot,
+								RefactorableHarvester.this.monitor);
 						processor.process();
-						N2ORefactorableHarvester.this.workList.addAll(processor.getFound());
-						if (N2ORefactorableHarvester.this.elemToRefactorableSourceRangeMap.putIfAbsent(
+						RefactorableHarvester.this.workList.addAll(processor.getFound());
+						if (RefactorableHarvester.this.elemToRefactorableSourceRangeMap.putIfAbsent(
 								element,
-								(Set<ISourceRange>) processor.getLegalEncounteredInfixExpressionSourceLocations()) 
+								(Set<ISourceRange>) processor.getN2ORefactorableSourceLocations()) 
 								!= null)
-							N2ORefactorableHarvester.this.elemToRefactorableSourceRangeMap.get(element)
-							.addAll(processor.getLegalEncounteredInfixExpressionSourceLocations());
+							RefactorableHarvester.this.elemToRefactorableSourceRangeMap.get(element)
+							.addAll(processor.getN2ORefactorableSourceLocations());
 					}
 				}
 			};

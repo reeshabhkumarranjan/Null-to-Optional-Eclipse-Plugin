@@ -26,13 +26,13 @@ import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.UndeterminedNodeBinding;
 
-public class N2OASTAscender {
+public class ASTAscender {
 	
 	private final ASTNode node;
 	private final IProgressMonitor monitor;
 	private final Set<IJavaElement> candidates = new LinkedHashSet<>();
 	
-	public N2OASTAscender(ASTNode node, IProgressMonitor monitor) {
+	public ASTAscender(ASTNode node, IProgressMonitor monitor) {
 		this.node = node;
 		this.monitor = monitor;
 	}
@@ -41,7 +41,7 @@ public class N2OASTAscender {
 		ASTVisitor visitor = new ASTVisitor() {
 			@Override
 			public boolean visit(NullLiteral nl) {
-				N2OASTAscender.this.process(nl.getParent());
+				ASTAscender.this.process(nl.getParent());
 				return super.visit(nl);
 			}
 		};
