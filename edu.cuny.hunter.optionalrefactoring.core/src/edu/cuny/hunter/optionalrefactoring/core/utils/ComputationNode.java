@@ -1,7 +1,9 @@
 package edu.cuny.hunter.optionalrefactoring.core.utils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.jdt.core.IJavaElement;
 
@@ -26,19 +28,18 @@ public abstract class ComputationNode implements Visitable {
 		return this.children;
 	}
 
-	public List<IJavaElement> getComputationTreeElements() {
+	public Set<IJavaElement> getComputationTreeElements() {
 		// Get all the nodes of the tree.
 		final List<ComputationNode> family = this.getAllChildren();
 		family.add(this);
 
 		// Return the elements corresponding to those nodes.
-		final List<IJavaElement> ret = new ArrayList<>();
+		final Set<IJavaElement> ret = new LinkedHashSet<>();
 		for (Object it : family) {
 			final ComputationNode member = (ComputationNode) it;
 			if (member instanceof ValuedComputationNode)
 				ret.add(((ValuedComputationNode) member).getVal());
 		}
-
 		return ret;
 	}
 

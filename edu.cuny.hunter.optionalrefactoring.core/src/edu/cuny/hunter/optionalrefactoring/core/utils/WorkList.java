@@ -93,7 +93,7 @@ public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJ
 		return this.computationForest;
 	}
 
-	public List<IJavaElement> getCurrentComputationTreeElements() {
+	public Set<IJavaElement> getCurrentComputationTreeElements() {
 		// find the tree in the forest that contains the current node.
 		final ComputationNode root = this.currentNode.getRoot();
 		return root.getComputationTreeElements();

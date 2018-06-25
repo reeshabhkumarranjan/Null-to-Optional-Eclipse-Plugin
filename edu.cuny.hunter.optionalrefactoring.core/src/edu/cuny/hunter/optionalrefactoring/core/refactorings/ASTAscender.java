@@ -1,6 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,7 +51,7 @@ public class ASTAscender {
 	private void process(ASTNode node) {
 		try {
 			switch (node.getNodeType()) {
-			case ASTNode.ASSIGNMENT : candidates.add(processLeftSideOfAssignment(((Assignment)node).getLeftHandSide()));
+			case ASTNode.ASSIGNMENT : this.processLeftSideOfAssignment(((Assignment)node).getLeftHandSide());
 			break;
 			case ASTNode.RETURN_STATEMENT : // TODO: 
 				break;
@@ -62,11 +61,11 @@ public class ASTAscender {
 				break;
 			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : // TODO:
 				break;
-			case ASTNode.CLASS_INSTANCE_CREATION : candidates.add(processClassInstanceCreation((ClassInstanceCreation)node));
+			case ASTNode.CLASS_INSTANCE_CREATION : this.processClassInstanceCreation((ClassInstanceCreation)node);
 			break;
-			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : candidates.addAll(processVariableDeclarationFragment((VariableDeclarationFragment)node));
+			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : this.processVariableDeclarationFragment((VariableDeclarationFragment)node);
 			break;
-			case ASTNode.SINGLE_VARIABLE_DECLARATION : candidates.add(processSingleVariableDeclaration((SingleVariableDeclaration)node));
+			case ASTNode.SINGLE_VARIABLE_DECLARATION : this.processSingleVariableDeclaration((SingleVariableDeclaration)node);
 			break;
 			default : throw new UndeterminedNodeBinding(node, "While trying to process the parent of an encountered NullLiteral: ");
 			}
@@ -76,68 +75,68 @@ public class ASTAscender {
 		}
 	}
 
-	private IJavaElement processLeftSideOfAssignment(Expression node) throws UndeterminedNodeBinding {
+	private void processLeftSideOfAssignment(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
-		case ASTNode.QUALIFIED_NAME : return processName((Name)node);
-		case ASTNode.SIMPLE_NAME : return processName((Name)node);
-		case ASTNode.ARRAY_ACCESS : return processArrayAccess(node);
-		case ASTNode.FIELD_ACCESS : return processFieldAccess(node);
-		case ASTNode.SUPER_FIELD_ACCESS : return processSuperFieldAccess(node);
+		case ASTNode.QUALIFIED_NAME : processName((Name)node);
+		case ASTNode.SIMPLE_NAME : processName((Name)node);
+		case ASTNode.ARRAY_ACCESS : processArrayAccess(node);
+		case ASTNode.FIELD_ACCESS : processFieldAccess(node);
+		case ASTNode.SUPER_FIELD_ACCESS : processSuperFieldAccess(node);
 		default : throw new UndeterminedNodeBinding(node, "While trying to process left side of assignment: ");
 		}
 	}
 
-	private IJavaElement processName(Name node) throws UndeterminedNodeBinding {
+	private void processName(Name node) throws UndeterminedNodeBinding {
 		IBinding b = node.resolveBinding();
 		if (b != null) {
 			IJavaElement element = b.getJavaElement();
-			if (element != null) return element;
+			if (element != null) this.candidates.add(element);
 		}
 		throw new UndeterminedNodeBinding(node, "While trying to process a Name node: ");
 	}
 
-	private IJavaElement processSuperFieldAccess(Expression node) throws UndeterminedNodeBinding {
+	private void processSuperFieldAccess(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
 		// TODO: implement
 		default : throw new UndeterminedNodeBinding(node);
 		}
 	}
 
-	private IJavaElement processFieldAccess(Expression node) throws UndeterminedNodeBinding {
+	private void processFieldAccess(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
 		case ASTNode.FIELD_ACCESS : {
 			IBinding ib = ((FieldAccess)node).resolveFieldBinding();
 			if (ib != null) {
 				IJavaElement element = ib.getJavaElement();
-				if (element != null) return element;
+				if (element != null) this.candidates.add(element);
 			}
 		}
 		default : throw new UndeterminedNodeBinding(node, "While trying to process a Field Access node: ");
 		}
 	}
 
-	private IJavaElement processArrayAccess(Expression node) throws UndeterminedNodeBinding {
+	private void processArrayAccess(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
 		case ASTNode.ARRAY_ACCESS : {
 			Expression e = ((ArrayAccess)node).getArray();
-			return processLeftSideOfAssignment(e);
+			processLeftSideOfAssignment(e);
 		}
 		default : throw new UndeterminedNodeBinding(node, "While trying to process an Array Access node: ");
 		}
 	}
 
-	private IJavaElement processClassInstanceCreation(ClassInstanceCreation cic) throws UndeterminedNodeBinding {
+	private void processClassInstanceCreation(ClassInstanceCreation cic) throws UndeterminedNodeBinding {
 		IBinding binding = cic.resolveConstructorBinding();
 		if (binding != null) {
 			IJavaElement element = binding.getJavaElement();
-			if (element != null) return element;
+			if (element != null) candidates.add(element);
 		}
 		throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
 	}
 
-	private Collection<? extends IJavaElement> processVariableDeclarationFragment(VariableDeclarationFragment vdf) throws UndeterminedNodeBinding {
+	private void processVariableDeclarationFragment(VariableDeclarationFragment vdf) throws UndeterminedNodeBinding {
 		ASTNode node = vdf.getParent();
-		List fragments;
+		List<VariableDeclarationFragment> fragments;
 		switch (node.getNodeType()) {
 		case ASTNode.FIELD_DECLARATION : fragments = ((FieldDeclaration)node).fragments();
 		break;
@@ -156,15 +155,15 @@ public class ASTAscender {
 			}
 			else throw new UndeterminedNodeBinding(vdf, "While trying to process the fragments in a Variable Declaration Expression: ");
 		}
-		return elements;
+		this.candidates.addAll(elements);
 	}
 
-	private IJavaElement processSingleVariableDeclaration(SingleVariableDeclaration node) throws UndeterminedNodeBinding {
+	private void processSingleVariableDeclaration(SingleVariableDeclaration node) throws UndeterminedNodeBinding {
 		// Single variable declaration nodes are used in a limited number of places, including formal parameter lists and catch clauses. They are not used for field declarations and regular variable declaration statements. 
 		IBinding b = node.resolveBinding();
 		if (b != null) {
 			IJavaElement element = b.getJavaElement();
-			if (element != null) return element;
+			if (element != null) this.candidates.add(element);
 		}
 		throw new UndeterminedNodeBinding(node, "While trying to process a Single Variable Declaration: ");
 	}

@@ -8,22 +8,21 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -109,10 +108,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			return unit;
 	}
 
-	private void helper(String... _expectedElements) throws Exception {
+	private void helper(Set<Set<String>> expectedElements) throws Exception {
 
-		Set<String> expectedElements = Arrays.asList(_expectedElements).stream().collect(Collectors.toSet());
-		
 		// compute the actual results.
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 		ASTParser parser = ASTParser.newParser(AST.JLS8);
@@ -121,9 +118,11 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		parser.setResolveBindings(true);
 		CompilationUnit c = (CompilationUnit)parser.createAST(null);
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
-				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), null);
+				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
 
-		Set<String> actualElements = harvester.harvestRefactorableContexts().keySet().stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet());
+		Set<Set<String>> actualElements = harvester.harvestRefactorableContexts().stream()
+				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
+				.collect(Collectors.toSet());
 		assertNotNull(actualElements);		
 
 		// compare them with the expected results.
@@ -132,30 +131,30 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testAssignmentLocalVariable() throws Exception {
-		this.helper("a");
+		this.helper(Util.setCons(Util.setCons("a")));
 	}
 
 	public void testAssignmentLocalVariableArrayAccess() throws Exception {
-		this.helper("a");
+		this.helper(Util.setCons(Util.setCons("a")));
 	}
 	
 	public void testAssignmentLocalVariableFieldAccess() throws Exception {
-		this.helper("a");
+		this.helper(Util.setCons(Util.setCons("a")));
 	}
 	
 	public void testAssignmentLocalVariableArrayAccessFieldAccess() throws Exception {
-		this.helper("a");
+		this.helper(Util.setCons(Util.setCons("a")));
 	}
 	
 	public void testAssignmentLocalVariableFieldAccessArrayAccess() throws Exception {
-		this.helper("a");
+		this.helper(Util.setCons(Util.setCons("a")));
 	}
 	
 	public void testDeclarationLocalVariable() throws Exception {
-		this.helper("a");
+		this.helper(Util.setCons(Util.setCons("a")));
 	}
 	
 	public void testDeclarationLocalVariableArray() throws Exception {
-		this.helper("a");
+		this.helper(Util.setCons(Util.setCons("a")));
 	}
 }

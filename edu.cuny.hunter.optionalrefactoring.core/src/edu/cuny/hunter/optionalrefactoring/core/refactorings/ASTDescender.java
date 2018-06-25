@@ -413,23 +413,8 @@ public class ASTDescender {
 		case ASTNode.INFIX_EXPRESSION: {
 			final InfixExpression iexp = (InfixExpression) node;
 			final InfixExpression.Operator op = iexp.getOperator();
-			if (Util.isLegalInfixOperator(op)) {
-//				if (Util.inNeedOfTransformation(op)) {
-//					final ISourceRange range = new SourceRange(iexp
-//							.getStartPosition(), iexp.getLength());
-//					this.legalEncounteredN2ORefactorableSourceLocations
-//							.add(range);
-//				}
-				this.processExpression(iexp.getLeftOperand());
-				this.processExpression(iexp.getRightOperand());
-			}
-
-//			else if (!Util.isSuspiciousInfixOperator(op))
-//				throw new DefinitelyNotEnumerizableOperationException(
-//						Messages.ASTNodeProcessor_IllegalInfixExpression, op, node);
-			else
-				throw new RefactoringASTOperationException(
-						Messages.ASTNodeProcessor_IllegalInfixExpression, op, node);
+			this.processExpression(iexp.getLeftOperand());
+			this.processExpression(iexp.getRightOperand());
 			break;
 		}
 

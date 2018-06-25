@@ -4,7 +4,13 @@
 package edu.cuny.hunter.optionalrefactoring.core.utils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -25,7 +31,6 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
@@ -42,6 +47,7 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.TreeTrimingVisitor;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.BinaryElementEncounteredException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
@@ -267,19 +273,38 @@ public interface Util {
 		return root;
 	}
 	
-	public static boolean isLegalInfixOperator(InfixExpression.Operator op) {
-		return op == InfixExpression.Operator.EQUALS
-				|| op == InfixExpression.Operator.NOT_EQUALS
-				|| op == InfixExpression.Operator.GREATER
-				|| op == InfixExpression.Operator.LESS
-				|| op == InfixExpression.Operator.GREATER_EQUALS
-				|| op == InfixExpression.Operator.LESS_EQUALS;
-	}
-	
 	public static MethodDeclaration getMethodDeclaration(ASTNode node) {
 		ASTNode trav = node;
 		while (trav.getNodeType() != ASTNode.METHOD_DECLARATION)
 			trav = trav.getParent();
 		return (MethodDeclaration) trav;
+	}
+
+	public static Set<ComputationNode> trimForest(Set<ComputationNode> computationForest,
+			Set<IJavaElement> nonEnumerizableList) {
+		final Set<ComputationNode> ret = new LinkedHashSet<>(computationForest);
+		final TreeTrimingVisitor visitor = new TreeTrimingVisitor(ret,
+				nonEnumerizableList);
+		// for each root in the computation forest
+		for (ComputationNode root : computationForest) {
+			root.accept(visitor);
+		}
+		return ret;
+	}
+	
+	public static Set<Set<IJavaElement>> getElementForest(Set<ComputationNode> computationForest) {
+		final Set<Set<IJavaElement>> ret = new LinkedHashSet<>();
+		for (ComputationNode tree : computationForest) {
+			ret.add(tree.getComputationTreeElements());
+		}
+		return ret;
+	}
+	
+	public static <T> Set<T> setCons(T o) {
+		return Stream.of(o).collect(Collectors.toCollection(LinkedHashSet::new));
+	}
+	
+	public static <T> List<T> listCons(T o) {
+		return Stream.of(o).collect(Collectors.toCollection(LinkedList::new));
 	}
 }

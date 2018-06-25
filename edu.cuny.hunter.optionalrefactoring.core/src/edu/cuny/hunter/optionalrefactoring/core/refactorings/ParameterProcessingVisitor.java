@@ -1,6 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -21,7 +20,7 @@ import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
 public class ParameterProcessingVisitor extends ASTVisitor {
 	private final Set<IJavaElement> elements = new LinkedHashSet<>();
-	private final Collection expressions = new LinkedHashSet();
+	private final Set<Expression> expressions = new LinkedHashSet<>();
 
 	private final int loc;
 	private final int paramNumber;
@@ -41,7 +40,7 @@ public class ParameterProcessingVisitor extends ASTVisitor {
 	/**
 	 * @return the expressions
 	 */
-	public Collection getExpressions() {
+	public Set<Expression> getExpressions() {
 		return this.expressions;
 	}
 

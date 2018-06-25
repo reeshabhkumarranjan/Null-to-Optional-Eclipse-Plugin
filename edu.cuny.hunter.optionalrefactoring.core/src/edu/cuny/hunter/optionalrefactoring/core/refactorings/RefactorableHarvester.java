@@ -1,11 +1,8 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -36,6 +33,7 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.NotOptionizableException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringException;
+import edu.cuny.hunter.optionalrefactoring.core.utils.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import edu.cuny.hunter.optionalrefactoring.core.utils.WorkList;
 
@@ -58,39 +56,39 @@ public class RefactorableHarvester {
 	}
 
 	public static RefactorableHarvester of(ICompilationUnit i, CompilationUnit c, 
-			IJavaSearchScope scope, SubMonitor monitor) {
+			IJavaSearchScope scope, IProgressMonitor monitor) {
 		return new RefactorableHarvester(i, c, scope, monitor);
 	}
 
 	public static RefactorableHarvester of(IType t, CompilationUnit c, 
-			IJavaSearchScope scope, SubMonitor monitor) throws JavaModelException {
+			IJavaSearchScope scope, IProgressMonitor monitor) throws JavaModelException {
 		TypeDeclaration typeDecl = Util.findASTNode(t, c);
 		RefactorableHarvester harvester = new RefactorableHarvester(t, typeDecl, scope, monitor);
 		return harvester;
 	}
 
 	public static RefactorableHarvester of(IInitializer i, CompilationUnit c, 
-			IJavaSearchScope scope, SubMonitor monitor) throws JavaModelException {
+			IJavaSearchScope scope, IProgressMonitor monitor) throws JavaModelException {
 		Initializer initializer = Util.findASTNode(i,c);
 		RefactorableHarvester harvester = new RefactorableHarvester(i, initializer, scope, monitor);
 		return harvester;
 	}
 
 	public static RefactorableHarvester of(IMethod m, CompilationUnit c, 
-			IJavaSearchScope scope, SubMonitor monitor) throws JavaModelException {
+			IJavaSearchScope scope, IProgressMonitor monitor) throws JavaModelException {
 		MethodDeclaration methodDecl = Util.findASTNode(m, c); 
 		RefactorableHarvester harvester = new RefactorableHarvester(m, methodDecl, scope, monitor);
 		return harvester;
 	}
 
 	public static RefactorableHarvester of(IField f, CompilationUnit c, 
-			IJavaSearchScope scope, SubMonitor monitor) throws JavaModelException {
+			IJavaSearchScope scope, IProgressMonitor monitor) throws JavaModelException {
 		FieldDeclaration fieldDecl = Util.findASTNode(f, c);
 		RefactorableHarvester harvester = new RefactorableHarvester(f, fieldDecl, scope, monitor);
 		return harvester;
 	}
 
-	public Map<IJavaElement, Set<ISourceRange>> harvestRefactorableContexts() throws CoreException {
+	public Set<Set<IJavaElement>> harvestRefactorableContexts() throws CoreException {
 		// this worklist starts with the immediate type-dependent entities on null expressions. 
 		Set<IJavaElement> seedNulls = new ASTAscender(refactoringRootNode, monitor).seedNulls();
 
@@ -172,10 +170,10 @@ public class RefactorableHarvester {
 		
 		this.notN2ORefactorable.retainAll(seedNulls);
 		
-		final Collection computationForest = Util.trimForest(this.workList
+		final Set<ComputationNode> computationForest = Util.trimForest(this.workList
 				.getComputationForest(), this.notRefactorable);
 		
-		final Collection candidateSets = Util
+		final Set<Set<IJavaElement>> candidateSets = Util
 				.getElementForest(computationForest);
 		
 		// this should be Set<Set<IJavaElement>>. It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 

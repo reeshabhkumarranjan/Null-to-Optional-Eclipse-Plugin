@@ -87,7 +87,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 	
-	private Map<IJavaElement, Set<ISourceRange>> refactorableContexts;
+	private Set<Set<IJavaElement>> refactorableContexts; // the forest of refactorable type-dependent entities
 
 	private final IJavaElement[] javaElements;	// the input java model elements
 	
@@ -249,7 +249,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	}
 	
 	// temporary development method for console logging extracted results
-	private void candidatePrinter(Map<IJavaElement, Set<ISourceRange>> refactorableContexts2) {
+	private void candidatePrinter(Set<Set<IJavaElement>> refactorableContexts2) {
 		Logger logger = Logger.getLogger(this.toString());
 		logger.info(refactorableContexts2.toString());
 	}
