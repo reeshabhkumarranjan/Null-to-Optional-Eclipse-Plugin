@@ -24,7 +24,16 @@ public class Messages extends NLS {
 	public static String CUContainsCompileErrors;
 	public static String NoNullsHavePassedThePreconditions;
 	public static String NoNullsToConvert;
-
+	public static String Util_MemberNotFound;
+	public static String Worklist_IllegalWorklistElement;
+	public static String ASTNodeProcessor_SourceNotPresent;
+	public static String ASTNodeProcessor_IllegalArrayUpcast;
+	public static String ASTNodeProcessor_IllegalExpression;
+	public static String ASTNodeProcessor_IllegalNodeContext;
+	public static String ASTNodeProcessor_NonEnumerizableTypeEncountered;
+	public static String ASTNodeProcessor_IllegalInfixExpression;
+	public static String ASTNodeProcessor_IllegalAssignmentExpression;
+	
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

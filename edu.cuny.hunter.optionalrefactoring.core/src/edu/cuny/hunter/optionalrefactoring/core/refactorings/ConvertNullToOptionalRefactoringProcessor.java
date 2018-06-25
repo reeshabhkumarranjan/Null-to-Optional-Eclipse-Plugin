@@ -5,7 +5,6 @@ import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,12 +25,15 @@ import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
+import org.eclipse.jdt.core.search.IJavaSearchScope;
+import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
@@ -84,8 +86,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private Map<ITypeRoot, CompilationUnit> typeRootToCompilationUnitMap = new HashMap<>();
 
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
+	
+	private Map<IJavaElement, Set<ISourceRange>> refactorableContexts;
 
-	private IJavaElement[] javaElements;
+	private final IJavaElement[] javaElements;	// the input java model elements
+	
+	private final IJavaSearchScope refactoringScope;
 
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
 		this(null, null, false, Optional.empty());
@@ -102,6 +108,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			this.javaElements = javaElements;
 			this.settings = settings;
 			this.layer = layer;
+			this.refactoringScope = SearchEngine.createJavaSearchScope(javaElements);
 
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
@@ -179,7 +186,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	private void process(IJavaProject project, SubMonitor subMonitor) throws JavaModelException {
+	private void process(IJavaProject project, SubMonitor subMonitor) throws CoreException {
 		IPackageFragmentRoot[] roots = project.getPackageFragmentRoots();
 		for (IPackageFragmentRoot root : roots) {
 			process(root, subMonitor);
@@ -187,7 +194,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	}
 
 	private void process(IPackageFragmentRoot root, SubMonitor subMonitor)
-			throws JavaModelException {
+			throws CoreException {
 		IJavaElement[] children = root.getChildren();
 		for (IJavaElement child : children) {
 			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
@@ -195,51 +202,56 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	private void process(IPackageFragment fragment, SubMonitor subMonitor) throws JavaModelException {
+	private void process(IPackageFragment fragment, SubMonitor subMonitor) throws CoreException {
 		ICompilationUnit[] units = fragment.getCompilationUnits();
 		for (ICompilationUnit unit : units)
 			process(unit, subMonitor);
 	}
 
-	private void process(ICompilationUnit icu, SubMonitor subMonitor) throws JavaModelException {
+	private void process(ICompilationUnit icu, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
-		NullExprHarvester harvester = NullExprHarvester.of(icu, compilationUnit);
-		Set<IJavaElement> workList = harvester.getCandidates();
-		candidatePrinter(workList);
+		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(icu, 
+				compilationUnit, refactoringScope, subMonitor);
+		refactorableContexts = harvester.harvestRefactorableContexts();
+		candidatePrinter(refactorableContexts);
 	}
 	
-	private void process(IType elem, SubMonitor subMonitor) throws JavaModelException {
-		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		Set<IJavaElement> workList = harvester.getCandidates();
-		candidatePrinter(workList);
+	private void process(IType type, SubMonitor subMonitor) throws CoreException {
+		CompilationUnit compilationUnit = getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
+		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(type, 
+				compilationUnit, refactoringScope, subMonitor);
+		refactorableContexts = harvester.harvestRefactorableContexts();
+		candidatePrinter(refactorableContexts);
 	}
 
-	private void process(IInitializer elem, SubMonitor subMonitor) throws JavaModelException {
-		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		Set<IJavaElement> workList = harvester.getCandidates();
-		candidatePrinter(workList);
+	private void process(IInitializer initializer, SubMonitor subMonitor) throws CoreException {
+		CompilationUnit compilationUnit = getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
+		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(initializer, 
+				compilationUnit, refactoringScope, subMonitor);
+		refactorableContexts = harvester.harvestRefactorableContexts();
+		candidatePrinter(refactorableContexts);
 	}
 
-	private void process(IMethod elem, SubMonitor subMonitor) throws JavaModelException {
-		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		Set<IJavaElement> workList = harvester.getCandidates();
-		candidatePrinter(workList);
+	private void process(IMethod method, SubMonitor subMonitor) throws CoreException {
+		CompilationUnit compilationUnit = getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
+		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(method, 
+				compilationUnit, refactoringScope, subMonitor);
+		refactorableContexts = harvester.harvestRefactorableContexts();
+		candidatePrinter(refactorableContexts);
 	}
 
-	private void process(IField elem, SubMonitor subMonitor) throws JavaModelException {
-		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		NullExprHarvester harvester = NullExprHarvester.of(elem, compilationUnit);
-		Set<IJavaElement> workList = harvester.getCandidates();
-		candidatePrinter(workList);	
+	private void process(IField field, SubMonitor subMonitor) throws CoreException {
+		CompilationUnit compilationUnit = getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
+		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(field, 
+				compilationUnit, refactoringScope, subMonitor);
+		refactorableContexts = harvester.harvestRefactorableContexts();
+		candidatePrinter(refactorableContexts);
 	}
 	
-	private void candidatePrinter(Set<? extends IJavaElement> candidates) {
+	// temporary development method for console logging extracted results
+	private void candidatePrinter(Map<IJavaElement, Set<ISourceRange>> refactorableContexts2) {
 		Logger logger = Logger.getLogger(this.toString());
-		candidates.forEach(x ->
-				logger.info(x.toString()));
+		logger.info(refactorableContexts2.toString());
 	}
 
 	@Override

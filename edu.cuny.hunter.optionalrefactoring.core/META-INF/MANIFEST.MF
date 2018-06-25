@@ -16,7 +16,7 @@ Require-Bundle: org.eclipse.ltk.core.refactoring,
  org.eclipse.jface;bundle-version="3.11.0",
  com.google.guava
 Export-Package: edu.cuny.hunter.optionalrefactoring.core.analysis,
- edu.cuny.hunter.optionalrefactoring.core.contributions,
+ edu.cuny.hunter.optionalrefactoring.core.exceptions,
  edu.cuny.hunter.optionalrefactoring.core.descriptors,
  edu.cuny.hunter.optionalrefactoring.core.messages,
  edu.cuny.hunter.optionalrefactoring.core.refactorings,

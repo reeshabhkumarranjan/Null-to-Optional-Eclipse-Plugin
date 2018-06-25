@@ -21,7 +21,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.NullExprHarvester;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.N2ORefactorableHarvester;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -118,9 +118,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		parser.setSource(icu);
 		parser.setResolveBindings(true);
 		CompilationUnit c = (CompilationUnit)parser.createAST(null);
-		NullExprHarvester harvester = NullExprHarvester.of(icu, c);
+		N2ORefactorableHarvester harvester = N2ORefactorableHarvester.of(icu, c, null, null);
 
-		Set<String> actualElements = harvester.getCandidates().stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet());
+		Set<String> actualElements = harvester.harvestRefactorableContexts().keySet().stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet());
 		assertNotNull(actualElements);		
 
 		// compare them with the expected results.

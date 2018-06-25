@@ -3,21 +3,37 @@
  */
 package edu.cuny.hunter.optionalrefactoring.core.utils;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.ILocalVariable;
+import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.InfixExpression;
+import org.eclipse.jdt.core.dom.Initializer;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
+import org.eclipse.jdt.internal.corext.refactoring.rename.MethodChecks;
+import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.Refactoring;
@@ -26,6 +42,8 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.BinaryElementEncounteredException;
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
 /**
  * @author <a href="mailto:raffi.khatchadourian@hunter.cuny.edu">Raffi
@@ -33,10 +51,8 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOption
  *
  */
 @SuppressWarnings("restriction")
-public final class Util {
-	private Util() {
-	}
-
+public interface Util {
+	
 	public static ProcessorBasedRefactoring createRefactoring(IJavaElement[] projects,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
@@ -148,5 +164,122 @@ public final class Util {
 		}
 		sb.append(")");
 		return sb.toString();
+	}
+	
+	public static TypeDeclaration findASTNode(IType declaration, CompilationUnit cu) 
+			throws JavaModelException {
+		return ASTNodeSearchUtil.getTypeDeclarationNode(declaration, cu);
+	}
+	
+	public static Initializer findASTNode(IInitializer initializer, CompilationUnit cu) 
+			throws JavaModelException {
+		return ASTNodeSearchUtil.getInitializerNode(initializer, cu);
+	}
+	
+	public static MethodDeclaration findASTNode(IMethod declaration, CompilationUnit cu) 
+			throws JavaModelException {
+		return ASTNodeSearchUtil.getMethodDeclarationNode(declaration, cu);
+	}
+
+	public static FieldDeclaration findASTNode(IField declaration, CompilationUnit cu) 
+			throws JavaModelException {
+		return ASTNodeSearchUtil.getFieldDeclarationNode(declaration, cu);
+	}
+	
+	public static ASTNode getExactASTNode(CompilationUnit root,
+			final SearchMatch match) {
+		final ArrayList<ASTNode> ret = new ArrayList<>(1);
+		final ASTVisitor visitor = new ASTVisitor() {
+			public void preVisit(ASTNode node) {
+				if (node.getStartPosition() == match.getOffset()) {
+					ret.clear();
+					ret.add(node);
+				}
+			}
+		};
+		root.accept(visitor);
+		return (ASTNode) ret.get(0);
+	}
+
+	public static ASTNode getExactASTNode(IJavaElement elem,
+			final SearchMatch match, IProgressMonitor monitor) {
+		final IMember mem = getIMember(elem);
+		final CompilationUnit root = Util.getCompilationUnit(mem
+				.getCompilationUnit(), monitor);
+		return getExactASTNode(root, match);
+	}
+
+	public static ASTNode getExactASTNode(SearchMatch match,
+			IProgressMonitor monitor) {
+		final IJavaElement elem = (IJavaElement) match.getElement();
+		return Util.getExactASTNode(elem, match, monitor);
+	}
+	
+	public static IMember getIMember(IJavaElement elem) {
+
+		if (elem == null)
+			throw new IllegalArgumentException(
+					Messages.Util_MemberNotFound);
+
+		switch (elem.getElementType()) {
+		case IJavaElement.METHOD:
+		case IJavaElement.FIELD:
+		case IJavaElement.INITIALIZER:
+		case IJavaElement.TYPE: {
+			return (IMember) elem;
+		}
+		}
+
+		return getIMember(elem.getParent());
+	}
+
+	public static CompilationUnit getCompilationUnit(ICompilationUnit icu,
+			IProgressMonitor monitor) {
+		final ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setSource(icu);
+		parser.setResolveBindings(true);
+		final CompilationUnit ret = (CompilationUnit) parser.createAST(monitor);
+		return ret;
+	}
+	
+	public static IMethod getTopMostSourceMethod(IMethod meth,
+			IProgressMonitor monitor) throws JavaModelException {
+		IMethod top = MethodChecks.isVirtual(meth) ? MethodChecks
+				.getTopmostMethod(meth, meth.getDeclaringType()
+						.newSupertypeHierarchy(monitor), monitor) : meth;
+
+		if (top == null)
+			top = meth;
+
+		if (top.isBinary())
+			return null;
+		else
+			return top;
+	}
+	
+	public static ASTNode getASTNode(IJavaElement elem, IProgressMonitor monitor) {
+		final IMember mem = getIMember(elem);
+		final ICompilationUnit icu = mem.getCompilationUnit();
+		if (icu == null)
+			throw new BinaryElementEncounteredException(Messages.ASTNodeProcessor_SourceNotPresent,
+					mem);
+		final ASTNode root = Util.getCompilationUnit(icu, monitor);
+		return root;
+	}
+	
+	public static boolean isLegalInfixOperator(InfixExpression.Operator op) {
+		return op == InfixExpression.Operator.EQUALS
+				|| op == InfixExpression.Operator.NOT_EQUALS
+				|| op == InfixExpression.Operator.GREATER
+				|| op == InfixExpression.Operator.LESS
+				|| op == InfixExpression.Operator.GREATER_EQUALS
+				|| op == InfixExpression.Operator.LESS_EQUALS;
+	}
+	
+	public static MethodDeclaration getMethodDeclaration(ASTNode node) {
+		ASTNode trav = node;
+		while (trav.getNodeType() != ASTNode.METHOD_DECLARATION)
+			trav = trav.getParent();
+		return (MethodDeclaration) trav;
 	}
 }
