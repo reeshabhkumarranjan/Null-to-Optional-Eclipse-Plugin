@@ -94,7 +94,8 @@ public class N2ORefactorableHarvester {
 
 		this.workList.addAll(new N2OASTAscender(refactoringRootNode, monitor).seedNulls());
 
-		for (IJavaElement element : workList) {
+		while (this.workList.hasNext()) {
+			final IJavaElement element = (IJavaElement) this.workList.next();
 			final SearchPattern pattern = SearchPattern.createPattern(element, 
 					IJavaSearchConstants.ALL_OCCURRENCES, 
 					SearchPattern.R_EXACT_MATCH);

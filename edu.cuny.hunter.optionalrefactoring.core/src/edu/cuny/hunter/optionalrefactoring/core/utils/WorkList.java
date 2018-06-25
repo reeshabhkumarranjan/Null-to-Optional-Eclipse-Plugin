@@ -38,11 +38,11 @@ public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJ
 	private final Map<IJavaElement, ValuedComputationNode> elemToNode = new HashMap<>();
 
 	public boolean add(IJavaElement element) {
-		try {
-			this.sanityCheck(element);
-		} catch (final JavaModelException e) {
-			throw new RuntimeException(e);
-		}
+//		try {
+//			this.sanityCheck(element);
+//		} catch (final JavaModelException e) {
+//			throw new RuntimeException(e);
+//		}
 
 		final ValuedComputationNode elemNode = this.elemToNode.get(element);
 
