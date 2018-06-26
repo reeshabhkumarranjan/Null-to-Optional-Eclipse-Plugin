@@ -123,45 +123,45 @@ public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJ
 		this.iterator().remove();
 	}
 
-	private void sanityCheck(Object e) throws JavaModelException {
-		final IJavaElement o = (IJavaElement) e;
-		if (o.isReadOnly())
-			throw new IllegalArgumentException(Messages.Worklist_IllegalWorklistElement + o);
-
-		switch (o.getElementType()) {
-		case IJavaElement.LOCAL_VARIABLE: {
-			final ILocalVariable lv = (ILocalVariable) o;
-			final String sig = lv.getTypeSignature();
-			if (!isValidTypeSignature(sig))
-				throw new IllegalArgumentException(Messages.Worklist_IllegalWorklistElement
-						+ o);
-			break;
-		}
-
-		case IJavaElement.FIELD: {
-			final IField f = (IField) o;
-			final String sig = f.getTypeSignature();
-			if (!isValidTypeSignature(sig))
-				throw new IllegalArgumentException(Messages.Worklist_IllegalWorklistElement
-						+ o);
-			break;
-		}
-
-		case IJavaElement.METHOD: {
-			final IMethod m = (IMethod) o;
-			final String retType = m.getReturnType();
-			if (!isValidTypeSignature(retType))
-				throw new IllegalArgumentException(Messages.Worklist_IllegalWorklistElement
-						+ o);
-
-			break;
-		}
-
-		default: {
-			throw new IllegalArgumentException(Messages.Worklist_IllegalWorklistElement + o);
-		}
-		}
-	}
+//	private void sanityCheck(Object e) throws JavaModelException {
+//		final IJavaElement o = (IJavaElement) e;
+//		if (o.isReadOnly())
+//			throw new IllegalArgumentException(Messages.Worklist_IllegalWorklistElement + o);
+//
+//		switch (o.getElementType()) {
+//		case IJavaElement.LOCAL_VARIABLE: {
+//			final ILocalVariable lv = (ILocalVariable) o;
+//			final String sig = lv.getTypeSignature();
+//			if (!isValidTypeSignature(sig))
+////				throw new IllegalArgumentException(Messages.Worklist_IllegalWorklistElement
+////						+ o);
+////			break;
+////		}
+//
+//		case IJavaElement.FIELD: {
+//			final IField f = (IField) o;
+//			final String sig = f.getTypeSignature();
+//			if (!isValidTypeSignature(sig))
+//				throw new IllegalArgumentException(Messages.Worklist_IllegalWorklistElement
+//						+ o);
+//			break;
+//		}
+//
+//		case IJavaElement.METHOD: {
+//			final IMethod m = (IMethod) o;
+//			final String retType = m.getReturnType();
+//			if (!isValidTypeSignature(retType))
+//				throw new IllegalArgumentException(Messages.Worklist_IllegalWorklistElement
+//						+ o);
+//
+//			break;
+//		}
+//
+//		default: {
+//			throw new IllegalArgumentException(Messages.Worklist_IllegalWorklistElement + o);
+//		}
+//		}
+//	}
 
 	private ComputationNode union(ComputationNode root1, ComputationNode root2) {
 		final ComputationNode ret = new UnionComputationNode();
@@ -169,4 +169,5 @@ public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJ
 		ret.makeParent(root2);
 		return ret;
 	}
+	
 }

@@ -6,8 +6,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.SubMonitor;
-import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IInitializer;
@@ -88,11 +86,20 @@ public class RefactorableHarvester {
 		return harvester;
 	}
 
+	private void reset() {
+		this.workList.clear();
+		this.notN2ORefactorable.clear();
+		this.notRefactorable.clear();
+	}
+	
 	public Set<Set<IJavaElement>> harvestRefactorableContexts() throws CoreException {
 		// this worklist starts with the immediate type-dependent entities on null expressions. 
-		Set<IJavaElement> seedNulls = new ASTAscender(refactoringRootNode, monitor).seedNulls();
+		Set<IJavaElement> nullSeeds = new ASTAscender(refactoringRootNode).seedNulls();
+		Util.candidatePrinter(nullSeeds);
 
-		this.workList.addAll(seedNulls);
+		this.reset();
+		
+		this.workList.addAll(nullSeeds);
 
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
@@ -136,8 +143,7 @@ public class RefactorableHarvester {
 				this.searchEngine.search(pattern,
 						new SearchParticipant[] { SearchEngine
 								.getDefaultSearchParticipant() }, this.scopeRoot,
-						requestor, new SubProgressMonitor(this.monitor, 1,
-								SubProgressMonitor.SUPPRESS_SUBTASK_LABEL));
+						requestor, this.monitor);
 
 				// Work around for bug 164121. Force match for formal
 				// parameters.
@@ -168,7 +174,7 @@ public class RefactorableHarvester {
 			}
 		}
 		
-		this.notN2ORefactorable.retainAll(seedNulls);
+		this.notN2ORefactorable.retainAll(nullSeeds);
 		
 		final Set<ComputationNode> computationForest = Util.trimForest(this.workList
 				.getComputationForest(), this.notRefactorable);

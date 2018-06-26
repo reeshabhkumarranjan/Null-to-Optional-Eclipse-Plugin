@@ -55,6 +55,7 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -86,17 +87,17 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private Map<ITypeRoot, CompilationUnit> typeRootToCompilationUnitMap = new HashMap<>();
 
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
-	
+
 	private Set<Set<IJavaElement>> refactorableContexts; // the forest of refactorable type-dependent entities
 
 	private final IJavaElement[] javaElements;	// the input java model elements
-	
+
 	private final IJavaSearchScope refactoringScope;
 
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
 		this(null, null, false, Optional.empty());
 	}
-	
+
 	public ConvertNullToOptionalRefactoringProcessor(final CodeGenerationSettings settings,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		this(null, settings, false, monitor);
@@ -178,7 +179,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			return status;
 		} catch (
 
-		Exception e) {
+				Exception e) {
 			JavaPlugin.log(e);
 			throw e;
 		} finally {
@@ -213,15 +214,15 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, 
 				compilationUnit, refactoringScope, subMonitor);
 		refactorableContexts = harvester.harvestRefactorableContexts();
-		candidatePrinter(refactorableContexts);
+		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);
 	}
-	
+
 	private void process(IType type, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(type, 
 				compilationUnit, refactoringScope, subMonitor);
 		refactorableContexts = harvester.harvestRefactorableContexts();
-		candidatePrinter(refactorableContexts);
+		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
 	}
 
 	private void process(IInitializer initializer, SubMonitor subMonitor) throws CoreException {
@@ -229,7 +230,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		RefactorableHarvester harvester = RefactorableHarvester.of(initializer, 
 				compilationUnit, refactoringScope, subMonitor);
 		refactorableContexts = harvester.harvestRefactorableContexts();
-		candidatePrinter(refactorableContexts);
+		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
 	}
 
 	private void process(IMethod method, SubMonitor subMonitor) throws CoreException {
@@ -237,7 +238,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		RefactorableHarvester harvester = RefactorableHarvester.of(method, 
 				compilationUnit, refactoringScope, subMonitor);
 		refactorableContexts = harvester.harvestRefactorableContexts();
-		candidatePrinter(refactorableContexts);
+		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
 	}
 
 	private void process(IField field, SubMonitor subMonitor) throws CoreException {
@@ -245,13 +246,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		RefactorableHarvester harvester = RefactorableHarvester.of(field, 
 				compilationUnit, refactoringScope, subMonitor);
 		refactorableContexts = harvester.harvestRefactorableContexts();
-		candidatePrinter(refactorableContexts);
-	}
-	
-	// temporary development method for console logging extracted results
-	private void candidatePrinter(Set<Set<IJavaElement>> refactorableContexts2) {
-		Logger logger = Logger.getLogger(this.toString());
-		logger.info(refactorableContexts2.toString());
+		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
 	}
 
 	@Override

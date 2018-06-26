@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -28,12 +27,10 @@ import edu.cuny.hunter.optionalrefactoring.core.exceptions.UndeterminedNodeBindi
 public class ASTAscender {
 	
 	private final ASTNode node;
-	private final IProgressMonitor monitor;
 	private final Set<IJavaElement> candidates = new LinkedHashSet<>();
 	
-	public ASTAscender(ASTNode node, IProgressMonitor monitor) {
+	public ASTAscender(ASTNode node) {
 		this.node = node;
-		this.monitor = monitor;
 	}
 	
 	public Set<IJavaElement> seedNulls() {
@@ -78,10 +75,15 @@ public class ASTAscender {
 	private void processLeftSideOfAssignment(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
 		case ASTNode.QUALIFIED_NAME : processName((Name)node);
+		break;
 		case ASTNode.SIMPLE_NAME : processName((Name)node);
+		break;
 		case ASTNode.ARRAY_ACCESS : processArrayAccess(node);
+		break;
 		case ASTNode.FIELD_ACCESS : processFieldAccess(node);
+		break;
 		case ASTNode.SUPER_FIELD_ACCESS : processSuperFieldAccess(node);
+		break;
 		default : throw new UndeterminedNodeBinding(node, "While trying to process left side of assignment: ");
 		}
 	}
@@ -90,7 +92,10 @@ public class ASTAscender {
 		IBinding b = node.resolveBinding();
 		if (b != null) {
 			IJavaElement element = b.getJavaElement();
-			if (element != null) this.candidates.add(element);
+			if (element != null) {
+				this.candidates.add(element);
+				return;
+			}
 		}
 		throw new UndeterminedNodeBinding(node, "While trying to process a Name node: ");
 	}
@@ -108,7 +113,10 @@ public class ASTAscender {
 			IBinding ib = ((FieldAccess)node).resolveFieldBinding();
 			if (ib != null) {
 				IJavaElement element = ib.getJavaElement();
-				if (element != null) this.candidates.add(element);
+				if (element != null) {
+					this.candidates.add(element);
+					return;
+				}
 			}
 		}
 		default : throw new UndeterminedNodeBinding(node, "While trying to process a Field Access node: ");
@@ -120,7 +128,7 @@ public class ASTAscender {
 		case ASTNode.ARRAY_ACCESS : {
 			Expression e = ((ArrayAccess)node).getArray();
 			processLeftSideOfAssignment(e);
-		}
+		} break;
 		default : throw new UndeterminedNodeBinding(node, "While trying to process an Array Access node: ");
 		}
 	}
@@ -129,7 +137,10 @@ public class ASTAscender {
 		IBinding binding = cic.resolveConstructorBinding();
 		if (binding != null) {
 			IJavaElement element = binding.getJavaElement();
-			if (element != null) candidates.add(element);
+			if (element != null) {
+				candidates.add(element);
+				return;
+			}
 		}
 		throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
 	}
@@ -163,7 +174,10 @@ public class ASTAscender {
 		IBinding b = node.resolveBinding();
 		if (b != null) {
 			IJavaElement element = b.getJavaElement();
-			if (element != null) this.candidates.add(element);
+			if (element != null) {
+				this.candidates.add(element);
+				return;
+			}
 		}
 		throw new UndeterminedNodeBinding(node, "While trying to process a Single Variable Declaration: ");
 	}
