@@ -303,9 +303,8 @@ public class ASTDescender {
 		case ASTNode.ARRAY_CREATION: {
 			final ArrayCreation creation = (ArrayCreation) node;
 			boolean legal = true;
-			for (final Iterator it = creation.dimensions().iterator(); it
-					.hasNext();) {
-				final Expression dimension = (Expression) it.next();
+			for (Object o : creation.dimensions()) {
+				Expression dimension = (Expression) o;
 				// if coming up from the index.
 				if (containedIn(dimension, this.name)) {
 					legal = false;

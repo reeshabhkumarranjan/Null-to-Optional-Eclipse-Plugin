@@ -129,6 +129,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
 				expectedElements.containsAll(actualElements));
 	}
+	
+	public void testAssignmentFieldQualifiedName() throws Exception {
+		this.helper(Util.setCons(Util.setCons("a")));
+	}
 
 	public void testAssignmentLocalVariable() throws Exception {
 		this.helper(Util.setCons(Util.setCons("a")));

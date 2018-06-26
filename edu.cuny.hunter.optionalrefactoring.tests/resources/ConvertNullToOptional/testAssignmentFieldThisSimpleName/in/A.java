@@ -4,6 +4,8 @@ public class A {
 	
 	Object a = new Object();
 	
-	a = null;
+	void m() {
+		this.a = null;
+	}
 	
 }

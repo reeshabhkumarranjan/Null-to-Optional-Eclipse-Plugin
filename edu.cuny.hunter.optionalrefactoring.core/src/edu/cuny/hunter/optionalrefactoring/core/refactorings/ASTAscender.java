@@ -18,6 +18,7 @@ import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
@@ -102,8 +103,17 @@ public class ASTAscender {
 
 	private void processSuperFieldAccess(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
-		// TODO: implement
-		default : throw new UndeterminedNodeBinding(node);
+		case ASTNode.SUPER_FIELD_ACCESS : {
+			IBinding ib = ((SuperFieldAccess)node).resolveFieldBinding();
+			if (ib != null) {
+				IJavaElement element = ib.getJavaElement();
+				if (element != null) {
+					this.candidates.add(element);
+					return;
+				}
+			}
+		}
+		default : throw new UndeterminedNodeBinding(node, "While trying to process a Super-field Access Node: ");
 		}
 	}
 

@@ -164,7 +164,6 @@ public class RefactorableHarvester {
 				this.notRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
-				
 				continue;
 			} catch (final RefactoringException e) {
 				this.notRefactorable.addAll(this.workList
@@ -182,7 +181,7 @@ public class RefactorableHarvester {
 		final Set<Set<IJavaElement>> candidateSets = Util
 				.getElementForest(computationForest);
 		
-		// this should be Set<Set<IJavaElement>>. It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
+		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
 		return candidateSets;
 	}
 }
