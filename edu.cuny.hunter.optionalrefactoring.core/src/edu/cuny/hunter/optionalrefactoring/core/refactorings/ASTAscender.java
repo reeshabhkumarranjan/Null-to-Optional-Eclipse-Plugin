@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
@@ -15,14 +16,18 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.UndeterminedNodeBinding;
 
 public class ASTAscender {
@@ -45,13 +50,22 @@ public class ASTAscender {
 		node.accept(visitor);
 		return candidates;
 	}
+	
+	private <T extends ASTNode> ASTNode getDeclaring(Class<T> type, ASTNode node) {
+		ASTNode curr = node;
+		while (curr != null && (curr.getClass() != type)) {
+			curr = curr.getParent();
+		}
+		if (curr != null) return curr;
+		throw new RefactoringASTException("While finding the declaring block for: ", node);
+	}
 
 	private void process(ASTNode node) {
 		try {
 			switch (node.getNodeType()) {
 			case ASTNode.ASSIGNMENT : this.processLeftSideOfAssignment(((Assignment)node).getLeftHandSide());
 			break;
-			case ASTNode.RETURN_STATEMENT : // TODO: 
+			case ASTNode.RETURN_STATEMENT : this.processReturnStatement((ReturnStatement)node);
 				break;
 			case ASTNode.METHOD_INVOCATION : // TODO:
 				break;
@@ -70,9 +84,26 @@ public class ASTAscender {
 		} catch (UndeterminedNodeBinding e) {
 			// TODO: save the ambiguous nodes ?
 			Logger.getAnonymousLogger().warning("Unable to process AST node: "+e+".");
+		} catch (RefactoringASTException e) {
+			Logger.getAnonymousLogger().warning("Problem with traversing the AST: "+e+".");
 		}
 	}
 
+	private void processReturnStatement(ReturnStatement node) throws RefactoringASTException {
+		ASTNode methodDecl = getDeclaring(MethodDeclaration.class, node); 
+		if (methodDecl instanceof MethodDeclaration){
+			IMethodBinding imb = ((MethodDeclaration)methodDecl).resolveBinding();
+			if (imb != null) {
+				IJavaElement im = imb.getJavaElement();
+				if (im != null) {
+					this.candidates.add(im);
+					return;
+				}
+			}
+		}
+		throw new UndeterminedNodeBinding(node, "While trying to process a null return statement in a Method Declaration: ");
+	}
+	
 	private void processLeftSideOfAssignment(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
 		case ASTNode.QUALIFIED_NAME : processName((Name)node);

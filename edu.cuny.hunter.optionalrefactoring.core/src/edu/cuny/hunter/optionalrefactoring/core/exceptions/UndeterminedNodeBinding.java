@@ -2,7 +2,7 @@ package edu.cuny.hunter.optionalrefactoring.core.exceptions;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 
-public class UndeterminedNodeBinding extends RefactoringException {
+public class UndeterminedNodeBinding extends RefactoringASTException {
 
 	private final ASTNode node;
 	private final String description;
@@ -12,7 +12,7 @@ public class UndeterminedNodeBinding extends RefactoringException {
 	}
 
 	public UndeterminedNodeBinding(ASTNode node, String string) {
-		super(UndeterminedNodeBinding.class.toString());
+		super(UndeterminedNodeBinding.class.toString()+": "+string, node);
 		this.node = node;
 		this.description = string;
 	}

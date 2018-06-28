@@ -92,10 +92,13 @@ public class RefactorableHarvester {
 		this.notRefactorable.clear();
 	}
 	
+	public Set<IJavaElement> getSeeds() {
+		return new ASTAscender(refactoringRootNode).seedNulls();
+	}
+	
 	public Set<Set<IJavaElement>> harvestRefactorableContexts() throws CoreException {
 		// this worklist starts with the immediate type-dependent entities on null expressions. 
 		Set<IJavaElement> nullSeeds = new ASTAscender(refactoringRootNode).seedNulls();
-		Util.candidatePrinter(nullSeeds);
 
 		this.reset();
 		

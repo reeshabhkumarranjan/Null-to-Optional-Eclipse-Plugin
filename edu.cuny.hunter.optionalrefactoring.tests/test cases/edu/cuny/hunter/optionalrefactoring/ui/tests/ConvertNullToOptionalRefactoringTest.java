@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -108,7 +109,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			return unit;
 	}
 
-	private void helper(Set<Set<String>> expectedElements) throws Exception {
+	private void helper2(Set<Set<String>> expectedElements) throws Exception {
 
 		// compute the actual results.
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
@@ -130,35 +131,112 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				expectedElements.containsAll(actualElements));
 	}
 	
+	private void helper1(Set<String> expectedElements) throws Exception {
+
+		// compute the actual results.
+		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(icu);
+		parser.setResolveBindings(true);
+		CompilationUnit c = (CompilationUnit)parser.createAST(null);
+		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
+				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
+
+		Set<IJavaElement> seeds = harvester.getSeeds();
+		Util.candidatePrinter(seeds);
+		Set<String> actualElements = seeds.stream()
+				.map(element -> element.getElementName().toString()).collect(Collectors.toSet());
+		assertNotNull(actualElements);		
+		
+		// compare them with the expected results.
+		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
+				expectedElements.containsAll(actualElements));
+	}
+	
 	public void testAssignmentFieldQualifiedName() throws Exception {
-		this.helper(Util.setCons(Util.setCons("a")));
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+
+	public void testAssignmentFieldSimpleName() throws Exception {
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+	
+	public void testAssignmentFieldSuper() throws Exception {
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+
+	public void testAssignmentFieldThisQualifiedName() throws Exception {
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+
+	public void testAssignmentFieldThisSimpleName() throws Exception {
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));	
 	}
 
 	public void testAssignmentLocalVariable() throws Exception {
-		this.helper(Util.setCons(Util.setCons("a")));
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 
 	public void testAssignmentLocalVariableArrayAccess() throws Exception {
-		this.helper(Util.setCons(Util.setCons("a")));
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
 	public void testAssignmentLocalVariableFieldAccess() throws Exception {
-		this.helper(Util.setCons(Util.setCons("a")));
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
 	public void testAssignmentLocalVariableArrayAccessFieldAccess() throws Exception {
-		this.helper(Util.setCons(Util.setCons("a")));
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
 	public void testAssignmentLocalVariableFieldAccessArrayAccess() throws Exception {
-		this.helper(Util.setCons(Util.setCons("a")));
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
 	public void testDeclarationLocalVariable() throws Exception {
-		this.helper(Util.setCons(Util.setCons("a")));
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
 	public void testDeclarationLocalVariableArray() throws Exception {
-		this.helper(Util.setCons(Util.setCons("a")));
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));
 	}
+	
+	public void testInvocationConstructor() throws Exception {
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+	
+	public void testInvocationMethod() throws Exception {
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+	
+	public void testInvocationSuperConstructor() throws Exception {
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+
+	public void testNewStatement() throws Exception {
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+	
+	public void testReturnStatement() throws Exception {
+		this.helper1(Util.setCons("a"));
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+
 }

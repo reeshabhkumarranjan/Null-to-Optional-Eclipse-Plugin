@@ -6,8 +6,6 @@ public class A {
 		return o;
 	}
 	
-	{
-		testMethod0(null);
-	}
+	testMethod0(null);
 
 }
