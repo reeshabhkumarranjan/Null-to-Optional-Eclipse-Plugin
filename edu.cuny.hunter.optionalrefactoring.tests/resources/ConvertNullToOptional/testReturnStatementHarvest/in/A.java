@@ -2,7 +2,7 @@ package p;
 
 class A {
 	
-	A m() {
+	A a() {
 		return null;
 	}
 }

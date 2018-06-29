@@ -1,9 +1,11 @@
 package p;
 
 public class A {
-	Object o = new Object();
+	
+	Object a = new Object();
 	
 	void m() {
-		A.o = null;
+		this.a = null;
 	}
+	
 }

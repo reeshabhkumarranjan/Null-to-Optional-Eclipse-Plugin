@@ -108,7 +108,31 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		else
 			return unit;
 	}
+	
+	private void helper1(Set<String> expectedElements) throws Exception {
 
+		// compute the actual results.
+		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(icu);
+		parser.setResolveBindings(true);
+		CompilationUnit c = (CompilationUnit)parser.createAST(null);
+		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
+				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
+
+		Set<IJavaElement> seeds = harvester.getSeeds();
+		Util.candidatePrinter(seeds);
+		Set<String> actualElements = seeds.stream()
+				.map(element -> element.getElementName().toString())
+				.collect(Collectors.toSet());
+		assertNotNull(actualElements);		
+		
+		// compare them with the expected results.
+		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
+				expectedElements.containsAll(actualElements));
+	}
+	
 	private void helper2(Set<Set<String>> expectedElements) throws Exception {
 
 		// compute the actual results.
@@ -130,112 +154,140 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
 				expectedElements.containsAll(actualElements));
 	}
-	
-	private void helper1(Set<String> expectedElements) throws Exception {
 
-		// compute the actual results.
-		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setSource(icu);
-		parser.setResolveBindings(true);
-		CompilationUnit c = (CompilationUnit)parser.createAST(null);
-		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
-				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
-
-		Set<IJavaElement> seeds = harvester.getSeeds();
-		Util.candidatePrinter(seeds);
-		Set<String> actualElements = seeds.stream()
-				.map(element -> element.getElementName().toString()).collect(Collectors.toSet());
-		assertNotNull(actualElements);		
-		
-		// compare them with the expected results.
-		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
-				expectedElements.containsAll(actualElements));
+	public void testAssignmentFieldQualifiedNameSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
 	}
 	
-	public void testAssignmentFieldQualifiedName() throws Exception {
-		this.helper1(Util.setCons("a"));
+	public void testAssignmentFieldQualifiedNameHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 
-	public void testAssignmentFieldSimpleName() throws Exception {
+	public void testAssignmentFieldSimpleNameSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentFieldSimpleNameHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
-	public void testAssignmentFieldSuper() throws Exception {
+	public void testAssignmentFieldSuperSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentFieldSuperHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));	
 	}
 
-	public void testAssignmentFieldThisQualifiedName() throws Exception {
+	public void testAssignmentFieldThisQualifiedNameSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+
+	public void testAssignmentFieldThisQualifiedNameHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));	
 	}
 
-	public void testAssignmentFieldThisSimpleName() throws Exception {
-		this.helper1(Util.setCons("a"));
+	public void testAssignmentFieldThisSimpleNameSeed() throws Exception {
+		this.helper1(Util.setCons("a"));	
+	}
+
+	public void testAssignmentFieldThisSimpleNameHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));	
 	}
 
-	public void testAssignmentLocalVariable() throws Exception {
+	public void testAssignmentLocalVariableSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+
+	public void testAssignmentLocalVariableHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 
-	public void testAssignmentLocalVariableArrayAccess() throws Exception {
+	public void testAssignmentLocalVariableArrayAccessSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentLocalVariableArrayAccessHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
-	public void testAssignmentLocalVariableFieldAccess() throws Exception {
+	public void testAssignmentLocalVariableFieldAccessSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentLocalVariableFieldAccessHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
-	public void testAssignmentLocalVariableArrayAccessFieldAccess() throws Exception {
+	public void testAssignmentLocalVariableArrayAccessFieldAccessSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentLocalVariableArrayAccessFieldAccessHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
-	public void testAssignmentLocalVariableFieldAccessArrayAccess() throws Exception {
+	public void testAssignmentLocalVariableFieldAccessArrayAccessSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentLocalVariableFieldAccessArrayAccessHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
-	public void testDeclarationLocalVariable() throws Exception {
+	public void testDeclarationLocalVariableSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testDeclarationLocalVariableHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
-	public void testDeclarationLocalVariableArray() throws Exception {
+	public void testDeclarationLocalVariableArraySeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testDeclarationLocalVariableArrayHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
-	public void testInvocationConstructor() throws Exception {
+	public void testInvocationConstructorSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testInvocationConstructorHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));
 	}
 	
-	public void testInvocationMethod() throws Exception {
+	public void testInvocationMethodSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testInvocationMethodHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));	
 	}
 	
-	public void testInvocationSuperConstructor() throws Exception {
+	public void testInvocationSuperConstructorSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+
+	public void testInvocationSuperConstructorHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));	
 	}
 
-	public void testNewStatement() throws Exception {
+	public void testNewStatementSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testNewStatementHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));	
 	}
 	
-	public void testReturnStatement() throws Exception {
+	public void testReturnStatementSeed() throws Exception {
 		this.helper1(Util.setCons("a"));
+	}
+
+	public void testReturnStatementHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));	
 	}
 
