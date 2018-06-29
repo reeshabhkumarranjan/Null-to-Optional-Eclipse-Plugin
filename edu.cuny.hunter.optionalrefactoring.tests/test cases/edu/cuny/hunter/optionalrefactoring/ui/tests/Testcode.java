@@ -1,6 +1,6 @@
-package p;
+package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
-public class A {
+public class Testcode {
 	
 	public Object testMethod0(Object o) {
 		Object x = o;
