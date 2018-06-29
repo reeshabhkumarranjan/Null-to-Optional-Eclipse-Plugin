@@ -145,7 +145,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
 				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
 
-		Set<Set<String>> actualElements = harvester.harvestRefactorableContexts().stream()
+		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts();
+		sets.forEach(set -> Util.candidatePrinter(set));
+		
+		Set<Set<String>> actualElements = sets.stream()
 				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
 				.collect(Collectors.toSet());
 		assertNotNull(actualElements);		

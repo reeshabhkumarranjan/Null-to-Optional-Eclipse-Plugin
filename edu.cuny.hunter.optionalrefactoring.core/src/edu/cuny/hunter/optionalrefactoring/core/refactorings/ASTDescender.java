@@ -52,11 +52,9 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.NotOptionizableException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTOperationException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
-import org.eclipse.jdt.core.SourceRange;
 
 public class ASTDescender {
 
@@ -481,6 +479,9 @@ public class ASTDescender {
 								.getExpression());
 					} catch (JavaModelException E) {
 						throw new RuntimeException(E);
+					} catch (CoreException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 					return true;
 				}
@@ -624,7 +625,7 @@ public class ASTDescender {
 		}
 	}
 
-	protected void processExpression(Expression node) throws JavaModelException {
+	protected void processExpression(Expression node) throws CoreException {
 		if (node == null)
 			return;
 
@@ -689,6 +690,20 @@ public class ASTDescender {
 //				throw new NonEnumerizableOperationException(
 //						Messages.ASTNodeProcessor_IllegalAssignmentExpression, assignment
 //								.getOperator(), node);
+			break;
+		}
+
+		case ASTNode.CLASS_INSTANCE_CREATION: {
+			final ClassInstanceCreation ctorCall = (ClassInstanceCreation) node;
+			// if coming up from a argument.
+			if (containedIn(ctorCall.arguments(), this.name))
+				// if we don't have the source, no can do.
+				if (!ctorCall.getType().resolveBinding().isFromSource())
+					throw new NotOptionizableException(
+							Messages.ASTNodeProcessor_SourceNotPresent, node);
+				else
+					// go find the formals.
+					this.findFormalsForVariable(ctorCall);
 			break;
 		}
 
@@ -818,6 +833,9 @@ public class ASTDescender {
 			}
 			break;
 		}
+		
+		case ASTNode.NULL_LITERAL : 
+			break;
 
 		case ASTNode.CAST_EXPRESSION: {
 //			final CastExpression cast = (CastExpression) node;
