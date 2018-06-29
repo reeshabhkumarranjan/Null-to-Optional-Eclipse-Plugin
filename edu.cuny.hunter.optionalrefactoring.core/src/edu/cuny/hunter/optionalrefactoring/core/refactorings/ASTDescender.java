@@ -60,7 +60,7 @@ import org.eclipse.jdt.core.SourceRange;
 
 public class ASTDescender {
 
-	private static boolean containedIn(ASTNode node, Name name) {
+	private static boolean containedIn(ASTNode node, Expression name) {
 		ASTNode curr = name;
 		while (curr != null)
 			if (node.equals(curr))
@@ -70,7 +70,7 @@ public class ASTDescender {
 		return false;
 	}
 
-	private static boolean containedIn(List<ASTNode> arguments, Name name) {
+	private static boolean containedIn(List<ASTNode> arguments, Expression name) {
 		ASTNode curr = name;
 		while (curr != null)
 			if (arguments.contains(curr))
@@ -92,7 +92,7 @@ public class ASTDescender {
 		return decl.parameters().indexOf(svd);
 	}
 
-	private static int getParamNumber(List<ASTNode> arguments, Name name) {
+	private static int getParamNumber(List<ASTNode> arguments, Expression name) {
 		ASTNode curr = name;
 		while (curr != null) {
 			final int inx = arguments.indexOf(curr);
@@ -112,13 +112,13 @@ public class ASTDescender {
 
 	private final IProgressMonitor monitor;
 
-	private final Name name;
+	private final Expression name;
 
 	private final IJavaSearchScope scope;
 
 	public ASTDescender(ASTNode node, Set<IJavaElement> constFields,
 			IJavaSearchScope scope, IProgressMonitor monitor) {
-		this.name = (Name) node;
+		this.name = (Expression) node;
 		this.constFields = constFields;
 		this.scope = scope;
 		this.monitor = monitor;
