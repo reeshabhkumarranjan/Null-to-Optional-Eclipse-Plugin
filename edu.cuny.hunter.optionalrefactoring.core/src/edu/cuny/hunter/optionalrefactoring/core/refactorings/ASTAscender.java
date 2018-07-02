@@ -1,5 +1,7 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -17,6 +19,7 @@ import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
@@ -175,13 +178,22 @@ public class ASTAscender {
 	}
 
 	private void processClassInstanceCreation(ClassInstanceCreation cic) throws UndeterminedNodeBinding {
-		IBinding binding = cic.resolveConstructorBinding();
+		List<Expression> args = cic.arguments();
+		List<Integer> argPositions = new ArrayList<>();
+		Integer pos = 0;
+		for (Expression arg : args) {
+			pos += 1;
+			if (arg instanceof NullLiteral) argPositions.add(new Integer(pos));
+		}
+		IMethodBinding binding = cic.resolveConstructorBinding();
 		if (binding != null) {
 			IJavaElement element = binding.getJavaElement();
 			if (element != null) {
-				candidates.add(element);
-				return;
-			}
+				IJavaElement parameter = (IJavaElement) new Object();
+				// search engine search for the parameter
+					candidates.add(parameter);
+					return;
+				}
 		}
 		throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
 	}

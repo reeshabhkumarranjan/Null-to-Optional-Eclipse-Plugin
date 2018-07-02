@@ -122,7 +122,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
 
 		Set<IJavaElement> seeds = harvester.getSeeds();
-		Util.candidatePrinter(seeds);
+//		Util.candidatePrinter(seeds);
 		Set<String> actualElements = seeds.stream()
 				.map(element -> element.getElementName().toString())
 				.collect(Collectors.toSet());
