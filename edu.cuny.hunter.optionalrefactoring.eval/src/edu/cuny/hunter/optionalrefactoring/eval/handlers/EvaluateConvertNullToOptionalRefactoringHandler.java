@@ -1,6 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.eval.handlers;
 
-import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createConvertToParallelStreamRefactoringProcessor;
+import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOptionalRefactoringProcessor;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -86,7 +86,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 					TimeCollector resultsTimeCollector = new TimeCollector();
 
 					resultsTimeCollector.start();
-					ConvertNullToOptionalRefactoringProcessor processor = createConvertToParallelStreamRefactoringProcessor(
+					ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
 							new IJavaProject[] { javaProject }, Optional.of(monitor));
 					resultsTimeCollector.stop();
 

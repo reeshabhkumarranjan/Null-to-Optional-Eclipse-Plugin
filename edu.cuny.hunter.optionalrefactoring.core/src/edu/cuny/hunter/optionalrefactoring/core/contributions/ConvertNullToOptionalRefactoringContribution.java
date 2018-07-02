@@ -4,25 +4,16 @@ import java.util.Map;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.refactoring.descriptors.JavaRefactoringDescriptor;
-import org.eclipse.jdt.internal.corext.refactoring.scripting.JavaUIRefactoringContribution;
 import org.eclipse.ltk.core.refactoring.Refactoring;
+import org.eclipse.jdt.internal.corext.refactoring.scripting.JavaUIRefactoringContribution;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 
 @SuppressWarnings("restriction")
-public class ConvertStreamToParallelRefactoringContribution
-		extends JavaUIRefactoringContribution {
+public class ConvertNullToOptionalRefactoringContribution extends JavaUIRefactoringContribution {
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.eclipse.ltk.core.refactoring.RefactoringContribution#createDescriptor
-	 * (java.lang.String, java.lang.String, java.lang.String, java.lang.String,
-	 * java.util.Map, int)
-	 */
 	@Override
 	public RefactoringDescriptor createDescriptor(String id, String project,
 			String description, String comment,
@@ -37,4 +28,5 @@ public class ConvertStreamToParallelRefactoringContribution
 			throws CoreException {
 		return descriptor.createRefactoring(status);
 	}
+
 }

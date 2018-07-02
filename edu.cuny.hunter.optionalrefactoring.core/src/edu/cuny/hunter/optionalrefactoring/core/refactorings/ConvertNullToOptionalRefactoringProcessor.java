@@ -7,6 +7,9 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.logging.Logger;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -22,14 +25,15 @@ import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
+import org.eclipse.jdt.core.search.IJavaSearchScope;
+import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
@@ -46,10 +50,12 @@ import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringParticipant;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
+
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -59,9 +65,6 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
  */
 @SuppressWarnings({ "restriction", "deprecation" })
 public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProcessor {
-
-	// private Set<IMethod> unmigratableMethods = new
-	// UnmigratableMethodSet(sourceMethods);
 
 	@SuppressWarnings("unused")
 	private static final GroupCategorySet SET_CONVERT_NULL_TO_OPTIONAL = new GroupCategorySet(
@@ -85,7 +88,11 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 
-	private IJavaElement[] javaElements;
+	private Set<Set<IJavaElement>> refactorableContexts; // the forest of refactorable type-dependent entities
+
+	private final IJavaElement[] javaElements;	// the input java model elements
+
+	private final IJavaSearchScope refactoringScope;
 
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
 		this(null, null, false, Optional.empty());
@@ -102,6 +109,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			this.javaElements = javaElements;
 			this.settings = settings;
 			this.layer = layer;
+			this.refactoringScope = SearchEngine.createJavaSearchScope(javaElements);
 
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
@@ -171,7 +179,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			return status;
 		} catch (
 
-		Exception e) {
+				Exception e) {
 			JavaPlugin.log(e);
 			throw e;
 		} finally {
@@ -179,22 +187,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	private void process(IInitializer elem, SubMonitor subMonitor) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	private void process(IMethod elem, SubMonitor subMonitor) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	private void process(IField elem, SubMonitor subMonitor) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	private void process(IJavaProject project, SubMonitor subMonitor) throws JavaModelException {
+	private void process(IJavaProject project, SubMonitor subMonitor) throws CoreException {
 		IPackageFragmentRoot[] roots = project.getPackageFragmentRoots();
 		for (IPackageFragmentRoot root : roots) {
 			process(root, subMonitor);
@@ -202,7 +195,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	}
 
 	private void process(IPackageFragmentRoot root, SubMonitor subMonitor)
-			throws JavaModelException {
+			throws CoreException {
 		IJavaElement[] children = root.getChildren();
 		for (IJavaElement child : children) {
 			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT)
@@ -210,29 +203,50 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	private void process(IPackageFragment fragment, SubMonitor subMonitor) throws JavaModelException {
+	private void process(IPackageFragment fragment, SubMonitor subMonitor) throws CoreException {
 		ICompilationUnit[] units = fragment.getCompilationUnits();
 		for (ICompilationUnit unit : units)
 			process(unit, subMonitor);
 	}
 
-	private void process(ICompilationUnit unit, SubMonitor subMonitor) {
-		CompilationUnit compilationUnit = getCompilationUnit(unit, subMonitor.split(1));
-		ASTVisitor visitor = new TypeDeclarationPrinter();
-		compilationUnit.accept(visitor);
+	private void process(ICompilationUnit icu, SubMonitor subMonitor) throws CoreException {
+		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
+		RefactorableHarvester harvester = RefactorableHarvester.of(icu, 
+				compilationUnit, refactoringScope, subMonitor);
+		refactorableContexts = harvester.harvestRefactorableContexts();
+		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);
 	}
-	
-	private void process(IType elem, SubMonitor subMonitor) {
-		CompilationUnit compilationUnit = getCompilationUnit(elem.getTypeRoot(), subMonitor.split(1));
-		for (Object obj : compilationUnit.types()) {
-			AbstractTypeDeclaration typeDecl = (AbstractTypeDeclaration) obj;
-			
-			// if the current type is equal to the selected type
-			if (typeDecl.resolveBinding().getJavaElement().equals(elem)) {
-				ASTVisitor visitor = new TypeDeclarationPrinter();
-				typeDecl.accept(visitor);
-			}
-		}
+
+	private void process(IType type, SubMonitor subMonitor) throws CoreException {
+		CompilationUnit compilationUnit = getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
+		RefactorableHarvester harvester = RefactorableHarvester.of(type, 
+				compilationUnit, refactoringScope, subMonitor);
+		refactorableContexts = harvester.harvestRefactorableContexts();
+		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
+	}
+
+	private void process(IInitializer initializer, SubMonitor subMonitor) throws CoreException {
+		CompilationUnit compilationUnit = getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
+		RefactorableHarvester harvester = RefactorableHarvester.of(initializer, 
+				compilationUnit, refactoringScope, subMonitor);
+		refactorableContexts = harvester.harvestRefactorableContexts();
+		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
+	}
+
+	private void process(IMethod method, SubMonitor subMonitor) throws CoreException {
+		CompilationUnit compilationUnit = getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
+		RefactorableHarvester harvester = RefactorableHarvester.of(method, 
+				compilationUnit, refactoringScope, subMonitor);
+		refactorableContexts = harvester.harvestRefactorableContexts();
+		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
+	}
+
+	private void process(IField field, SubMonitor subMonitor) throws CoreException {
+		CompilationUnit compilationUnit = getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
+		RefactorableHarvester harvester = RefactorableHarvester.of(field, 
+				compilationUnit, refactoringScope, subMonitor);
+		refactorableContexts = harvester.harvestRefactorableContexts();
+		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
 	}
 
 	@Override

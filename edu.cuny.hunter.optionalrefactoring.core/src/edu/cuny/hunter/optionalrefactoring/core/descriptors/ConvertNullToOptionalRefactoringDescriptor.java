@@ -13,7 +13,7 @@ import org.eclipse.jdt.core.refactoring.descriptors.JavaRefactoringDescriptor;
  */
 public class ConvertNullToOptionalRefactoringDescriptor extends JavaRefactoringDescriptor {
 
-	public static final String REFACTORING_ID = "edu.cuny.hunter.streamrefactoring.convert.stream.to.parallel"; //$NON-NLS-1$
+	public static final String REFACTORING_ID = "edu.cuny.hunter.optionalrefactoring"; //$NON-NLS-1$
 
 	protected ConvertNullToOptionalRefactoringDescriptor() {
 		super(REFACTORING_ID);

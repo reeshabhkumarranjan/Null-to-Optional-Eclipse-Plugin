@@ -3,19 +3,27 @@
  */
 package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-
+import java.util.Set;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
+import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -25,7 +33,11 @@ import junit.framework.TestSuite;
  *
  */
 @SuppressWarnings("restriction")
-public class ConvertNullToOptionalRefactoringTest extends org.eclipse.jdt.ui.tests.refactoring.RefactoringTest {
+public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
+
+	private static final Class<ConvertNullToOptionalRefactoringTest> clazz = ConvertNullToOptionalRefactoringTest.class;
+
+	private static final String REFACTORING_PATH = "ConvertNullToOptional/";
 
 	/**
 	 * The name of the directory containing resources under the project
@@ -33,9 +45,7 @@ public class ConvertNullToOptionalRefactoringTest extends org.eclipse.jdt.ui.tes
 	 */
 	private static final String RESOURCE_PATH = "resources";
 
-	private static final Class<ConvertNullToOptionalRefactoringTest> clazz = ConvertNullToOptionalRefactoringTest.class;
-
-	private static final String REFACTORING_PATH = "ConvertStreamToParallel/";
+	private static final Logger LOGGER = Logger.getLogger(clazz.getName());
 
 	public static Test setUpTest(Test test) {
 		return new Java18Setup(test);
@@ -98,19 +108,190 @@ public class ConvertNullToOptionalRefactoringTest extends org.eclipse.jdt.ui.tes
 		else
 			return unit;
 	}
+	
+	private void helper1(Set<String> expectedElements) throws Exception {
 
-	private static boolean compiles(String source) throws IOException {
-		// Save source in .java file.
-		Path root = Files.createTempDirectory(null);
-		File sourceFile = new File(root.toFile(), "p/A.java");
-		sourceFile.getParentFile().mkdirs();
-		Files.write(sourceFile.toPath(), source.getBytes());
+		// compute the actual results.
+		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(icu);
+		parser.setResolveBindings(true);
+		CompilationUnit c = (CompilationUnit)parser.createAST(null);
+		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
+				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
 
-		// Compile source file.
-		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-		return compiler.run(null, null, null, sourceFile.getPath()) == 0;
+		Set<IJavaElement> seeds = harvester.getSeeds();
+//		Util.candidatePrinter(seeds);
+		Set<String> actualElements = seeds.stream()
+				.map(element -> element.getElementName().toString())
+				.collect(Collectors.toSet());
+		assertNotNull(actualElements);		
+		
+		// compare them with the expected results.
+		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
+				expectedElements.containsAll(actualElements));
 	}
 	
-	public void testNothing() {
+	private void helper2(Set<Set<String>> expectedElements) throws Exception {
+
+		// compute the actual results.
+		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(icu);
+		parser.setResolveBindings(true);
+		CompilationUnit c = (CompilationUnit)parser.createAST(null);
+		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
+				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
+
+		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts();
+		sets.forEach(set -> Util.candidatePrinter(set));
+		
+		Set<Set<String>> actualElements = sets.stream()
+				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
+				.collect(Collectors.toSet());
+		assertNotNull(actualElements);		
+
+		// compare them with the expected results.
+		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
+				expectedElements.containsAll(actualElements));
 	}
+
+	public void testAssignmentFieldQualifiedNameSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentFieldQualifiedNameHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+
+	public void testAssignmentFieldSimpleNameSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentFieldSimpleNameHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+	
+	public void testAssignmentFieldSuperSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentFieldSuperHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+
+	public void testAssignmentFieldThisQualifiedNameSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+
+	public void testAssignmentFieldThisQualifiedNameHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+
+	public void testAssignmentFieldThisSimpleNameSeed() throws Exception {
+		this.helper1(Util.setCons("a"));	
+	}
+
+	public void testAssignmentFieldThisSimpleNameHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+
+	public void testAssignmentLocalVariableSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+
+	public void testAssignmentLocalVariableHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+
+	public void testAssignmentLocalVariableArrayAccessSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentLocalVariableArrayAccessHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+	
+	public void testAssignmentLocalVariableFieldAccessSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentLocalVariableFieldAccessHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+	
+	public void testAssignmentLocalVariableArrayAccessFieldAccessSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentLocalVariableArrayAccessFieldAccessHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+	
+	public void testAssignmentLocalVariableFieldAccessArrayAccessSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testAssignmentLocalVariableFieldAccessArrayAccessHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+	
+	public void testDeclarationLocalVariableSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testDeclarationLocalVariableHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+	
+	public void testDeclarationLocalVariableArraySeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testDeclarationLocalVariableArrayHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+	
+	public void testInvocationConstructorSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testInvocationConstructorHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));
+	}
+	
+	public void testInvocationMethodSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+	
+	public void testInvocationMethodHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+	
+	public void testInvocationSuperConstructorSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+
+	public void testInvocationSuperConstructorHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+
+	public void testNewStatementSeed() throws Exception {
+		this.helper1(Util.setCons("o"));
+	}
+	
+	public void testNewStatementHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+	
+	public void testReturnStatementSeed() throws Exception {
+		this.helper1(Util.setCons("a"));
+	}
+
+	public void testReturnStatementHarvest() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a")));	
+	}
+
 }
