@@ -1,14 +1,17 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.ITypeParameter;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
@@ -19,7 +22,6 @@ import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
@@ -29,19 +31,27 @@ import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
+import org.eclipse.jdt.core.search.IJavaSearchConstants;
+import org.eclipse.jdt.core.search.SearchEngine;
+import org.eclipse.jdt.core.search.SearchMatch;
+import org.eclipse.jdt.core.search.SearchParticipant;
+import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.jdt.core.search.SearchRequestor;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.UndeterminedNodeBinding;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 public class ASTAscender {
-	
+
+	private final SearchEngine searchEngine = new SearchEngine();
 	private final ASTNode node;
 	private final Set<IJavaElement> candidates = new LinkedHashSet<>();
-	
+
 	public ASTAscender(ASTNode node) {
 		this.node = node;
 	}
-	
+
 	public Set<IJavaElement> seedNulls() {
 		ASTVisitor visitor = new ASTVisitor() {
 			@Override
@@ -53,7 +63,7 @@ public class ASTAscender {
 		node.accept(visitor);
 		return candidates;
 	}
-	
+
 	private <T extends ASTNode> ASTNode getDeclaring(Class<T> type, ASTNode node) {
 		ASTNode curr = node;
 		while (curr != null && (curr.getClass() != type)) {
@@ -69,7 +79,7 @@ public class ASTAscender {
 			case ASTNode.ASSIGNMENT : this.processLeftSideOfAssignment(((Assignment)node).getLeftHandSide());
 			break;
 			case ASTNode.RETURN_STATEMENT : this.processReturnStatement((ReturnStatement)node);
-				break;
+			break;
 			case ASTNode.METHOD_INVOCATION : // TODO:
 				break;
 			case ASTNode.CONSTRUCTOR_INVOCATION : // TODO:
@@ -106,7 +116,7 @@ public class ASTAscender {
 		}
 		throw new UndeterminedNodeBinding(node, "While trying to process a null return statement in a Method Declaration: ");
 	}
-	
+
 	private void processLeftSideOfAssignment(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
 		case ASTNode.QUALIFIED_NAME : processName((Name)node);
@@ -180,21 +190,54 @@ public class ASTAscender {
 	private void processClassInstanceCreation(ClassInstanceCreation cic) throws UndeterminedNodeBinding {
 		List<Expression> args = cic.arguments();
 		List<Integer> argPositions = new ArrayList<>();
-		Integer pos = 0;
+		Integer pos = -1;
 		for (Expression arg : args) {
 			pos += 1;
 			if (arg instanceof NullLiteral) argPositions.add(new Integer(pos));
 		}
 		IMethodBinding binding = cic.resolveConstructorBinding();
+		Set<SingleVariableDeclaration> svd = new LinkedHashSet<>();
+		
 		if (binding != null) {
-			IJavaElement element = binding.getJavaElement();
-			if (element != null) {
-				IJavaElement parameter = (IJavaElement) new Object();
-				// search engine search for the parameter
-					candidates.add(parameter);
-					return;
+			
+			IMethod declaration = (IMethod)binding.getJavaElement();
+			SearchRequestor requestor = new SearchRequestor() {
+
+				@Override
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					// TODO Auto-generated method stub
+					MethodDeclaration methodDecl = Util.getMethodDeclaration(Util.getExactASTNode(match, new NullProgressMonitor()));
+					@SuppressWarnings("unchecked")
+					List<SingleVariableDeclaration> params = methodDecl.parameters();
+					
+					for (Integer i : argPositions) {
+						svd.add(params.get(i));
+					}
 				}
+			};
+
+			try {
+				this.searchEngine.search(
+						SearchPattern.createPattern(declaration, IJavaSearchConstants.DECLARATIONS),
+						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, 
+						SearchEngine.createWorkspaceScope(),
+						requestor, new NullProgressMonitor());
+			} catch (CoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			for (SingleVariableDeclaration node : svd) {
+				IBinding b = node.resolveBinding();
+				if (b != null) {
+					IJavaElement e = b.getJavaElement();
+					if (e != null) {
+						this.candidates.add(e);
+					}
+				}
+			}
 		}
+		
 		throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
 	}
 

@@ -279,7 +279,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testNewStatementSeed() throws Exception {
-		this.helper1(Util.setCons("a"));
+		this.helper1(Util.setCons("o"));
 	}
 	
 	public void testNewStatementHarvest() throws Exception {
