@@ -22,8 +22,6 @@ import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 
-import com.ibm.icu.impl.duration.impl.Utils;
-
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
