@@ -1,11 +1,11 @@
 package p;
 
 public class A {
-	
-	Object a = new Object();
-	
+	// expect {{a,b}}
 	void m() {
+		A a;
 		a = null;
+		A b;
+		b = a;
 	}
-	
 }

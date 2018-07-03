@@ -301,11 +301,13 @@ public interface Util {
 		return ret;
 	}
 	
-	public static <T> Set<T> setCons(T o) {
+	@SafeVarargs
+	public static <T> Set<T> setCons(T... o) {
 		return Stream.of(o).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 	
-	public static <T> List<T> listCons(T o) {
+	@SafeVarargs
+	public static <T> List<T> listCons(T... o) {
 		return Stream.of(o).collect(Collectors.toCollection(LinkedList::new));
 	}
 	
