@@ -22,6 +22,8 @@ import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 
+import com.ibm.icu.impl.duration.impl.Utils;
+
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
@@ -212,27 +214,35 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));	
 	}
 
-	public void testTransitiveLocalVariableAssignment2arity() throws Exception {
+	public void testAssignmentLocalVariableTransitive2arity() throws Exception {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
 	}
 
-	public void testTransitiveLocalVariableAssignment1arity() throws Exception {
+	public void testAssignmentLocalVariableTransitive1arity() throws Exception {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
 	}
 
-	public void testTransitiveLocalVariableAssignment2arityAnd1arity() throws Exception {
+	public void testAssignmentLocalVariableTransitive2arityAnd1arity() throws Exception {
 		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"),Util.setCons("d","e")));
 	}
 	
-	public void testTransitiveLocalVariableDeclaration1arity() throws Exception {
+	public void testDeclarationLocalVariableTransitive1arity() throws Exception {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
 	}
 	
-	public void testTransitiveLocalVariableDeclaration2arity() throws Exception {
+	public void testDeclarationLocalVariableTransitive2arity() throws Exception {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
 	}
 	
-	public void testTransitiveLocalVariableDeclaration2arityAnd1arity() throws Exception {
+	public void testDeclarationLocalVariableTransitive2arityAnd1arity() throws Exception {
 		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"), Util.setCons("d","e")));
+	}
+	
+	public void testAssignmentFieldTransitive2arity() throws Exception {
+		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
+	}
+	
+	public void testAssignmentFieldTransitive1arity() throws Exception {
+		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
 	}
 }
