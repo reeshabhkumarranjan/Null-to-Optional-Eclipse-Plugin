@@ -17,16 +17,19 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
+import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -39,6 +42,7 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.UndeterminedNodeBinding;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -80,12 +84,12 @@ public class ASTAscender {
 			break;
 			case ASTNode.RETURN_STATEMENT : this.processReturnStatement((ReturnStatement)node);
 			break;
-			case ASTNode.METHOD_INVOCATION : // TODO:
-				break;
-			case ASTNode.CONSTRUCTOR_INVOCATION : // TODO:
-				break;
-			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : // TODO:
-				break;
+			case ASTNode.METHOD_INVOCATION : this.processMethodInvocation((MethodInvocation)node);
+			break;
+			case ASTNode.CONSTRUCTOR_INVOCATION : this.processConstructorInvocation((ConstructorInvocation)node);
+			break;
+			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : this.processSuperConstructorInvocation((SuperConstructorInvocation)node);
+			break;
 			case ASTNode.CLASS_INSTANCE_CREATION : this.processClassInstanceCreation((ClassInstanceCreation)node);
 			break;
 			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : this.processVariableDeclarationFragment((VariableDeclarationFragment)node);
@@ -188,28 +192,42 @@ public class ASTAscender {
 	}
 
 	private void processClassInstanceCreation(ClassInstanceCreation cic) throws UndeterminedNodeBinding {
-		List<Expression> args = cic.arguments();
-		List<Integer> argPositions = new ArrayList<>();
-		Integer pos = -1;
-		for (Expression arg : args) {
-			pos += 1;
-			if (arg instanceof NullLiteral) argPositions.add(new Integer(pos));
-		}
+		List<Integer> argPositions = getParamPositions(cic);
 		IMethodBinding binding = cic.resolveConstructorBinding();
-		Set<SingleVariableDeclaration> svd = new LinkedHashSet<>();
+		if (binding != null) processInvocation(argPositions, binding);
+		else throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
+	}
+	
+	private void processMethodInvocation(MethodInvocation mi) throws UndeterminedNodeBinding {
+		List<Integer> argPositions = getParamPositions(mi);
+		IMethodBinding binding = mi.resolveMethodBinding();
+		if (binding != null) processInvocation(argPositions, binding);
+		else throw new UndeterminedNodeBinding(mi, "While trying to process a Method Invocation node: ");
+	}
+	
+	private void processConstructorInvocation(ConstructorInvocation ci) throws UndeterminedNodeBinding {
+		List<Integer> argPositions = getParamPositions(ci);
+		IMethodBinding binding = ci.resolveConstructorBinding();
+		if (binding != null) processInvocation(argPositions, binding);
+		else throw new UndeterminedNodeBinding(ci, "While trying to process a Constructor Invocation node: ");
+	}
+	
+	private void processSuperConstructorInvocation(SuperConstructorInvocation sci) throws UndeterminedNodeBinding {
+		List<Integer> argPositions = getParamPositions(sci);
+		IMethodBinding binding = sci.resolveConstructorBinding();
+		if (binding != null) processInvocation(argPositions, binding);
+		else throw new UndeterminedNodeBinding(sci, "While trying to process a Super Constructor Invocation node: ");
+	}
+
+	private void processInvocation(List<Integer> argPositions, IMethodBinding binding) {
 		
-		if (binding != null) {
-			
+		Set<SingleVariableDeclaration> svd = new LinkedHashSet<>();
 			IMethod declaration = (IMethod)binding.getJavaElement();
 			SearchRequestor requestor = new SearchRequestor() {
-
 				@Override
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {
-					// TODO Auto-generated method stub
 					MethodDeclaration methodDecl = Util.getMethodDeclaration(Util.getExactASTNode(match, new NullProgressMonitor()));
-					@SuppressWarnings("unchecked")
-					List<SingleVariableDeclaration> params = methodDecl.parameters();
-					
+					List<SingleVariableDeclaration> params = methodDecl.parameters();					
 					for (Integer i : argPositions) {
 						svd.add(params.get(i));
 					}
@@ -236,9 +254,29 @@ public class ASTAscender {
 					}
 				}
 			}
+	}
+
+	private <T extends ASTNode> List<Integer> getParamPositions(T invocation) {
+		List<Expression> args;
+		switch (invocation.getNodeType()) {
+		case ASTNode.METHOD_INVOCATION : args = ((MethodInvocation)invocation).arguments();
+		break;
+		case ASTNode.CONSTRUCTOR_INVOCATION : args = ((ConstructorInvocation)invocation).arguments();
+		break;
+		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : args = ((SuperConstructorInvocation)invocation).arguments();
+		break;
+		case ASTNode.CLASS_INSTANCE_CREATION : args = ((ClassInstanceCreation)invocation).arguments();
+		break;
+		default : throw new RefactoringASTException("Tried processing parameters for something other than an invocation.", invocation);
 		}
 		
-		throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
+		List<Integer> argPositions = new ArrayList<>();
+		Integer pos = -1;
+		for (Expression arg : args) {
+			pos += 1;
+			if (arg instanceof NullLiteral) argPositions.add(new Integer(pos));
+		}
+		return argPositions;
 	}
 
 	private void processVariableDeclarationFragment(VariableDeclarationFragment vdf) throws UndeterminedNodeBinding {
