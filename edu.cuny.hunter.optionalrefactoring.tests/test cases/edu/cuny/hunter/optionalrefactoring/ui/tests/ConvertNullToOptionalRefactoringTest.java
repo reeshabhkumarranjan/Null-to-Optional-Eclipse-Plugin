@@ -127,7 +127,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		Set<String> actualElements = seeds.stream()
 				.map(element -> element.getElementName().toString())
 				.collect(Collectors.toSet());
-
+		
 		assertNotNull(actualElements);		
 		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
 				expectedElements.containsAll(actualElements));
@@ -222,5 +222,17 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testTransitiveLocalVariableAssignment2arityAnd1arity() throws Exception {
 		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"),Util.setCons("d","e")));
+	}
+	
+	public void testTransitiveLocalVariableDeclaration1arity() throws Exception {
+		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
+	}
+	
+	public void testTransitiveLocalVariableDeclaration2arity() throws Exception {
+		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
+	}
+	
+	public void testTransitiveLocalVariableDeclaration2arityAnd1arity() throws Exception {
+		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"), Util.setCons("d","e")));
 	}
 }
