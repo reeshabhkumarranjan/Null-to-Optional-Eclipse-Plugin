@@ -127,7 +127,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		Set<String> actualElements = seeds.stream()
 				.map(element -> element.getElementName().toString())
 				.collect(Collectors.toSet());
-
+		
 		assertNotNull(actualElements);		
 		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
 				expectedElements.containsAll(actualElements));
@@ -212,15 +212,35 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));	
 	}
 
-	public void testTransitiveLocalVariableAssignment2arity() throws Exception {
+	public void testAssignmentLocalVariableTransitive2arity() throws Exception {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
 	}
 
-	public void testTransitiveLocalVariableAssignment1arity() throws Exception {
+	public void testAssignmentLocalVariableTransitive1arity() throws Exception {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
 	}
 
-	public void testTransitiveLocalVariableAssignment2arityAnd1arity() throws Exception {
+	public void testAssignmentLocalVariableTransitive2arityAnd1arity() throws Exception {
 		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"),Util.setCons("d","e")));
+	}
+	
+	public void testDeclarationLocalVariableTransitive1arity() throws Exception {
+		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
+	}
+	
+	public void testDeclarationLocalVariableTransitive2arity() throws Exception {
+		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
+	}
+	
+	public void testDeclarationLocalVariableTransitive2arityAnd1arity() throws Exception {
+		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"), Util.setCons("d","e")));
+	}
+	
+	public void testAssignmentFieldTransitive2arity() throws Exception {
+		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
+	}
+	
+	public void testAssignmentFieldTransitive1arity() throws Exception {
+		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
 	}
 }
