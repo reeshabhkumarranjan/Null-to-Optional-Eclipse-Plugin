@@ -146,7 +146,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
 
 		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts();
-		sets.forEach(set -> Util.candidatePrinter(set));
+		//sets.forEach(set -> Util.candidatePrinter(set));
 		
 		Set<Set<String>> actualElements = sets.stream()
 				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
@@ -255,7 +255,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 	
 	public void testInvocationConstructorSeed() throws Exception {
-		this.helper1(Util.setCons("a"));
+		this.helper1(Util.setCons("o"));
 	}
 	
 	public void testInvocationConstructorHarvest() throws Exception {
@@ -263,7 +263,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 	
 	public void testInvocationMethodSeed() throws Exception {
-		this.helper1(Util.setCons("a"));
+		this.helper1(Util.setCons("o"));
 	}
 	
 	public void testInvocationMethodHarvest() throws Exception {
@@ -271,7 +271,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 	
 	public void testInvocationSuperConstructorSeed() throws Exception {
-		this.helper1(Util.setCons("a"));
+		this.helper1(Util.setCons("o"));
 	}
 
 	public void testInvocationSuperConstructorHarvest() throws Exception {
@@ -293,5 +293,17 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testReturnStatementHarvest() throws Exception {
 		this.helper2(Util.setCons(Util.setCons("a")));	
 	}
+	
+	public void testTransitiveLocalVariableAssignment1() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a","b","c")));
+	}
+	
+	public void testTransitiveLocalVariableAssignment2() throws Exception {
+		this.helper2(Util.setCons(Util.setCons("a","b")));
+	}
 
+	public void testTransitiveLocalVariableAssignment3() throws Exception {
+		//this.helper1(Util.setCons("a","c"));
+		this.helper2(Util.setCons(Util.setCons("a","b"),Util.setCons("c")));
+	}
 }
