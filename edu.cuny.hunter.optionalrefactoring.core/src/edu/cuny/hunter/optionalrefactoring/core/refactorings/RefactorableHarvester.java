@@ -147,20 +147,7 @@ public class RefactorableHarvester {
 						new SearchParticipant[] { SearchEngine
 								.getDefaultSearchParticipant() }, this.scopeRoot,
 						requestor, this.monitor);
-
-				// Work around for bug 164121. Force match for formal
-				// parameters.
-				if (element.getElementType() == IJavaElement.LOCAL_VARIABLE) {
-					ISourceRange isr = ((ILocalVariable) element).getNameRange();
-					
-					SearchMatch match = new SearchMatch(element,
-							SearchMatch.A_ACCURATE, isr.getOffset(), isr
-							.getLength(), SearchEngine
-							.getDefaultSearchParticipant(), element
-							.getResource());
-					
-					requestor.acceptSearchMatch(match);
-				}
+				
 			} catch (final NotOptionizableException e) {
 				this.notN2ORefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());

@@ -21,7 +21,6 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
-
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
@@ -129,7 +128,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				.collect(Collectors.toSet());
 		
 		assertNotNull(actualElements);		
-		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
+		assertTrue("Expected elements are "+expectedElements.toString()+" and are the same in both sets.", 
 				expectedElements.containsAll(actualElements));
 		
 		// Here we are getting all the sets of type dependent entities
@@ -138,30 +137,11 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		Set<Set<String>> actualSets = sets.stream()
 				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
 				.collect(Collectors.toSet());
-
+		
 		assertNotNull(actualSets);		
+		
 		assertTrue("Expected sets contain "+expectedSets.toString()+" and are the same.", 
 				expectedSets.containsAll(actualSets));
-	}
-
-	public void testAssignmentFieldQualifiedName() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
-	}
-
-	public void testAssignmentFieldSimpleName() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
-	}
-
-	public void testAssignmentFieldSuper() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));	
-	}
-
-	public void testAssignmentFieldThisQualifiedName() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));	
-	}
-
-	public void testAssignmentFieldThisSimpleName() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));	
 	}
 
 	public void testAssignmentLocalVariable() throws Exception {
@@ -169,18 +149,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testAssignmentLocalVariableArrayAccess() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
-	}
-
-	public void testAssignmentLocalVariableFieldAccess() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
-	}
-
-	public void testAssignmentLocalVariableArrayAccessFieldAccess() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
-	}
-
-	public void testAssignmentLocalVariableFieldAccessArrayAccess() throws Exception {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
 	}
 
@@ -242,5 +210,39 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	
 	public void testAssignmentFieldTransitive1arity() throws Exception {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
+	}
+	
+	public void testAssignmentField() throws Exception {
+		this.helper(Util.setCons("thisQualifiedName", "thisSimpleName", "simpleName", 
+				"superQualifiedName", "superSimpleName", "staticSimpleName", "staticQualifiedName"), 
+				Util.setCons(Util.setCons("superSimpleName"), 
+						Util.setCons("thisQualifiedName"), 
+						Util.setCons("staticQualifiedName"), 
+						Util.setCons("simpleName"), 
+						Util.setCons("thisSimpleName"), 
+						Util.setCons("staticSimpleName"), 
+						Util.setCons("superQualifiedName")));
+	}
+	
+	public void testAssignmentFieldArray() throws Exception {
+		this.helper(Util.setCons("thisQualifiedName", "thisSimpleName", "simpleName", 
+				"thisQualifiedNameInitialized", "thisSimpleNameInitialized", "simpleNameInitialized", "fieldAccess"), 
+				Util.setCons(Util.setCons("thisQualifiedName"),
+						Util.setCons("thisSimpleName"),
+						Util.setCons("simpleName"),
+						Util.setCons("thisQualifiedNameInitialized"),
+						Util.setCons("thisSimpleNameInitialized"),
+						Util.setCons("simpleNameInitialized"),
+						Util.setCons("fieldAccess")));
+	}
+	
+	public void testDeclarationField() throws Exception {
+		this.helper(Util.setCons("e", "earray", "einitializedarray", "f", "farray", "finitializedarray"), 
+				Util.setCons(Util.setCons("e"),
+						Util.setCons("earray"),
+						Util.setCons("einitializedarray"),
+						Util.setCons("f"),
+						Util.setCons("farray"),
+						Util.setCons("finitializedarray")));
 	}
 }
