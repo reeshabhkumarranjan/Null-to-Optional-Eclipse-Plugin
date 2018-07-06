@@ -148,7 +148,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.helper(setOf("a"), setOf(setOf("a")));
 	}
 
-	public void testAssignmentLocalVariableArrayAccess() throws Exception {
+	public void testAssignmentLocalVariableArray() throws Exception {
 		this.helper(setOf("a"), setOf(setOf("a")));
 	}
 
@@ -182,46 +182,25 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("controlNullReturner")));	
 	}
 
-	public void testAssignmentLocalVariableTransitive2arity() throws Exception {
-		this.helper(setOf("a"), setOf(setOf("a","b","c")));
-	}
-
-	public void testAssignmentLocalVariableTransitive1arity() throws Exception {
-		this.helper(setOf("a"), setOf(setOf("a","b")));
-	}
-
-	public void testAssignmentLocalVariableTransitive2arityAnd1arity() throws Exception {
-		this.helper(setOf("a","d"), setOf(setOf("a","b","c"),setOf("d","e")));
+	public void testAssignmentLocalVariableTransitive() throws Exception {
+		this.helper(setOf("a","e","control"), 
+				setOf(setOf("a","b"),
+						setOf("c","d","e","f","g"),
+						setOf("control")));
 	}
 	
-	public void testAssignmentLocalVariableArrayAccessTransitive1arity() throws Exception {
-		this.helper(setOf("a"), setOf(setOf("a","b")));
+	public void testDeclarationLocalVariableTransitive() throws Exception {
+		this.helper(setOf("a","d","control"), 
+				setOf(setOf("a","b","c"), 
+						setOf("d","e"),
+						setOf("control")));
 	}
 	
-	public void testDeclarationLocalVariableTransitive1arity() throws Exception {
-		this.helper(setOf("a"), setOf(setOf("a","b")));
-	}
-	
-	public void testDeclarationLocalVariableTransitive2arity() throws Exception {
-		this.helper(setOf("a"), setOf(setOf("a","b","c")));
-	}
-	
-	public void testDeclarationLocalVariableTransitive2arityAnd1arity() throws Exception {
-		this.helper(setOf("a","d"), setOf(setOf("a","b","c"), setOf("d","e")));
-	}
-	
-	public void testAssignmentFieldTransitive2arity() throws Exception {
+	public void testAssignmentFieldTransitive() throws Exception {
 		this.helper(setOf("a","controlNullDependent","d"), 
 				setOf(setOf("a","b","c"),
 						setOf("controlNullDependent"),
-						setOf("d","e","f")));
-	}
-	
-	public void testAssignmentFieldTransitive1arity() throws Exception {
-		this.helper(setOf("a","controlNullDependent","d"), 
-				setOf(setOf("a","b"),
-						setOf("controlNullDependent"),
-						setOf("c","d")));
+						setOf("d","e")));
 	}
 	
 	public void testAssignmentField() throws Exception {
