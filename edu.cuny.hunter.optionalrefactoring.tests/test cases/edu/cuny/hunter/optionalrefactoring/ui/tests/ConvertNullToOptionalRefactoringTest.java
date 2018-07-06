@@ -192,6 +192,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"),Util.setCons("d","e")));
 	}
 	
+	public void testAssignmentLocalVariableArrayAccessTransitive1arity() throws Exception {
+		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
+	}
+	
 	public void testDeclarationLocalVariableTransitive1arity() throws Exception {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
 	}
@@ -212,7 +216,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
 	}
 	
-<<<<<<< HEAD
 	public void testAssignmentField() throws Exception {
 		this.helper(Util.setCons("thisQualifiedName", "thisSimpleName", "simpleName", 
 				"superQualifiedName", "superSimpleName", "staticSimpleName", "staticQualifiedName"), 
@@ -245,9 +248,5 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						Util.setCons("f"),
 						Util.setCons("farray"),
 						Util.setCons("finitializedarray")));
-=======
-	public void testAssignmentLocalVariableArrayAccessTransitive1arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
->>>>>>> c7dac3a97d18d68c1d847c2cbef30b7b2fce4a2b
 	}
 }
