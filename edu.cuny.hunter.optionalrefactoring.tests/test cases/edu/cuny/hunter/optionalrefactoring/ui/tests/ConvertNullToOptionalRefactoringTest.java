@@ -177,7 +177,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testReturnStatement() throws Exception {
-		this.helper(setOf("a"), setOf(setOf("a")));	
+		this.helper(setOf("nullReturner", "extendedNullReturner", "composedNullReturner", "controlNullReturner"), 
+				setOf(setOf("nullReturner", "extendedNullReturner", "composedNullReturner"),
+						setOf("controlNullReturner")));	
 	}
 
 	public void testAssignmentLocalVariableTransitive2arity() throws Exception {

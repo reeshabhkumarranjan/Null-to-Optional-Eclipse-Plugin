@@ -2,14 +2,29 @@ package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
 class ScratchClass {
 	
-	public class A {
+	public class B {
+		B nullReturner() {
+		return null;
+		}
+		B control() {
+			return new B();
+		}
+	}
+	
+	public class C extends B {
 		
-		A a = null;
-		A b = a;
-		A c = null;
-		A d = c;
-		A e = d;
-		A controlNullDependent = null;
-		A control = new A();
+		B extendedNullReturner() {
+			return nullReturner();
+		}
+		
+		B extenderControl() {
+			return control();
+		}
+	}
+	
+	public class D {
+		B composedNullReturner() {
+			return new C().extendedNullReturner();
+		}
 	}
 }
