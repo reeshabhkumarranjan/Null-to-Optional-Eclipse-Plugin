@@ -243,4 +243,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testAssignmentFieldTransitive1arity() throws Exception {
 		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
 	}
+	
+	public void testAssignmentLocalVariableArrayAccessTransitive1arity() throws Exception {
+		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
+	}
 }
