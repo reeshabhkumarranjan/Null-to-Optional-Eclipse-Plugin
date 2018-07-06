@@ -302,12 +302,12 @@ public interface Util {
 	}
 	
 	@SafeVarargs
-	public static <T> Set<T> setCons(T... o) {
+	public static <T> Set<T> setOf(T... o) {
 		return Stream.of(o).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 	
 	@SafeVarargs
-	public static <T> List<T> listCons(T... o) {
+	public static <T> List<T> listOf(T... o) {
 		return Stream.of(o).collect(Collectors.toCollection(LinkedList::new));
 	}
 	

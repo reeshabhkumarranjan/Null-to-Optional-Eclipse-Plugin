@@ -22,7 +22,7 @@ import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
-import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
+import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.*;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -145,108 +145,121 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testAssignmentLocalVariable() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+		this.helper(setOf("a"), setOf(setOf("a")));
 	}
 
 	public void testAssignmentLocalVariableArrayAccess() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+		this.helper(setOf("a"), setOf(setOf("a")));
 	}
 
 	public void testDeclarationLocalVariable() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+		this.helper(setOf("a"), setOf(setOf("a")));
 	}
 
 	public void testDeclarationLocalVariableArray() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+		this.helper(setOf("a"), setOf(setOf("a")));
 	}
 
 	public void testInvocationConstructor() throws Exception {
-		this.helper(Util.setCons("o"), Util.setCons(Util.setCons("a")));
+		this.helper(setOf("o"), setOf(setOf("a")));
 	}
 
 	public void testInvocationMethod() throws Exception {
-		this.helper(Util.setCons("o"), Util.setCons(Util.setCons("a")));	
+		this.helper(setOf("o"), setOf(setOf("a")));	
 	}
 
 	public void testInvocationSuperConstructor() throws Exception {
-		this.helper(Util.setCons("o"), Util.setCons(Util.setCons("a")));	
+		this.helper(setOf("o"), setOf(setOf("a")));	
 	}
 
 	public void testNewStatement() throws Exception {
-		this.helper(Util.setCons("o"), Util.setCons(Util.setCons("a")));	
+		this.helper(setOf("o"), setOf(setOf("a")));	
 	}
 
 	public void testReturnStatement() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));	
+		this.helper(setOf("a"), setOf(setOf("a")));	
 	}
 
 	public void testAssignmentLocalVariableTransitive2arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
+		this.helper(setOf("a"), setOf(setOf("a","b","c")));
 	}
 
 	public void testAssignmentLocalVariableTransitive1arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
+		this.helper(setOf("a"), setOf(setOf("a","b")));
 	}
 
 	public void testAssignmentLocalVariableTransitive2arityAnd1arity() throws Exception {
-		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"),Util.setCons("d","e")));
+		this.helper(setOf("a","d"), setOf(setOf("a","b","c"),setOf("d","e")));
 	}
 	
 	public void testAssignmentLocalVariableArrayAccessTransitive1arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
+		this.helper(setOf("a"), setOf(setOf("a","b")));
 	}
 	
 	public void testDeclarationLocalVariableTransitive1arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
+		this.helper(setOf("a"), setOf(setOf("a","b")));
 	}
 	
 	public void testDeclarationLocalVariableTransitive2arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
+		this.helper(setOf("a"), setOf(setOf("a","b","c")));
 	}
 	
 	public void testDeclarationLocalVariableTransitive2arityAnd1arity() throws Exception {
-		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"), Util.setCons("d","e")));
+		this.helper(setOf("a","d"), setOf(setOf("a","b","c"), setOf("d","e")));
 	}
 	
 	public void testAssignmentFieldTransitive2arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
+		this.helper(setOf("a","controlNullDependent","d"), 
+				setOf(setOf("a","b","c"),
+						setOf("controlNullDependent"),
+						setOf("d","e","f")));
 	}
 	
 	public void testAssignmentFieldTransitive1arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
+		this.helper(setOf("a","controlNullDependent","d"), 
+				setOf(setOf("a","b"),
+						setOf("controlNullDependent"),
+						setOf("c","d")));
 	}
 	
 	public void testAssignmentField() throws Exception {
-		this.helper(Util.setCons("thisQualifiedName", "thisSimpleName", "simpleName", 
+		this.helper(setOf("thisQualifiedName", "thisSimpleName", "simpleName", 
 				"superQualifiedName", "superSimpleName", "staticSimpleName", "staticQualifiedName"), 
-				Util.setCons(Util.setCons("superSimpleName"), 
-						Util.setCons("thisQualifiedName"), 
-						Util.setCons("staticQualifiedName"), 
-						Util.setCons("simpleName"), 
-						Util.setCons("thisSimpleName"), 
-						Util.setCons("staticSimpleName"), 
-						Util.setCons("superQualifiedName")));
+				setOf(setOf("superSimpleName"), 
+						setOf("thisQualifiedName"), 
+						setOf("staticQualifiedName"), 
+						setOf("simpleName"), 
+						setOf("thisSimpleName"), 
+						setOf("staticSimpleName"), 
+						setOf("superQualifiedName")));
 	}
 	
 	public void testAssignmentFieldArray() throws Exception {
-		this.helper(Util.setCons("thisQualifiedName", "thisSimpleName", "simpleName", 
+		this.helper(setOf("thisQualifiedName", "thisSimpleName", "simpleName", 
 				"thisQualifiedNameInitialized", "thisSimpleNameInitialized", "simpleNameInitialized", "fieldAccess"), 
-				Util.setCons(Util.setCons("thisQualifiedName"),
-						Util.setCons("thisSimpleName"),
-						Util.setCons("simpleName"),
-						Util.setCons("thisQualifiedNameInitialized"),
-						Util.setCons("thisSimpleNameInitialized"),
-						Util.setCons("simpleNameInitialized"),
-						Util.setCons("fieldAccess")));
+				setOf(setOf("thisQualifiedName"),
+						setOf("thisSimpleName"),
+						setOf("simpleName"),
+						setOf("thisQualifiedNameInitialized"),
+						setOf("thisSimpleNameInitialized"),
+						setOf("simpleNameInitialized"),
+						setOf("fieldAccess")));
 	}
 	
 	public void testDeclarationField() throws Exception {
-		this.helper(Util.setCons("e", "earray", "einitializedarray", "f", "farray", "finitializedarray"), 
-				Util.setCons(Util.setCons("e"),
-						Util.setCons("earray"),
-						Util.setCons("einitializedarray"),
-						Util.setCons("f"),
-						Util.setCons("farray"),
-						Util.setCons("finitializedarray")));
+		this.helper(setOf("e", "earray", "einitializedarray", "f", "farray", "finitializedarray"), 
+				setOf(setOf("e"),
+						setOf("earray"),
+						setOf("einitializedarray"),
+						setOf("f"),
+						setOf("farray"),
+						setOf("finitializedarray")));
+	}
+	
+	public void testDeclarationFieldTransitive() throws Exception {
+		this.helper(setOf("a","controlNullDependent","c"), 
+				setOf(setOf("a","b"),
+						setOf("c","d","e"),
+						setOf("controlNullDependent")));
 	}
 }
