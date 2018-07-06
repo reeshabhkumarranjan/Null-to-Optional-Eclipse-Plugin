@@ -41,7 +41,6 @@ class ScratchClass {
 
 			// should not seed or propagate these
 			A.staticControl = new A();
-			staticControl = new A();
 		}
 		
 		A a;
