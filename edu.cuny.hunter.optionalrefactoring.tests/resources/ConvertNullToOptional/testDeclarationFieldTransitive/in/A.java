@@ -2,8 +2,10 @@ package p;
 
 public class A {
 
-	// should seed {a,c,controlNullDependent)
-	// should propagate {{a,b},{c,d,e},{controlNullDependent}}
+	/** should seed {a,c,controlNullDependent)
+	* should propagate {{a,b},{c,d,e},{controlNullDependent}}
+	*/
+	
 	A a = null;
 	A b = a;
 	A c = null;

@@ -3,26 +3,29 @@ package p;
 public class A {
 	
 	public class B {
-		// should seed: {k,l,m,n,o,h,j,d,c,a}
-		// should propagate: {{k},{l},{m},{n},{o},{h},{j},{d},{c},{a}}
+		/** 
+		* should seed: {"a","f","o"}
+		* should propagate: {{"a","b","d","g","k"}, {"f","i","m"}, {"o"}}
+		* 
+		*/
 		public B() {
 			this(null);
 		}
 		
 		public B(Object a) {
-			this(new Object(), null);
+			this(a, new Object());
 		}
 		
 		public B(Object b, Object c) {	
-			this(null, new Object(), new Object());
+			this(b, c, null);
 		}
 		
 		public B(Object d, Object e, Object f) {	
-			this(new Object(), null, new Object(), null);
+			this(d, e, f, new Object());
 		}
 		
 		public B(Object g, Object h, Object i, Object j) {	
-			this(null, null, null, null, null);
+			this(g, h, i, j, null);
 		}
 
 		public B(Object k, Object l, Object m, Object n, Object o) {	}

@@ -2,27 +2,31 @@ package p;
 
 public class A {
 	
-	// should seed: {a,c,d,f,g}
-	// should propagate {{a},{c},{d},{f},{g}}
+	/** 
+	 * should seed: {"k","m","o"}
+	 * should propagate {{"k","g","d","b","a"},{"m","i","f"},{"o"}}
+	 * 
+	 */
 	
-	// testing the argument position inference
 	public void m(A a) { }
 	
-	public void m(A b, A c) { }
+	public void m(A b, A c) { 
+		m(b);
+	}
 	
-	public void n(A d, A e) { }
+	public void m(A d, A e, A f) { 
+		m(d,e);
+	}
 	
-	public void o(A f, A g) { }
+	public void m(A g, A h, A i, A j) { 
+		m(g,h,i);
+	}
 	
-	public void p(A notNull) { }
-
-	A a = m(null);
+	public void m(A k, A l, A m, A n, A o) {
+		m(k,l,m,n);
+	}
 	
-	A b = m(new A(), null);
-	
-	A c = n(null, new A());
-	
-	A d = o(null, null);
-	
-	A e = p(new A());
+	public void t() {
+		m(null, new A(), null, new A(), null);
+	}
 }
