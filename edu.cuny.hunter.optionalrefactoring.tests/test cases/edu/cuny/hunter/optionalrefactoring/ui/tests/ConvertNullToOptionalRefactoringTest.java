@@ -181,7 +181,11 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testNewStatement() throws Exception {
-		this.helper(setOf("o"), setOf(setOf("a")));	
+		this.helper(setOf("l","n","p","r"), 
+				setOf(setOf("l","g","d","b","a"),
+						setOf("n","i","f","a"),
+						setOf("p","k","c","a"),
+						setOf("r","c","a")));	
 	}
 
 	public void testReturnStatement() throws Exception {
