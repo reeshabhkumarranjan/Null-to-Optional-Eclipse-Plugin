@@ -10,7 +10,7 @@ public class A {
 		}
 		
 		public B(Object a) {
-			this(new Object(), null)
+			this(new Object(), null);
 		}
 		
 		public B(Object b, Object c) {	
