@@ -17,6 +17,7 @@ import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
+import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
@@ -27,6 +28,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
@@ -95,7 +97,13 @@ public class ASTAscender {
 			break;
 			case ASTNode.ARRAY_INITIALIZER : this.processArrayInitializer((ArrayInitializer)node);
 			break;
+			case ASTNode.PARENTHESIZED_EXPRESSION : this.processParenthesizedExpression((ParenthesizedExpression)node);
+			break;
+			case ASTNode.CONDITIONAL_EXPRESSION : this.processConditionalExpression((ConditionalExpression)node);
+			break;
 			case ASTNode.SINGLE_VARIABLE_DECLARATION : this.processSingleVariableDeclaration((SingleVariableDeclaration)node);
+			break;
+			case ASTNode.INFIX_EXPRESSION :
 			break;
 			default : throw new UndeterminedNodeBinding(node, "While trying to process the parent of an encountered NullLiteral: ");
 			}
@@ -105,6 +113,18 @@ public class ASTAscender {
 		} catch (RefactoringASTException e) {
 			Logger.getAnonymousLogger().warning("Problem with traversing the AST: "+e+".");
 		}
+	}
+
+	private void processConditionalExpression(ConditionalExpression node2) {
+		ASTNode parent = node2.getParent();
+		if (parent != null) process(parent);
+		else throw new UndeterminedNodeBinding(node2, "While trying to process a Conditional Expression node: ");
+	}
+
+	private void processParenthesizedExpression(ParenthesizedExpression node2) {
+		ASTNode parent = node2.getParent();
+		if (parent != null) process(parent);
+		else throw new UndeterminedNodeBinding(node2, "While trying to process a Parenthesized Expression node: ");
 	}
 
 	private void processReturnStatement(ReturnStatement node) throws RefactoringASTException {
