@@ -2,6 +2,14 @@ package p;
 
 public class A {
 	
+	/**
+	 * 
+	 * @author oren
+	 * seeds: {"nullReturner", "extendedNullReturner", "composedNullReturner", "controlNullReturner"} 
+	 * propagates: {{"nullReturner"}, {"extendedNullReturner"}, {"composedNullReturner"}, {"controlNullReturner"}}
+	 *
+	 */
+	
 	public class B {
 		A nullReturner() {
 		return null;
