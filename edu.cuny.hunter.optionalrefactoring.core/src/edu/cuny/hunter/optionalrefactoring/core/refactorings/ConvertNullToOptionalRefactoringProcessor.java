@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -25,20 +24,16 @@ import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
-import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
-import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.refactoring.base.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
-import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.ltk.core.refactoring.Change;
@@ -48,9 +43,9 @@ import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringParticipant;
-import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
 
+import edu.cuny.citytech.refactoring.common.core.RefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -71,8 +66,6 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			new GroupCategory("edu.cuny.hunter.optionalrefactoring", //$NON-NLS-1$
 					Messages.CategoryName, Messages.CategoryDescription));
 
-	private Map<ICompilationUnit, CompilationUnitRewrite> compilationUnitToCompilationUnitRewriteMap = new HashMap<>();
-
 	/**
 	 * For excluding AST parse time.
 	 */
@@ -80,11 +73,6 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	/** Does the refactoring use a working copy layer? */
 	private final boolean layer;
-
-	/** The code generation settings, or <code>null</code> */
-	private CodeGenerationSettings settings;
-
-	private Map<ITypeRoot, CompilationUnit> typeRootToCompilationUnitMap = new HashMap<>();
 
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 
@@ -105,9 +93,9 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, final CodeGenerationSettings settings,
 			boolean layer, Optional<IProgressMonitor> monitor) throws JavaModelException {
+		super(settings);
 		try {
 			this.javaElements = javaElements;
-			this.settings = settings;
 			this.layer = layer;
 			this.refactoringScope = SearchEngine.createJavaSearchScope(javaElements);
 
@@ -301,11 +289,6 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		return new RefactoringStatus();
 	}
 
-	private void clearCaches() {
-		getTypeToTypeHierarchyMap().clear();
-		getCompilationUnitToCompilationUnitRewriteMap().clear();
-	}
-
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		try {
@@ -357,26 +340,6 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		} finally {
 			monitor.done();
 		}
-	}
-
-	private CompilationUnit getCompilationUnit(ITypeRoot root, IProgressMonitor pm) {
-		CompilationUnit compilationUnit = this.typeRootToCompilationUnitMap.get(root);
-		if (compilationUnit == null) {
-			this.getExcludedTimeCollector().start();
-			compilationUnit = RefactoringASTParser.parseWithASTProvider(root, true, pm);
-			this.getExcludedTimeCollector().stop();
-			this.typeRootToCompilationUnitMap.put(root, compilationUnit);
-		}
-		return compilationUnit;
-	}
-
-	private CompilationUnitRewrite getCompilationUnitRewrite(ICompilationUnit unit, CompilationUnit root) {
-		CompilationUnitRewrite rewrite = this.getCompilationUnitToCompilationUnitRewriteMap().get(unit);
-		if (rewrite == null) {
-			rewrite = new CompilationUnitRewrite(unit, root);
-			this.getCompilationUnitToCompilationUnitRewriteMap().put(unit, rewrite);
-		}
-		return rewrite;
 	}
 
 	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitToCompilationUnitRewriteMap() {
@@ -442,16 +405,5 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	public RefactoringParticipant[] loadParticipants(RefactoringStatus status, SharableParticipants sharedParticipants)
 			throws CoreException {
 		return new RefactoringParticipant[0];
-	}
-
-	private void manageCompilationUnit(final TextEditBasedChangeManager manager, CompilationUnitRewrite rewrite,
-			Optional<IProgressMonitor> monitor) throws CoreException {
-		monitor.ifPresent(m -> m.beginTask("Creating change ...", IProgressMonitor.UNKNOWN));
-		CompilationUnitChange change = rewrite.createChange(false, monitor.orElseGet(NullProgressMonitor::new));
-
-		if (change != null)
-			change.setTextType("java");
-
-		manager.manage(rewrite.getCu(), change);
 	}
 }
