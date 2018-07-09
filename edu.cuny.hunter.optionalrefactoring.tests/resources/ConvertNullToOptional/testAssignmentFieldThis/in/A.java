@@ -12,7 +12,7 @@ public class A {
 		/** should seed: { "a", "nullControl"}
 		 * 	should propagate: {{"a","b"},{"nullControl"}}
 		 */
-		
+
 		this.a = null;
 		this.b = this.a;
 		this.nullControl = null;
