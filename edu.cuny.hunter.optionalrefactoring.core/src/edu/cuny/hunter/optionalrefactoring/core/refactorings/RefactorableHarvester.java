@@ -10,6 +10,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -121,7 +122,7 @@ public class RefactorableHarvester {
 						// here, we have search match. 
 
 						IJavaElement element = (IJavaElement) match.getElement();
-						if (element.getPrimaryElement().isReadOnly()) {
+						if (element.isReadOnly()) {
 							throw new BinaryElementEncounteredException("Match found a dependency in a non-writable location.", element);
 						}
 						

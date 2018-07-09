@@ -122,28 +122,70 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		// Here we are getting just the seeds without transitive dependencies
 		Set<IJavaElement> seeds = harvester.getSeeds();
-		
+
 		Set<String> actualElements = seeds.stream()
 				.map(element -> element.getElementName().toString())
 				.collect(Collectors.toSet());
-		
+
 		assertNotNull(actualElements);		
 		assertTrue("Expected elements are "+expectedElements.toString()+" and are the same in both sets.", 
 				expectedElements.containsAll(actualElements));
-		
+
 		// Here we are getting all the sets of type dependent entities
 		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts();
 
 		Set<Set<String>> actualSets = sets.stream()
 				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
 				.collect(Collectors.toSet());
-		
+
 		assertNotNull(actualSets);		
-		
+
 		assertTrue("Expected sets contain "+expectedSets.toString()+" and are the same.", 
 				expectedSets.containsAll(actualSets));
 	}
 
+	public void testAssignmentFieldSimpleName() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+	
+	public void testAssignmentFieldThis() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+	
+	public void testAssignmentFieldThisQualified() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+	
+	public void testAssignmentFieldSuper() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+	
+	public void testAssignmentFieldSuperQualified() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+	
+	public void testAssignmentFieldStaticSimpleName() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+	
+	public void testAssignmentFieldStaticQualified() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+	
 	public void testAssignmentLocalVariable() throws Exception {
 		this.helper(setOf("a"), setOf(setOf("a")));
 	}
@@ -200,33 +242,21 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("c","d","e","f","g"),
 						setOf("control")));
 	}
-	
+
 	public void testDeclarationLocalVariableTransitive() throws Exception {
 		this.helper(setOf("a","d","control"), 
 				setOf(setOf("a","b","c"), 
 						setOf("d","e"),
 						setOf("control")));
 	}
-	
+
 	public void testAssignmentFieldTransitive() throws Exception {
 		this.helper(setOf("a","controlNullDependent","d"), 
 				setOf(setOf("a","b","c"),
 						setOf("controlNullDependent"),
 						setOf("d","e")));
 	}
-	
-	public void testAssignmentField() throws Exception {
-		this.helper(setOf("thisQualifiedName", "thisSimpleName", "simpleName", 
-				"superQualifiedName", "superSimpleName", "staticSimpleName", "staticQualifiedName"), 
-				setOf(setOf("superSimpleName"), 
-						setOf("thisQualifiedName"), 
-						setOf("staticQualifiedName"), 
-						setOf("simpleName"), 
-						setOf("thisSimpleName"), 
-						setOf("staticSimpleName"), 
-						setOf("superQualifiedName")));
-	}
-	
+
 	public void testAssignmentFieldArray() throws Exception {
 		this.helper(setOf("thisQualifiedName", "thisSimpleName", "simpleName", 
 				"thisQualifiedNameInitialized", "thisSimpleNameInitialized", "simpleNameInitialized", "fieldAccess"), 
@@ -238,7 +268,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("simpleNameInitialized"),
 						setOf("fieldAccess")));
 	}
-	
+
 	public void testDeclarationField() throws Exception {
 		this.helper(setOf("e", "earray", "einitializedarray", "f", "farray", "finitializedarray"), 
 				setOf(setOf("e"),
@@ -248,7 +278,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("farray"),
 						setOf("finitializedarray")));
 	}
-	
+
 	public void testDeclarationFieldTransitive() throws Exception {
 		this.helper(setOf("a","controlNullDependent","c"), 
 				setOf(setOf("a","b"),
