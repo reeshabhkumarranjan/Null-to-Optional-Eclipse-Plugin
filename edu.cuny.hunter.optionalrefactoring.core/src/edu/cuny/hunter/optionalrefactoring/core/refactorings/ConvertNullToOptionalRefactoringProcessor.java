@@ -282,7 +282,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		return new RefactoringStatus();
 	}
 
-	private RefactoringStatus checkWritabilitiy(IMember member, PreconditionFailure failure) {
+	private RefactoringStatus checkWritability(IMember member, PreconditionFailure failure) {
 		// if (member.isBinary() || member.isReadOnly()) {
 		// return createError(failure, member);
 		// }

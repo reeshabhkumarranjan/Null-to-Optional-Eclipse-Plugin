@@ -10,9 +10,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -29,6 +27,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.BinaryElementEncounteredException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.NotOptionizableException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.ComputationNode;
@@ -91,50 +90,55 @@ public class RefactorableHarvester {
 		this.notN2ORefactorable.clear();
 		this.notRefactorable.clear();
 	}
-	
+
 	public Set<IJavaElement> getSeeds() {
 		return new ASTAscender(refactoringRootNode).seedNulls();
 	}
-	
+
 	public Set<Set<IJavaElement>> harvestRefactorableContexts() throws CoreException {
 		// this worklist starts with the immediate type-dependent entities on null expressions. 
 		Set<IJavaElement> nullSeeds = new ASTAscender(refactoringRootNode).seedNulls();
 
 		this.reset();
-		
+
 		this.workList.addAll(nullSeeds);
 
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
 			// grab the next element.
 			final IJavaElement element = (IJavaElement) this.workList.next();
-			
+
 			// build a search pattern to find all occurrences of the java element.
 			final SearchPattern pattern = SearchPattern.createPattern(element, 
 					IJavaSearchConstants.ALL_OCCURRENCES, 
 					SearchPattern.R_EXACT_MATCH);
-			
+
 			final SearchRequestor requestor = new SearchRequestor() {
 				public void acceptSearchMatch(SearchMatch match)
 						throws CoreException {
 					if (match.getAccuracy() == SearchMatch.A_ACCURATE
 							&& !match.isInsideDocComment()) {
 						// here, we have search match. 
+
+						IJavaElement element = (IJavaElement) match.getElement();
+						if (element.getPrimaryElement().isReadOnly()) {
+							throw new BinaryElementEncounteredException("Match found a dependency in a non-writable location.", element);
+						}
 						
 						// convert the match to an ASTNode.
 						ASTNode node = Util.getExactASTNode(match,
 								RefactorableHarvester.this.monitor);
-						
+
 						// now we have the ASTNode corresponding to the match.
 						// process the matching ASTNode.
 						ASTDescender processor = new ASTDescender(node,
 								Collections.singleton(RefactorableHarvester.this.refactoringRootElement),
 								RefactorableHarvester.this.scopeRoot,
 								RefactorableHarvester.this.monitor);
-						
+
 						// this is a "black box" right now.
 						processor.process();
-						
+
 						// add to the worklist all of the type-dependent stuff we found.
 						RefactorableHarvester.this.workList.addAll(processor.getFound());
 					}
@@ -144,10 +148,11 @@ public class RefactorableHarvester {
 			// here, we're actually doing the search.
 			try {
 				this.searchEngine.search(pattern,
-						new SearchParticipant[] { SearchEngine
-								.getDefaultSearchParticipant() }, this.scopeRoot,
-						requestor, this.monitor);
-				
+						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, 
+						this.scopeRoot,
+						requestor, 
+						this.monitor);
+
 			} catch (final NotOptionizableException e) {
 				this.notN2ORefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
@@ -162,15 +167,15 @@ public class RefactorableHarvester {
 				continue;
 			}
 		}
-		
+
 		this.notN2ORefactorable.retainAll(nullSeeds);
-		
+
 		final Set<ComputationNode> computationForest = Util.trimForest(this.workList
 				.getComputationForest(), this.notRefactorable);
-		
+
 		final Set<Set<IJavaElement>> candidateSets = Util
 				.getElementForest(computationForest);
-		
+
 		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
 		return candidateSets;
 	}
