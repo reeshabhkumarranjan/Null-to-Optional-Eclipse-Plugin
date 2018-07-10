@@ -73,10 +73,10 @@ class ParameterProcessingVisitor extends ASTVisitor {
 			if (elem.isReadOnly() || svd.getName().resolveBoxing())
 				throw new NotOptionizableException(
 						Messages.ASTNodeProcessor_SourceNotPresent, svd);
-			if (svd.resolveBinding().getType().isEqualTo(
-					node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-				throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalArrayUpcast,
-						svd);
+//			if (svd.resolveBinding().getType().isEqualTo(
+//					node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
+//				throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalArrayUpcast,
+//						svd);
 			this.elements.add(elem);
 		}
 

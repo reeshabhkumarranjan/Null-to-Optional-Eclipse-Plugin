@@ -137,6 +137,10 @@ public class RefactorableHarvester {
 							throw new BinaryElementEncounteredException("Match found a dependency in a non-writable location.", element);
 						}
 						
+						if (element.getResource().isDerived()) {
+							throw new BinaryElementEncounteredException("Match found a dependency in generated code.", element);
+						}
+						
 						// convert the match to an ASTNode.
 						ASTNode node = Util.getExactASTNode(match,
 								RefactorableHarvester.this.monitor);

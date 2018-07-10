@@ -22,6 +22,8 @@ import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
+
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.*;
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -134,10 +136,13 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		// Here we are getting all the sets of type dependent entities
 		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts();
 
+		// print to console
+		sets.forEach(set -> Util.candidatePrinter(set));
+
 		Set<Set<String>> actualSets = sets.stream()
 				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
 				.collect(Collectors.toSet());
-
+		
 		assertNotNull(actualSets);		
 
 		assertTrue("Expected sets contain "+expectedSets.toString()+" and are the same.", 
@@ -185,7 +190,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				setOf(setOf("a","b"),
 						setOf("nullControl")));
 	}
-
 
 	public void testAssignmentFieldArray() throws Exception {
 		this.helper(setOf("a","nullControl"), 
@@ -259,6 +263,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("d","e"),
 						setOf("control")));
 	}
+	
 	public void testInvocationConstructor() throws Exception {
 		this.helper(setOf("a","f","o"), 
 				setOf(setOf("a","b","d","g","k"),

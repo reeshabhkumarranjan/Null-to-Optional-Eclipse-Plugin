@@ -355,10 +355,10 @@ class ASTDescender {
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, vdf);
-				if (vdf.resolveBinding().getType().isEqualTo(
-						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-					throw new RefactoringASTException(
-							Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
+//				if (vdf.resolveBinding().getType().isEqualTo(
+//						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
+//					throw new RefactoringASTException(
+//							Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
 				this.found.add(elem);
 				this.processExpression(vdf.getInitializer());
 			}
@@ -375,10 +375,10 @@ class ASTDescender {
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
-				if (vdf.resolveBinding().getType().isEqualTo(
-						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-					throw new RefactoringASTException(
-							Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
+//				if (vdf.resolveBinding().getType().isEqualTo(
+//						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
+//					throw new RefactoringASTException(
+//							Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
 				this.found.add(elem);
 				this.processExpression(vdf.getInitializer());
 			}
@@ -395,11 +395,11 @@ class ASTDescender {
 					if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 						throw new NotOptionizableException(
 								Messages.ASTNodeProcessor_SourceNotPresent, vdf);
-					if (vdf.resolveBinding().getType().isEqualTo(
-							node.getAST().resolveWellKnownType(
-									"java.lang.Object"))) //$NON-NLS-1$
-						throw new RefactoringASTException(
-								Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
+//					if (vdf.resolveBinding().getType().isEqualTo(
+//							node.getAST().resolveWellKnownType(
+//									"java.lang.Object"))) //$NON-NLS-1$
+//						throw new RefactoringASTException(
+//								Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
 					this.found.add(elem);
 					this.processExpression(vdf.getInitializer());
 				}
@@ -583,10 +583,10 @@ class ASTDescender {
 			if (elem.isReadOnly() || svd.getName().resolveBoxing())
 				throw new NotOptionizableException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
-			if (svd.resolveBinding().getType().isEqualTo(
-					node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-				throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalArrayUpcast,
-						svd);
+//			if (svd.resolveBinding().getType().isEqualTo(
+//					node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
+//				throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalArrayUpcast,
+//						svd);
 
 			this.found.add(elem);
 
@@ -643,10 +643,10 @@ class ASTDescender {
 				if (elem.isReadOnly() || name.resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
-				if (name.resolveTypeBinding().isEqualTo(
-						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-					throw new RefactoringASTException(
-							Messages.ASTNodeProcessor_IllegalArrayUpcast, name);
+//				if (name.resolveTypeBinding().isEqualTo(
+//						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
+//					throw new RefactoringASTException(
+//							Messages.ASTNodeProcessor_IllegalArrayUpcast, name);
 				this.found.add(elem);
 			}
 			break;
@@ -726,10 +726,10 @@ class ASTDescender {
 				if (elem.isReadOnly() || fieldAccess.resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
-				if (fieldAccess.resolveTypeBinding().isEqualTo(
-						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-					throw new RefactoringASTException(
-							Messages.ASTNodeProcessor_IllegalArrayUpcast, fieldAccess);
+//				if (fieldAccess.resolveTypeBinding().isEqualTo(
+//						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
+//					throw new RefactoringASTException(
+//							Messages.ASTNodeProcessor_IllegalArrayUpcast, fieldAccess);
 				this.found.add(elem);
 			}
 			break;
@@ -789,10 +789,10 @@ class ASTDescender {
 			if (elem.isReadOnly() || superFieldAccess.resolveBoxing())
 				throw new NotOptionizableException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
-			if (superFieldAccess.resolveTypeBinding().isEqualTo(
-					node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-				throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalArrayUpcast,
-						superFieldAccess);
+//			if (superFieldAccess.resolveTypeBinding().isEqualTo(
+//					node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
+//				throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalArrayUpcast,
+//						superFieldAccess);
 			this.found.add(elem);
 			break;
 		}
@@ -825,10 +825,10 @@ class ASTDescender {
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, vdf);
-				if (vdf.resolveBinding().getType().isEqualTo(
-						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-					throw new RefactoringASTException(
-							Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
+//				if (vdf.resolveBinding().getType().isEqualTo(
+//						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
+//					throw new RefactoringASTException(
+//							Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
 				this.found.add(elem);
 			}
 			break;
