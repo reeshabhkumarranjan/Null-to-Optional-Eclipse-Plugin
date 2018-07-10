@@ -48,7 +48,6 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.TreeTrimingVisitor;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.BinaryElementEncounteredException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
@@ -279,18 +278,6 @@ public interface Util {
 		while (trav.getNodeType() != ASTNode.METHOD_DECLARATION)
 			trav = trav.getParent();
 		return (MethodDeclaration) trav;
-	}
-
-	public static Set<ComputationNode> trimForest(Set<ComputationNode> computationForest,
-			Set<IJavaElement> nonEnumerizableList) {
-		final Set<ComputationNode> ret = new LinkedHashSet<>(computationForest);
-		final TreeTrimingVisitor visitor = new TreeTrimingVisitor(ret,
-				nonEnumerizableList);
-		// for each root in the computation forest
-		for (ComputationNode root : computationForest) {
-			root.accept(visitor);
-		}
-		return ret;
 	}
 	
 	public static Set<Set<IJavaElement>> getElementForest(Set<ComputationNode> computationForest) {

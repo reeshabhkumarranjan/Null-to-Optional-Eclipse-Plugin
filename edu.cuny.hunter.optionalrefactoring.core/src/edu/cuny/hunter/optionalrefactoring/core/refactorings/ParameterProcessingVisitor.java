@@ -18,7 +18,7 @@ import edu.cuny.hunter.optionalrefactoring.core.exceptions.NotOptionizableExcept
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
-public class ParameterProcessingVisitor extends ASTVisitor {
+class ParameterProcessingVisitor extends ASTVisitor {
 	private final Set<IJavaElement> elements = new LinkedHashSet<>();
 	private final Set<Expression> expressions = new LinkedHashSet<>();
 

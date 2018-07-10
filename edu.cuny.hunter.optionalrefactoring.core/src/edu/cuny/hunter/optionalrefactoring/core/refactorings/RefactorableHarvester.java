@@ -10,7 +10,6 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
@@ -92,6 +91,18 @@ public class RefactorableHarvester {
 		this.notRefactorable.clear();
 	}
 
+	private Set<ComputationNode> trimForest(Set<ComputationNode> computationForest,
+			Set<IJavaElement> nonEnumerizableList) {
+		final Set<ComputationNode> ret = new LinkedHashSet<>(computationForest);
+		final TreeTrimingVisitor visitor = new TreeTrimingVisitor(ret,
+				nonEnumerizableList);
+		// for each root in the computation forest
+		for (ComputationNode root : computationForest) {
+			root.accept(visitor);
+		}
+		return ret;
+	}
+
 	public Set<IJavaElement> getSeeds() {
 		return new ASTAscender(refactoringRootNode).seedNulls();
 	}
@@ -171,7 +182,7 @@ public class RefactorableHarvester {
 
 		this.notN2ORefactorable.retainAll(nullSeeds);
 
-		final Set<ComputationNode> computationForest = Util.trimForest(this.workList
+		final Set<ComputationNode> computationForest = this.trimForest(this.workList
 				.getComputationForest(), this.notRefactorable);
 
 		final Set<Set<IJavaElement>> candidateSets = Util

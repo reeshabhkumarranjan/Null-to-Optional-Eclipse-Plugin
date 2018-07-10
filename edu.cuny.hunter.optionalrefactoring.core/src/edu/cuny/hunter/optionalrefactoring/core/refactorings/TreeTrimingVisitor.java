@@ -9,7 +9,7 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.UnionComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.utils.ValuedComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Visitor;
 
-public class TreeTrimingVisitor implements Visitor {
+class TreeTrimingVisitor implements Visitor {
 	private final Set<ComputationNode> computationForest;
 	private final Set<IJavaElement> nonEnumerizableList;
 

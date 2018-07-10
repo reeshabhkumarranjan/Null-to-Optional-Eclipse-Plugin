@@ -56,7 +56,7 @@ import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 
-public class ASTDescender {
+class ASTDescender {
 
 	private static boolean containedIn(ASTNode node, Expression name) {
 		ASTNode curr = name;

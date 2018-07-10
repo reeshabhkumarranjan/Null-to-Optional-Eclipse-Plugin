@@ -47,7 +47,7 @@ import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTExcepti
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.UndeterminedNodeBinding;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
-public class ASTAscender {
+class ASTAscender {
 
 	private final SearchEngine searchEngine = new SearchEngine();
 	private final ASTNode node;
