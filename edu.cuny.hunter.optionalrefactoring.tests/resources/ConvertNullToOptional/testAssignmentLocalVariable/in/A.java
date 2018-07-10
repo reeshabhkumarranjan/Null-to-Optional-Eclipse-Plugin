@@ -3,10 +3,17 @@ package p;
 public class A {
 	
 	void m() {
-		
-		A a = new A();
+		/**
+		 * should seed: {"a","nullControl"}
+		 * should propagate: {{"a","b"},{"nullControl"}}
+		 */
+		A a;
 		a = null;
-		
+		A b;
+		b = a;
+		A nullControl;
+		nullControl = null;
+		A control;
 	}
 	
 }

@@ -8,11 +8,12 @@ public class A {
 	A control;
 
 	void fieldAssignmentTest() {
-		/** should seed: { "a","nullControl" }
+
+		/** should seed: { "a", "nullControl"}
 		 * 	should propagate: {{"a","b"},{"nullControl"}}
 		 */
-		a = null;
-		b = a;
-		nullControl = null;
+		A.this.a = null;
+		A.this.b = A.this.a;
+		A.this.nullControl = null;
 	}
 }

@@ -21,9 +21,8 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
-
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
-import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
+import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.*;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -123,15 +122,15 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		// Here we are getting just the seeds without transitive dependencies
 		Set<IJavaElement> seeds = harvester.getSeeds();
-		
+
 		Set<String> actualElements = seeds.stream()
 				.map(element -> element.getElementName().toString())
 				.collect(Collectors.toSet());
-		
+
 		assertNotNull(actualElements);		
-		assertTrue("Expected sets contain "+expectedElements.toString()+" and are the same.", 
+		assertTrue("Expected elements are "+expectedElements.toString()+" and are the same in both sets.", 
 				expectedElements.containsAll(actualElements));
-		
+
 		// Here we are getting all the sets of type dependent entities
 		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts();
 
@@ -140,111 +139,157 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				.collect(Collectors.toSet());
 
 		assertNotNull(actualSets);		
+
 		assertTrue("Expected sets contain "+expectedSets.toString()+" and are the same.", 
 				expectedSets.containsAll(actualSets));
 	}
 
-	public void testAssignmentFieldQualifiedName() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+	public void testAssignmentFieldSimpleName() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
 	}
 
-	public void testAssignmentFieldSimpleName() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+	public void testAssignmentFieldThis() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+
+	public void testAssignmentFieldThisQualified() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
 	}
 
 	public void testAssignmentFieldSuper() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));	
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
 	}
 
-	public void testAssignmentFieldThisQualifiedName() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));	
+	public void testAssignmentFieldSuperQualified() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
 	}
 
-	public void testAssignmentFieldThisSimpleName() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));	
+	public void testAssignmentFieldStaticSimpleName() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+
+	public void testAssignmentFieldStaticQualified() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+
+
+	public void testAssignmentFieldArray() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
+	}
+
+	public void testAssignmentFieldTransitive() throws Exception {
+		this.helper(setOf("a","controlNullDependent","d"), 
+				setOf(setOf("a","b","c"),
+						setOf("controlNullDependent"),
+						setOf("d","e")));
 	}
 
 	public void testAssignmentLocalVariable() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
 	}
 
-	public void testAssignmentLocalVariableArrayAccess() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+	public void testAssignmentLocalVariableArray() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
 	}
 
-	public void testAssignmentLocalVariableFieldAccess() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+	public void testAssignmentLocalVariableTransitive() throws Exception {
+		this.helper(setOf("a","e","control"), 
+				setOf(setOf("a","b"),
+						setOf("c","d","e","f","g"),
+						setOf("control")));
 	}
 
-	public void testAssignmentLocalVariableArrayAccessFieldAccess() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+	public void testDeclarationField() throws Exception {
+		this.helper(setOf("e", "earray", "einitializedarray", "f", "farray", "finitializedarray"), 
+				setOf(setOf("e"),
+						setOf("earray"),
+						setOf("einitializedarray"),
+						setOf("f"),
+						setOf("farray"),
+						setOf("finitializedarray")));
+	}
+	
+	public void testDeclarationFieldArray() throws Exception {
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
 	}
 
-	public void testAssignmentLocalVariableFieldAccessArrayAccess() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+	public void testDeclarationFieldTransitive() throws Exception {
+		this.helper(setOf("a","controlNullDependent","c"), 
+				setOf(setOf("a","b"),
+						setOf("c","d","e"),
+						setOf("controlNullDependent")));
 	}
 
 	public void testDeclarationLocalVariable() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+		this.helper(setOf("a"), setOf(setOf("a")));
 	}
 
 	public void testDeclarationLocalVariableArray() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));
+		this.helper(setOf("a","nullControl"), 
+				setOf(setOf("a","b"),
+						setOf("nullControl")));
 	}
 
+
+	public void testDeclarationLocalVariableTransitive() throws Exception {
+		this.helper(setOf("a","d","control"), 
+				setOf(setOf("a","b","c"), 
+						setOf("d","e"),
+						setOf("control")));
+	}
 	public void testInvocationConstructor() throws Exception {
-		this.helper(Util.setCons("o"), Util.setCons(Util.setCons("a")));
+		this.helper(setOf("a","f","o"), 
+				setOf(setOf("a","b","d","g","k"),
+						setOf("f","i","m"),
+						setOf("o")));
 	}
 
 	public void testInvocationMethod() throws Exception {
-		this.helper(Util.setCons("o"), Util.setCons(Util.setCons("a")));	
+		this.helper(setOf("k","m","o"), 
+				setOf(setOf("o"),
+						setOf("m","i","f"),
+						setOf("k","g","d","b","a")));	
 	}
 
 	public void testInvocationSuperConstructor() throws Exception {
-		this.helper(Util.setCons("o"), Util.setCons(Util.setCons("a")));	
+		this.helper(setOf("g","i"), 
+				setOf(setOf("g","d","b","a"),
+						setOf("i","f")));	
 	}
 
 	public void testNewStatement() throws Exception {
-		this.helper(Util.setCons("o"), Util.setCons(Util.setCons("a")));	
+		this.helper(setOf("l","n","p","r"), 
+				setOf(setOf("l","g","d","b","a"),
+						setOf("n","i","f","a"),
+						setOf("p","k","c","a"),
+						setOf("r","c","a")));	
 	}
 
 	public void testReturnStatement() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a")));	
-	}
-
-	public void testAssignmentLocalVariableTransitive2arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
-	}
-
-	public void testAssignmentLocalVariableTransitive1arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
-	}
-
-	public void testAssignmentLocalVariableTransitive2arityAnd1arity() throws Exception {
-		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"),Util.setCons("d","e")));
-	}
-	
-	public void testDeclarationLocalVariableTransitive1arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
-	}
-	
-	public void testDeclarationLocalVariableTransitive2arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
-	}
-	
-	public void testDeclarationLocalVariableTransitive2arityAnd1arity() throws Exception {
-		this.helper(Util.setCons("a","d"), Util.setCons(Util.setCons("a","b","c"), Util.setCons("d","e")));
-	}
-	
-	public void testAssignmentFieldTransitive2arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b","c")));
-	}
-	
-	public void testAssignmentFieldTransitive1arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
-	}
-	
-	public void testAssignmentLocalVariableArrayAccessTransitive1arity() throws Exception {
-		this.helper(Util.setCons("a"), Util.setCons(Util.setCons("a","b")));
+		this.helper(setOf("nullReturner", "extendedNullReturner", "composedNullReturner", "controlNullReturner"), 
+				setOf(setOf("nullReturner", "extendedNullReturner", "composedNullReturner"),
+						setOf("controlNullReturner")));	
 	}
 }

@@ -13,10 +13,10 @@ public class A extends Super {
 	void fieldAssignmentTest() {
 
 		/** should seed: { "a", "nullControl"}
-		 * 	should propagate: {{"a","b"},{"nullControl"}}
+		 *	should propagate: {{"a","b"},{"nullControl"}}
 		 */
-		super.a = null;
-		b = super.a;
+		A.super.a = null;
+		b = A.super.a;
 		nullControl = null;		
 	}
 }

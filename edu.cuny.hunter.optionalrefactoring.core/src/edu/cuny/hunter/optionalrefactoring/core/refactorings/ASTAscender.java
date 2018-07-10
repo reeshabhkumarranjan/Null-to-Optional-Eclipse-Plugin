@@ -10,13 +10,14 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.ITypeParameter;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
+import org.eclipse.jdt.core.dom.ArrayCreation;
+import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
+import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
@@ -27,6 +28,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
@@ -42,7 +44,6 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.UndeterminedNodeBinding;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -68,7 +69,7 @@ public class ASTAscender {
 		return candidates;
 	}
 
-	private <T extends ASTNode> ASTNode getDeclaring(Class<T> type, ASTNode node) {
+	private <T extends ASTNode> ASTNode getContaining(Class<T> type, ASTNode node) {
 		ASTNode curr = node;
 		while (curr != null && (curr.getClass() != type)) {
 			curr = curr.getParent();
@@ -94,7 +95,15 @@ public class ASTAscender {
 			break;
 			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : this.processVariableDeclarationFragment((VariableDeclarationFragment)node);
 			break;
+			case ASTNode.ARRAY_INITIALIZER : this.processArrayInitializer((ArrayInitializer)node);
+			break;
+			case ASTNode.PARENTHESIZED_EXPRESSION : this.processParenthesizedExpression((ParenthesizedExpression)node);
+			break;
+			case ASTNode.CONDITIONAL_EXPRESSION : this.processConditionalExpression((ConditionalExpression)node);
+			break;
 			case ASTNode.SINGLE_VARIABLE_DECLARATION : this.processSingleVariableDeclaration((SingleVariableDeclaration)node);
+			break;
+			case ASTNode.INFIX_EXPRESSION :
 			break;
 			default : throw new UndeterminedNodeBinding(node, "While trying to process the parent of an encountered NullLiteral: ");
 			}
@@ -106,8 +115,20 @@ public class ASTAscender {
 		}
 	}
 
+	private void processConditionalExpression(ConditionalExpression node2) {
+		ASTNode parent = node2.getParent();
+		if (parent != null) process(parent);
+		else throw new UndeterminedNodeBinding(node2, "While trying to process a Conditional Expression node: ");
+	}
+
+	private void processParenthesizedExpression(ParenthesizedExpression node2) {
+		ASTNode parent = node2.getParent();
+		if (parent != null) process(parent);
+		else throw new UndeterminedNodeBinding(node2, "While trying to process a Parenthesized Expression node: ");
+	}
+
 	private void processReturnStatement(ReturnStatement node) throws RefactoringASTException {
-		ASTNode methodDecl = getDeclaring(MethodDeclaration.class, node); 
+		ASTNode methodDecl = getContaining(MethodDeclaration.class, node); 
 		if (methodDecl instanceof MethodDeclaration){
 			IMethodBinding imb = ((MethodDeclaration)methodDecl).resolveBinding();
 			if (imb != null) {
@@ -179,6 +200,13 @@ public class ASTAscender {
 		}
 		default : throw new UndeterminedNodeBinding(node, "While trying to process a Field Access node: ");
 		}
+	}
+
+	private void processArrayInitializer(ArrayInitializer node) {
+		ASTNode arrayCreation = getContaining(ArrayCreation.class, node);
+		ASTNode parent = arrayCreation.getParent();
+		if (parent != null) process(parent);
+		else throw new UndeterminedNodeBinding(node, "While trying to process an Array Initializer node: ");
 	}
 
 	private void processArrayAccess(Expression node) throws UndeterminedNodeBinding {
