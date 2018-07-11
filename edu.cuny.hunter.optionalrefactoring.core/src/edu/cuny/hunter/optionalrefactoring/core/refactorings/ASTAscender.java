@@ -203,10 +203,19 @@ class ASTAscender {
 	}
 
 	private void processArrayInitializer(ArrayInitializer node) {
-		ASTNode arrayCreation = getContaining(ArrayCreation.class, node);
-		ASTNode parent = arrayCreation.getParent();
-		if (parent != null) process(parent);
-		else throw new UndeterminedNodeBinding(node, "While trying to process an Array Initializer node: ");
+		ASTNode arrayCreationOrVariableDeclarationFragment = node.getParent();
+		switch (arrayCreationOrVariableDeclarationFragment.getNodeType()) {
+		case ASTNode.ARRAY_CREATION : {
+			ASTNode target = arrayCreationOrVariableDeclarationFragment.getParent();
+			if (target != null) {
+				process(target);
+				break;
+			}
+		}
+		case ASTNode.VARIABLE_DECLARATION_FRAGMENT : process(arrayCreationOrVariableDeclarationFragment);
+		break;
+		default : throw new UndeterminedNodeBinding(node, "While trying to process an Array Initializer node: ");
+		}
 	}
 
 	private void processArrayAccess(Expression node) throws UndeterminedNodeBinding {

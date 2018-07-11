@@ -301,6 +301,8 @@ public interface Util {
 	// temporary development method for console logging extracted results
 	public static void candidatePrinter(Set<IJavaElement> refactorableContexts2) {
 		if (refactorableContexts2.isEmpty()) Logger.getAnonymousLogger().info(refactorableContexts2+" is empty!");
-		refactorableContexts2.forEach(element -> Logger.getAnonymousLogger().info(element.toString()));
+		System.out.print("{");
+		refactorableContexts2.forEach(element -> System.out.print(element.getElementName()+","));
+		System.out.print("}");
 	}
 }

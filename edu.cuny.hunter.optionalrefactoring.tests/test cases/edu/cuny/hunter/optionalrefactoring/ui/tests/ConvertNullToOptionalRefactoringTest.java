@@ -22,6 +22,8 @@ import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
+
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.*;
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -124,7 +126,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		Set<IJavaElement> seeds = harvester.getSeeds();
 
 		Set<String> actualElements = seeds.stream()
-				.map(element -> element.getElementName().toString())
+				.map(element -> element.getElementName())
 				.collect(Collectors.toSet());
 
 		assertNotNull(actualElements);		
@@ -134,10 +136,19 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		// Here we are getting all the sets of type dependent entities
 		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts();
 
+		// print to console
+		System.out.println(this.getName());
+		System.out.print("{");
+		sets.forEach(set -> {
+			Util.candidatePrinter(set);
+			System.out.print(", ");
+		});
+		System.out.println("}");
+
 		Set<Set<String>> actualSets = sets.stream()
 				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
 				.collect(Collectors.toSet());
-
+		
 		assertNotNull(actualSets);		
 
 		assertTrue("Expected sets contain "+expectedSets.toString()+" and are the same.", 
@@ -185,7 +196,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				setOf(setOf("a","b"),
 						setOf("nullControl")));
 	}
-
 
 	public void testAssignmentFieldArray() throws Exception {
 		this.helper(setOf("a","nullControl"), 
@@ -259,6 +269,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("d","e"),
 						setOf("control")));
 	}
+	
 	public void testInvocationConstructor() throws Exception {
 		this.helper(setOf("a","f","o"), 
 				setOf(setOf("a","b","d","g","k"),
@@ -280,11 +291,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testNewStatement() throws Exception {
-		this.helper(setOf("l","n","p","r"), 
-				setOf(setOf("l","g","d","b","a"),
-						setOf("n","i","f","a"),
-						setOf("p","k","c","a"),
-						setOf("r","c","a")));	
+		this.helper(setOf("k","m","o"), 
+				setOf(setOf("k","g","d","b","a"),
+						setOf("m","i","f"),
+						setOf("o")));	
 	}
 
 	public void testReturnStatement() throws Exception {
