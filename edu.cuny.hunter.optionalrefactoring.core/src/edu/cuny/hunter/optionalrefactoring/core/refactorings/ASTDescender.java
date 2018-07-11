@@ -133,11 +133,6 @@ class ASTDescender {
 	}
 
 	public void process() throws CoreException {
-		// boxing.
-//		if (this.name != null && this.name.resolveBoxing())
-//			throw new RefactoringASTException(
-//					Messages.ASTNodeProcessor_EncounteredBoxedExpression, this.name);
-
 		if (this.name != null)
 			this.process(this.name);
 	}
@@ -334,12 +329,6 @@ class ASTDescender {
 				this.processExpression(assignment.getLeftHandSide());
 				this.processExpression(assignment.getRightHandSide());
 			}
-
-//			else if (!Util.isSuspiciousAssignmentOperator(assignment
-//					.getOperator()))
-//				throw new DefinitelyNotEnumerizableOperationException(
-//						Messages.ASTNodeProcessor_IllegalAssignmentExpression, assignment
-//								.getOperator(), node);
 			else
 				throw new RefactoringASTException(
 						Messages.ASTNodeProcessor_IllegalAssignmentExpression, node);
@@ -355,10 +344,6 @@ class ASTDescender {
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, vdf);
-//				if (vdf.resolveBinding().getType().isEqualTo(
-//						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-//					throw new RefactoringASTException(
-//							Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
 				this.found.add(elem);
 				this.processExpression(vdf.getInitializer());
 			}
@@ -375,10 +360,6 @@ class ASTDescender {
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
-//				if (vdf.resolveBinding().getType().isEqualTo(
-//						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-//					throw new RefactoringASTException(
-//							Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
 				this.found.add(elem);
 				this.processExpression(vdf.getInitializer());
 			}
@@ -395,11 +376,6 @@ class ASTDescender {
 					if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 						throw new NotOptionizableException(
 								Messages.ASTNodeProcessor_SourceNotPresent, vdf);
-//					if (vdf.resolveBinding().getType().isEqualTo(
-//							node.getAST().resolveWellKnownType(
-//									"java.lang.Object"))) //$NON-NLS-1$
-//						throw new RefactoringASTException(
-//								Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
 					this.found.add(elem);
 					this.processExpression(vdf.getInitializer());
 				}
@@ -583,11 +559,7 @@ class ASTDescender {
 			if (elem.isReadOnly() || svd.getName().resolveBoxing())
 				throw new NotOptionizableException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
-//			if (svd.resolveBinding().getType().isEqualTo(
-//					node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-//				throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalArrayUpcast,
-//						svd);
-
+			
 			this.found.add(elem);
 
 			// take care of remote usage.
@@ -601,13 +573,7 @@ class ASTDescender {
 			break;
 		}
 
-		case ASTNode.CAST_EXPRESSION: {
-//			final CastExpression cast = (CastExpression) node;
-//			throw new NonEnumerizableCastExpression(Messages.ASTNodeProcessor_IllegalNodeContext,
-//					node, cast.getExpression().resolveTypeBinding(), cast
-//							.getType().resolveBinding());
-		}
-
+		case ASTNode.CAST_EXPRESSION:
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
 		case ASTNode.IF_STATEMENT:
 		case ASTNode.BOOLEAN_LITERAL:
@@ -643,10 +609,6 @@ class ASTDescender {
 				if (elem.isReadOnly() || name.resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
-//				if (name.resolveTypeBinding().isEqualTo(
-//						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-//					throw new RefactoringASTException(
-//							Messages.ASTNodeProcessor_IllegalArrayUpcast, name);
 				this.found.add(elem);
 			}
 			break;
@@ -676,20 +638,8 @@ class ASTDescender {
 
 		case ASTNode.ASSIGNMENT: {
 			final Assignment assignment = (Assignment) node;
-//			if (assignment.getOperator() == Assignment.Operator.ASSIGN) {
 				this.processExpression(assignment.getLeftHandSide());
 				this.processExpression(assignment.getRightHandSide());
-//			}
-
-//			else if (!Util.isSuspiciousAssignmentOperator(assignment
-//					.getOperator()))
-//				throw new DefinitelyNotEnumerizableOperationException(
-//						Messages.ASTNodeProcessor_IllegalAssignmentExpression, assignment
-//								.getOperator(), node);
-//			else
-//				throw new NonEnumerizableOperationException(
-//						Messages.ASTNodeProcessor_IllegalAssignmentExpression, assignment
-//								.getOperator(), node);
 			break;
 		}
 
@@ -726,37 +676,12 @@ class ASTDescender {
 				if (elem.isReadOnly() || fieldAccess.resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
-//				if (fieldAccess.resolveTypeBinding().isEqualTo(
-//						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-//					throw new RefactoringASTException(
-//							Messages.ASTNodeProcessor_IllegalArrayUpcast, fieldAccess);
 				this.found.add(elem);
 			}
 			break;
 		}
 
-		case ASTNode.INFIX_EXPRESSION: {
-			final InfixExpression ie = (InfixExpression) node;
-//			final InfixExpression.Operator op = ie.getOperator();
-//			if (Util.isLegalInfixOperator(op)) {
-//				if (Util.inNeedOfTransformation(op)) {
-//					final ISourceRange range = new SourceRange(ie
-//							.getStartPosition(), ie.getLength());
-//					this.legalEncounteredN2ORefactorableSourceLocations
-//							.add(range);
-//				}
-//				this.processExpression(ie.getLeftOperand());
-//				this.processExpression(ie.getRightOperand());
-//			}
-//
-//			else if (!Util.isSuspiciousInfixOperator(op))
-//				throw new DefinitelyNotEnumerizableOperationException(
-//						Messages.ASTNodeProcessor_IllegalInfixExpression, op, node);
-//			else
-//				throw new NonEnumerizableOperationException(
-//						Messages.ASTNodeProcessor_IllegalInfixExpression, op, node);
-			break;
-		}
+		case ASTNode.INFIX_EXPRESSION:
 
 		case ASTNode.METHOD_INVOCATION: {
 			final MethodInvocation m = (MethodInvocation) node;
@@ -789,10 +714,6 @@ class ASTDescender {
 			if (elem.isReadOnly() || superFieldAccess.resolveBoxing())
 				throw new NotOptionizableException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
-//			if (superFieldAccess.resolveTypeBinding().isEqualTo(
-//					node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-//				throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalArrayUpcast,
-//						superFieldAccess);
 			this.found.add(elem);
 			break;
 		}
@@ -825,10 +746,6 @@ class ASTDescender {
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, vdf);
-//				if (vdf.resolveBinding().getType().isEqualTo(
-//						node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-//					throw new RefactoringASTException(
-//							Messages.ASTNodeProcessor_IllegalArrayUpcast, vdf);
 				this.found.add(elem);
 			}
 			break;
@@ -837,13 +754,7 @@ class ASTDescender {
 		case ASTNode.NULL_LITERAL : 
 			break;
 
-		case ASTNode.CAST_EXPRESSION: {
-//			final CastExpression cast = (CastExpression) node;
-//			throw new NonEnumerizableCastExpression(Messages.ASTNodeProcessor_IllegalNodeContext,
-//					node, cast.getExpression().resolveTypeBinding(), cast
-//							.getType().resolveBinding());
-		}
-
+		case ASTNode.CAST_EXPRESSION:
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
 		case ASTNode.IF_STATEMENT:
 		case ASTNode.BOOLEAN_LITERAL:
