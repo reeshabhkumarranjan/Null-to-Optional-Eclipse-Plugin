@@ -2,16 +2,17 @@ package edu.cuny.hunter.optionalrefactoring.eval.handlers;
 
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOptionalRefactoringProcessor;
 
+import com.google.common.collect.Lists;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
-import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
@@ -41,6 +42,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.osgi.framework.FrameworkUtil;
 
+import edu.cuny.citytech.refactoring.common.eval.handlers.EvaluateRefactoringHandler;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringContextSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
@@ -53,7 +55,7 @@ import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
  * @see org.eclipse.core.commands.AbstractHandler
  */
 @SuppressWarnings("deprecation")
-public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHandler {
+public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRefactoringHandler {
 
 	private static final boolean BUILD_WORKSPACE = false;
 	private static final RefactoringContextSettings DEFAULT_SETTINGS = RefactoringContextSettings.getDefault();
@@ -68,7 +70,10 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
-			try {
+			List<String> resultsHeader = Lists.newArrayList("");
+			
+			try (CSVPrinter resultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("results.csv", 
+					resultsHeader.toArray(new String[resultsHeader.size()])))	{
 				if (BUILD_WORKSPACE) {
 					// build the workspace.
 					monitor.beginTask("Building workspace ...", IProgressMonitor.UNKNOWN);
@@ -106,13 +111,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 			} catch (Exception e) {
 				return new Status(IStatus.ERROR, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
 						"Encountered exception during evaluation", e);
-			} finally {
-//				try {
-					// closing the files writer after done writing
-//				} catch (IOException e) {
-//					return new Status(IStatus.ERROR, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
-//							"Encountered exception during file closing", e);
-//				}
 			}
 
 			return new Status(IStatus.OK, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
@@ -120,23 +118,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 		}).schedule();
 
 		return null;
-	}
-
-	private Set<SearchMatch> findReferences(Set<? extends IJavaElement> elements) throws CoreException {
-		Set<SearchMatch> ret = new HashSet<>();
-		for (IJavaElement elem : elements) {
-			new SearchEngine().search(
-					SearchPattern.createPattern(elem, IJavaSearchConstants.REFERENCES, SearchPattern.R_EXACT_MATCH),
-					new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
-					SearchEngine.createWorkspaceScope(), new SearchRequestor() {
-
-						@Override
-						public void acceptSearchMatch(SearchMatch match) throws CoreException {
-							ret.add(match);
-						}
-					}, new NullProgressMonitor());
-		}
-		return ret;
 	}
 
 	private static IType[] getAllDeclaringTypeSubtypes(IMethod method) throws JavaModelException {
@@ -170,9 +151,5 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 			}
 		}
 		return methods;
-	}
-
-	private static CSVPrinter createCSVPrinter(String fileName, String[] header) throws IOException {
-		return new CSVPrinter(new FileWriter(fileName, true), CSVFormat.EXCEL.withHeader(header));
 	}
 }

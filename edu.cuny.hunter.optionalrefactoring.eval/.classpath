@@ -8,5 +8,13 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/edu.cuny.hunter.streamrefactoring.eval/lib/commons-csv-docs-1.1.zip!/commons-csv-1.1/apidocs"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.citytech.refactoring.common.core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.citytech.refactoring.common.eval"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.citytech.refactoring.common.tests"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.citytech.refactoring.common.ui"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.optionalrefactoring.core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.optionalrefactoring.tests"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.optionalrefactoring.ui"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.streamrefactoring.core"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
