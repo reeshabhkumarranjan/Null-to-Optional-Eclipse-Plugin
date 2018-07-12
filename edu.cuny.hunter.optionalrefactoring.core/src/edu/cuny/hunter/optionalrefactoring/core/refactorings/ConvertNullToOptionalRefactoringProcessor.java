@@ -73,7 +73,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	/** Does the refactoring use a working copy layer? */
 	private final boolean layer;
-
+	
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 
 	private Set<Set<IJavaElement>> refactorableContexts; // the forest of refactorable type-dependent entities
