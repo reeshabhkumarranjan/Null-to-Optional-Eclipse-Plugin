@@ -681,8 +681,6 @@ class ASTDescender {
 			break;
 		}
 
-		case ASTNode.INFIX_EXPRESSION:
-
 		case ASTNode.METHOD_INVOCATION: {
 			final MethodInvocation m = (MethodInvocation) node;
 			final IMethod meth = (IMethod) m.resolveMethodBinding()

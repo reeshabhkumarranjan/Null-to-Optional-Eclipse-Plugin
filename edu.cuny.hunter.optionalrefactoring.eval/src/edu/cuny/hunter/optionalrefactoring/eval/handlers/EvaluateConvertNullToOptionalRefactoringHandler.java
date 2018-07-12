@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.csv.CSVFormat;
@@ -41,6 +42,7 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.osgi.framework.FrameworkUtil;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringContextSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
 
@@ -54,8 +56,9 @@ import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
 public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHandler {
 
 	private static final boolean BUILD_WORKSPACE = false;
-	private static final String PERFORM_CHANGE_PROPERTY_KEY = "edu.cuny.hunter.optionalrefactoring.eval.performChange";
-	private static final boolean PERFORM_CHANGE_DEFAULT = false;
+	private static final RefactoringContextSettings DEFAULT_SETTINGS = RefactoringContextSettings.getDefault();
+	
+	private RefactoringContextSettings refactoringContextSettings;
 
 	/**
 	 * the command has been executed, so extract extract the needed information
@@ -95,6 +98,9 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 					RefactoringStatus status = new ProcessorBasedRefactoring(processor)
 							.checkAllConditions(new NullProgressMonitor());
 					resultsTimeCollector.stop();
+					
+					// get the environmental variables for refactoring contexts to be considered
+					refactoringContextSettings = this.shouldPerformChange().orElse(DEFAULT_SETTINGS);
 
 				}
 			} catch (Exception e) {
@@ -140,13 +146,13 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 		return allSubtypes;
 	}
 
-	private boolean shouldPerformChange() {
-		String performChangePropertyValue = System.getenv(PERFORM_CHANGE_PROPERTY_KEY);
+	private Optional<RefactoringContextSettings> shouldPerformChange() {
+		Map<String,String> performChangePropertyValue = System.getenv();
 
 		if (performChangePropertyValue == null)
-			return PERFORM_CHANGE_DEFAULT;
+			return Optional.empty();
 		else
-			return Boolean.valueOf(performChangePropertyValue);
+			return Optional.of(RefactoringContextSettings.of(performChangePropertyValue));
 	}
 
 	private static Set<IMethod> getAllMethods(IJavaProject javaProject) throws JavaModelException {
