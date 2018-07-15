@@ -346,8 +346,13 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		return this.compilationUnitToCompilationUnitRewriteMap;
 	}
 
+	public Set<Set<IJavaElement>> getRefactorableSets() {
+		return this.refactorableContexts;
+	}
+	
 	/**
 	 * {@inheritDoc}
+	 * Don't use this!
 	 */
 	@Override
 	public Object[] getElements() {

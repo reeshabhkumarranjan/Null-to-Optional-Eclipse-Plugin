@@ -15,6 +15,5 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.optionalrefactoring.core"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.optionalrefactoring.tests"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.optionalrefactoring.ui"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.streamrefactoring.core"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

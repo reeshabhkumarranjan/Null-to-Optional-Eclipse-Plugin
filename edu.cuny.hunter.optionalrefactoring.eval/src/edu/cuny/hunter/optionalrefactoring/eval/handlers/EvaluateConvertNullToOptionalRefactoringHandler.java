@@ -3,14 +3,20 @@ package edu.cuny.hunter.optionalrefactoring.eval.handlers;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOptionalRefactoringProcessor;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -25,8 +31,10 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
@@ -60,8 +68,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 	private static final boolean BUILD_WORKSPACE = false;
 	private static final RefactoringContextSettings DEFAULT_SETTINGS = RefactoringContextSettings.getDefault();
 	
-	private RefactoringContextSettings refactoringContextSettings;
-
 	/**
 	 * the command has been executed, so extract extract the needed information
 	 * from the application context.
@@ -71,7 +77,8 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
 			List<String> resultsHeader = Lists.newArrayList("");
-			
+			/* TODO: can the dependency on org.apache.commons.csv.CSVPrinter can potentially be resolved by linking
+			 with an updated version of edu.cuny.citytech.refactoring.eval that exports it?? */
 			try (CSVPrinter resultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("results.csv", 
 					resultsHeader.toArray(new String[resultsHeader.size()])))	{
 				if (BUILD_WORKSPACE) {
@@ -88,8 +95,8 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 						throw new IllegalStateException(
 								String.format("Project: %s should compile beforehand.", javaProject.getElementName()));
 
-					// subject.
-					// resultsPrinter.print(javaProject.getElementName());
+
+					resultsPrinter.print(javaProject.getElementName());
 
 					TimeCollector resultsTimeCollector = new TimeCollector();
 
@@ -105,8 +112,22 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					resultsTimeCollector.stop();
 					
 					// get the environmental variables for refactoring contexts to be considered
-					refactoringContextSettings = this.shouldPerformChange().orElse(DEFAULT_SETTINGS);
-
+					RefactoringContextSettings rcs = this.getEnvSettings().orElse(DEFAULT_SETTINGS);
+					
+					List<Set<IJavaElement>> candidateSets = Lists.newArrayList(processor.getRefactorableSets());
+					
+					candidateSets.removeIf(set -> 
+						// check each of the refactoring context settings, and remove sets that contain settings not wanted
+						set.stream().anyMatch(rcs.excludeNonComplying));
+					
+					// Now we have just the sets that we care about
+					
+					// Let's print some information about those
+					
+					// Then let's refactor them
+					
+					// Then let's print some more information about the refactoring
+					
 				}
 			} catch (Exception e) {
 				return new Status(IStatus.ERROR, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
@@ -127,7 +148,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 		return allSubtypes;
 	}
 
-	private Optional<RefactoringContextSettings> shouldPerformChange() {
+	private Optional<RefactoringContextSettings> getEnvSettings() {
 		Map<String,String> performChangePropertyValue = System.getenv();
 
 		if (performChangePropertyValue == null)

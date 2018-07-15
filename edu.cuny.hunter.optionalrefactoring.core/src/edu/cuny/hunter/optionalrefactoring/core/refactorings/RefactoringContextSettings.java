@@ -3,6 +3,12 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+
+import org.eclipse.jdt.core.IField;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ILocalVariable;
+import org.eclipse.jdt.core.IMethod;
 
 import com.google.common.collect.Sets;
 
@@ -46,23 +52,45 @@ public class RefactoringContextSettings {
 		this.settings = contexts;
 	}
 	
-	public boolean refactorsFields() {
+	private boolean refactorsFields() {
 		return settings.contains(ContextType.FIELDS);
 	}
 	
-	public boolean refactorsLocalVars() {
+	private boolean refactorsLocalVars() {
 		return settings.contains(ContextType.LOCAL_VARS);
 	}
 	
-	public boolean refactorsMethodParams() {
+	private boolean refactorsMethodParams() {
 		return settings.contains(ContextType.METHOD_PARAMS);
 	}
 	
-	public boolean refactorsMethodReturns() {
+	private boolean refactorsMethodReturns() {
 		return settings.contains(ContextType.METHOD_RETURNS);
 	}
 	
-	public boolean refactorsUninitializedFields() {
+/*	TODO: implement necessary Utility Method isNotInitialized(IField)
+ *  private boolean refactorsUninitializedFields() {
 		return settings.contains(ContextType.IMPLICIT_FIELDS);
-	}
+	}*/
+
+	public Predicate<IJavaElement> excludeNonComplying = element -> {
+		if (element instanceof IMethod)
+			return !this.refactorsMethodReturns();
+
+		if (element instanceof IField) {
+			if (!this.refactorsFields()) return true;
+
+			/* TODO: implement this static method
+			 * if (Util.isNotInitialized((IField)element))
+			 * 	return !this.refactorsUninitializedFields();
+			*/
+		}
+		if (element instanceof ILocalVariable) {
+			if (!this.refactorsLocalVars()) return true;
+			
+			if (((ILocalVariable) element).isParameter())
+				return !this.refactorsMethodParams();
+		}
+		return false;
+	};
 }
