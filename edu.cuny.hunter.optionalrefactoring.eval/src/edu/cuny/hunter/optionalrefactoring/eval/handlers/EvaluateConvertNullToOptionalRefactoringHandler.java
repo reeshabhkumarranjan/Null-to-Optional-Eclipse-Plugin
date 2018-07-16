@@ -112,9 +112,14 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					for (Set<IJavaElement> set : candidateSets) {
 						// Let's print some information about what's inside
 						for (IJavaElement entity : set) {
-							
+							resultsPrinter.printRecord( 
+									entity.getHandleIdentifier(),
+									entity.getParent().getHandleIdentifier(),
+									entity.getPrimaryElement().getHandleIdentifier());
 						}
 					}
+					resultsPrinter.println();
+					
 					// Then let's refactor them
 					
 					// Then let's print some more information about the refactoring
