@@ -112,7 +112,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					resultsTimeCollector.stop();
 					
 					// get the environmental variables for refactoring contexts to be considered
-					RefactoringContextSettings rcs = this.getEnvSettings().orElse(DEFAULT_SETTINGS);
+					final RefactoringContextSettings rcs = this.getEnvSettings().orElse(DEFAULT_SETTINGS);
 					
 					List<Set<IJavaElement>> candidateSets = Lists.newArrayList(processor.getRefactorableSets());
 					
@@ -121,9 +121,12 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 						set.stream().anyMatch(rcs.excludeNonComplying));
 					
 					// Now we have just the sets that we care about
-					
-					// Let's print some information about those
-					
+					for (Set<IJavaElement> set : candidateSets) {
+						// Let's print some information about what's inside
+						for (IJavaElement element : set) {
+							
+						}
+					}
 					// Then let's refactor them
 					
 					// Then let's print some more information about the refactoring
