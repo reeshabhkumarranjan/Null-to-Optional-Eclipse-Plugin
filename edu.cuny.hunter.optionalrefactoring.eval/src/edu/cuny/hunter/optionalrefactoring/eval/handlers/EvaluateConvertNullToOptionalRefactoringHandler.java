@@ -3,27 +3,17 @@ package edu.cuny.hunter.optionalrefactoring.eval.handlers;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOptionalRefactoringProcessor;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -31,21 +21,13 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.search.IJavaSearchConstants;
-import org.eclipse.jdt.core.search.SearchEngine;
-import org.eclipse.jdt.core.search.SearchMatch;
-import org.eclipse.jdt.core.search.SearchParticipant;
-import org.eclipse.jdt.core.search.SearchPattern;
-import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.osgi.framework.FrameworkUtil;
@@ -55,6 +37,7 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOption
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringContextSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.ProgramEntity;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -76,7 +59,12 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
-			List<String> resultsHeader = Lists.newArrayList("");
+			List<String> resultsHeader = Lists.newArrayList("Program Entity", 
+															"Is Seed", 
+															"Dependency", 
+															"Dependents",
+															"Type Binding",
+															"Context");
 			/* TODO: can the dependency on org.apache.commons.csv.CSVPrinter can potentially be resolved by linking
 			 with an updated version of edu.cuny.citytech.refactoring.eval that exports it?? */
 			try (CSVPrinter resultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("results.csv", 
@@ -123,7 +111,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					// Now we have just the sets that we care about
 					for (Set<IJavaElement> set : candidateSets) {
 						// Let's print some information about what's inside
-						for (IJavaElement element : set) {
+						for (IJavaElement entity : set) {
 							
 						}
 					}

@@ -2,7 +2,7 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import org.eclipse.jdt.core.IJavaElement;
 
-class ProgramEntity {
+public class ProgramEntity {
 	
 	static enum EntityType {
 		SEED, DEPENDENT;
