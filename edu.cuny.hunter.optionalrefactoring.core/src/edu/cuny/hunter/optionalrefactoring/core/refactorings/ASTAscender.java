@@ -33,6 +33,7 @@ import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
@@ -43,6 +44,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.BinaryElementEncounteredException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.UndeterminedNodeBinding;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -81,27 +83,29 @@ class ASTAscender {
 	private void process(ASTNode node) {
 		try {
 			switch (node.getNodeType()) {
-			case ASTNode.ASSIGNMENT : this.processLeftSideOfAssignment(((Assignment)node).getLeftHandSide());
+			case ASTNode.ASSIGNMENT : this.process(((Assignment)node).getLeftHandSide());
 			break;
-			case ASTNode.RETURN_STATEMENT : this.processReturnStatement((ReturnStatement)node);
+			case ASTNode.RETURN_STATEMENT : this.process((ReturnStatement)node);
 			break;
-			case ASTNode.METHOD_INVOCATION : this.processMethodInvocation((MethodInvocation)node);
+			case ASTNode.METHOD_INVOCATION : this.process((MethodInvocation)node);
 			break;
-			case ASTNode.CONSTRUCTOR_INVOCATION : this.processConstructorInvocation((ConstructorInvocation)node);
+			case ASTNode.SUPER_METHOD_INVOCATION : this.process((SuperMethodInvocation)node);
 			break;
-			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : this.processSuperConstructorInvocation((SuperConstructorInvocation)node);
+			case ASTNode.CONSTRUCTOR_INVOCATION : this.process((ConstructorInvocation)node);
 			break;
-			case ASTNode.CLASS_INSTANCE_CREATION : this.processClassInstanceCreation((ClassInstanceCreation)node);
+			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : this.process((SuperConstructorInvocation)node);
 			break;
-			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : this.processVariableDeclarationFragment((VariableDeclarationFragment)node);
+			case ASTNode.CLASS_INSTANCE_CREATION : this.process((ClassInstanceCreation)node);
 			break;
-			case ASTNode.ARRAY_INITIALIZER : this.processArrayInitializer((ArrayInitializer)node);
+			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : this.process((VariableDeclarationFragment)node);
 			break;
-			case ASTNode.PARENTHESIZED_EXPRESSION : this.processParenthesizedExpression((ParenthesizedExpression)node);
+			case ASTNode.ARRAY_INITIALIZER : this.process((ArrayInitializer)node);
 			break;
-			case ASTNode.CONDITIONAL_EXPRESSION : this.processConditionalExpression((ConditionalExpression)node);
+			case ASTNode.PARENTHESIZED_EXPRESSION : this.process((ParenthesizedExpression)node);
 			break;
-			case ASTNode.SINGLE_VARIABLE_DECLARATION : this.processSingleVariableDeclaration((SingleVariableDeclaration)node);
+			case ASTNode.CONDITIONAL_EXPRESSION : this.process((ConditionalExpression)node);
+			break;
+			case ASTNode.SINGLE_VARIABLE_DECLARATION : this.process((SingleVariableDeclaration)node);
 			break;
 			case ASTNode.INFIX_EXPRESSION :
 			break;
@@ -110,24 +114,26 @@ class ASTAscender {
 		} catch (UndeterminedNodeBinding e) {
 			// TODO: save the ambiguous nodes ?
 			Logger.getAnonymousLogger().warning("Unable to process AST node: "+e+".");
+		} catch (BinaryElementEncounteredException e) {
+			Logger.getAnonymousLogger().warning("Unable to process an ASTNode in binary code: "+e+".");		
 		} catch (RefactoringASTException e) {
 			Logger.getAnonymousLogger().warning("Problem with traversing the AST: "+e+".");
 		}
 	}
 
-	private void processConditionalExpression(ConditionalExpression node2) {
+	private void process(ConditionalExpression node2) {
 		ASTNode parent = node2.getParent();
 		if (parent != null) process(parent);
 		else throw new UndeterminedNodeBinding(node2, "While trying to process a Conditional Expression node: ");
 	}
 
-	private void processParenthesizedExpression(ParenthesizedExpression node2) {
+	private void process(ParenthesizedExpression node2) {
 		ASTNode parent = node2.getParent();
 		if (parent != null) process(parent);
 		else throw new UndeterminedNodeBinding(node2, "While trying to process a Parenthesized Expression node: ");
 	}
 
-	private void processReturnStatement(ReturnStatement node) throws RefactoringASTException {
+	private void process(ReturnStatement node) throws RefactoringASTException {
 		ASTNode methodDecl = getContaining(MethodDeclaration.class, node); 
 		if (methodDecl instanceof MethodDeclaration){
 			IMethodBinding imb = ((MethodDeclaration)methodDecl).resolveBinding();
@@ -142,7 +148,7 @@ class ASTAscender {
 		throw new UndeterminedNodeBinding(node, "While trying to process a null return statement in a Method Declaration: ");
 	}
 
-	private void processLeftSideOfAssignment(Expression node) throws UndeterminedNodeBinding {
+	private void process(Expression node) throws UndeterminedNodeBinding {
 		switch (node.getNodeType()) {
 		case ASTNode.QUALIFIED_NAME : processName((Name)node);
 		break;
@@ -202,7 +208,7 @@ class ASTAscender {
 		}
 	}
 
-	private void processArrayInitializer(ArrayInitializer node) {
+	private void process(ArrayInitializer node) {
 		ASTNode arrayCreationOrVariableDeclarationFragment = node.getParent();
 		switch (arrayCreationOrVariableDeclarationFragment.getNodeType()) {
 		case ASTNode.ARRAY_CREATION : {
@@ -222,34 +228,41 @@ class ASTAscender {
 		switch (node.getNodeType()) {
 		case ASTNode.ARRAY_ACCESS : {
 			Expression e = ((ArrayAccess)node).getArray();
-			processLeftSideOfAssignment(e);
+			process(e);
 		} break;
 		default : throw new UndeterminedNodeBinding(node, "While trying to process an Array Access node: ");
 		}
 	}
 
-	private void processClassInstanceCreation(ClassInstanceCreation cic) throws UndeterminedNodeBinding {
+	private void process(ClassInstanceCreation cic) throws UndeterminedNodeBinding {
 		List<Integer> argPositions = getParamPositions(cic);
 		IMethodBinding binding = cic.resolveConstructorBinding();
 		if (binding != null) processInvocation(argPositions, binding);
 		else throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
 	}
 	
-	private void processMethodInvocation(MethodInvocation mi) throws UndeterminedNodeBinding {
+	private void process(MethodInvocation mi) throws UndeterminedNodeBinding {
 		List<Integer> argPositions = getParamPositions(mi);
 		IMethodBinding binding = mi.resolveMethodBinding();
 		if (binding != null) processInvocation(argPositions, binding);
 		else throw new UndeterminedNodeBinding(mi, "While trying to process a Method Invocation node: ");
 	}
 	
-	private void processConstructorInvocation(ConstructorInvocation ci) throws UndeterminedNodeBinding {
+	private void process(SuperMethodInvocation smi) throws UndeterminedNodeBinding {
+		List<Integer> argPositions = getParamPositions(smi);
+		IMethodBinding binding = smi.resolveMethodBinding();
+		if (binding != null) processInvocation(argPositions, binding);
+		else throw new UndeterminedNodeBinding(smi, "While trying to process a Super Method Invocation node: ");
+	}
+	
+	private void process(ConstructorInvocation ci) throws UndeterminedNodeBinding {
 		List<Integer> argPositions = getParamPositions(ci);
 		IMethodBinding binding = ci.resolveConstructorBinding();
 		if (binding != null) processInvocation(argPositions, binding);
 		else throw new UndeterminedNodeBinding(ci, "While trying to process a Constructor Invocation node: ");
 	}
 	
-	private void processSuperConstructorInvocation(SuperConstructorInvocation sci) throws UndeterminedNodeBinding {
+	private void process(SuperConstructorInvocation sci) throws UndeterminedNodeBinding {
 		List<Integer> argPositions = getParamPositions(sci);
 		IMethodBinding binding = sci.resolveConstructorBinding();
 		if (binding != null) processInvocation(argPositions, binding);
@@ -263,6 +276,16 @@ class ASTAscender {
 			SearchRequestor requestor = new SearchRequestor() {
 				@Override
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					
+					IJavaElement element = (IJavaElement) match.getElement();
+					if (element.isReadOnly()) {
+						throw new BinaryElementEncounteredException("Match found a dependency in a non-writable location.", element);
+					}
+					
+					if (element.getResource().isDerived()) {
+						throw new BinaryElementEncounteredException("Match found a dependency in generated code.", element);
+					}
+					
 					MethodDeclaration methodDecl = Util.getMethodDeclaration(Util.getExactASTNode(match, new NullProgressMonitor()));
 					List<SingleVariableDeclaration> params = methodDecl.parameters();					
 					for (Integer i : argPositions) {
@@ -316,7 +339,7 @@ class ASTAscender {
 		return argPositions;
 	}
 
-	private void processVariableDeclarationFragment(VariableDeclarationFragment vdf) throws UndeterminedNodeBinding {
+	private void process(VariableDeclarationFragment vdf) throws UndeterminedNodeBinding {
 		ASTNode node = vdf.getParent();
 		List<VariableDeclarationFragment> fragments;
 		switch (node.getNodeType()) {
@@ -340,7 +363,7 @@ class ASTAscender {
 		this.candidates.addAll(elements);
 	}
 
-	private void processSingleVariableDeclaration(SingleVariableDeclaration node) throws UndeterminedNodeBinding {
+	private void process(SingleVariableDeclaration node) throws UndeterminedNodeBinding {
 		// Single variable declaration nodes are used in a limited number of places, including formal parameter lists and catch clauses. They are not used for field declarations and regular variable declaration statements. 
 		IBinding b = node.resolveBinding();
 		if (b != null) {

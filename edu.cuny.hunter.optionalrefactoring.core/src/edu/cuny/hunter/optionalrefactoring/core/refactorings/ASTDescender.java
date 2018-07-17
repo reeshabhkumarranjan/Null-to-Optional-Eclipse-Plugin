@@ -22,6 +22,7 @@ import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
+import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
@@ -325,13 +326,8 @@ class ASTDescender {
 
 		case ASTNode.ASSIGNMENT: {
 			final Assignment assignment = (Assignment) node;
-			if (assignment.getOperator() == Assignment.Operator.ASSIGN) {
-				this.processExpression(assignment.getLeftHandSide());
-				this.processExpression(assignment.getRightHandSide());
-			}
-			else
-				throw new RefactoringASTException(
-						Messages.ASTNodeProcessor_IllegalAssignmentExpression, node);
+			this.processExpression(assignment.getLeftHandSide());
+			this.processExpression(assignment.getRightHandSide());
 			break;
 		}
 
@@ -559,12 +555,20 @@ class ASTDescender {
 			if (elem.isReadOnly() || svd.getName().resolveBoxing())
 				throw new NotOptionizableException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
-			
+
 			this.found.add(elem);
 
 			// take care of remote usage.
 			// go find variables on the corresponding calls.
 			this.findVariablesForFormal(svd);
+			break;
+		}
+
+
+		case ASTNode.ENHANCED_FOR_STATEMENT : {
+			final SingleVariableDeclaration svd = ((EnhancedForStatement)node).getParameter();
+			final IJavaElement elem = svd.resolveBinding().getJavaElement();
+			this.found.add(elem);
 			break;
 		}
 
@@ -574,16 +578,16 @@ class ASTDescender {
 		}
 
 		case ASTNode.CAST_EXPRESSION:
+		case ASTNode.INSTANCEOF_EXPRESSION:
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
 		case ASTNode.IF_STATEMENT:
 		case ASTNode.BOOLEAN_LITERAL:
 		case ASTNode.NUMBER_LITERAL:
 		case ASTNode.CHARACTER_LITERAL:
 		case ASTNode.POSTFIX_EXPRESSION:
-		case ASTNode.PREFIX_EXPRESSION: {
-			throw new NotOptionizableException(
-					Messages.ASTNodeProcessor_IllegalNodeContext, node);
-		}
+		case ASTNode.PREFIX_EXPRESSION: 
+		case ASTNode.WHILE_STATEMENT:
+			break;
 
 		default: {
 			throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalNodeContext, node);
@@ -638,8 +642,8 @@ class ASTDescender {
 
 		case ASTNode.ASSIGNMENT: {
 			final Assignment assignment = (Assignment) node;
-				this.processExpression(assignment.getLeftHandSide());
-				this.processExpression(assignment.getRightHandSide());
+			this.processExpression(assignment.getLeftHandSide());
+			this.processExpression(assignment.getRightHandSide());
 			break;
 		}
 
@@ -748,21 +752,20 @@ class ASTDescender {
 			}
 			break;
 		}
-		
-		case ASTNode.NULL_LITERAL : 
-			break;
 
+		case ASTNode.NULL_LITERAL : 
 		case ASTNode.CAST_EXPRESSION:
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
 		case ASTNode.IF_STATEMENT:
 		case ASTNode.BOOLEAN_LITERAL:
 		case ASTNode.NUMBER_LITERAL:
 		case ASTNode.CHARACTER_LITERAL:
+		case ASTNode.STRING_LITERAL:
 		case ASTNode.POSTFIX_EXPRESSION:
-		case ASTNode.PREFIX_EXPRESSION: {
-			throw new NotOptionizableException(
-					Messages.ASTNodeProcessor_IllegalNodeContext, node);
-		}
+		case ASTNode.INFIX_EXPRESSION:
+		case ASTNode.PREFIX_EXPRESSION: 
+		case ASTNode.THIS_EXPRESSION:
+			break;
 
 		default: {
 			throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalExpression, node);
