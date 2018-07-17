@@ -134,10 +134,12 @@ public class RefactorableHarvester {
 
 						IJavaElement element = (IJavaElement) match.getElement();
 						if (element.isReadOnly()) {
+							RefactorableHarvester.this.workList.add(element);
 							throw new BinaryElementEncounteredException("Match found a dependency in a non-writable location.", element);
 						}
 						
 						if (element.getResource().isDerived()) {
+							RefactorableHarvester.this.workList.add(element);
 							throw new BinaryElementEncounteredException("Match found a dependency in generated code.", element);
 						}
 						
