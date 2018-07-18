@@ -30,6 +30,7 @@ import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -55,6 +56,7 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.NotOptionizableException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 

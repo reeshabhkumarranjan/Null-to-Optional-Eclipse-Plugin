@@ -106,17 +106,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					
 					Set<Set<IJavaElement>> candidateSets = processor.getRefactorableSets();
 					
-/*					if (candidateSets.isEmpty()) Logger.getAnonymousLogger().severe("empty candidateSets");
-					
-					candidateSets.forEach(set -> {
-						if (set.isEmpty()) Logger.getAnonymousLogger().severe("empty candidateSet");
-					});*/
-					
-					candidateSets.forEach(set -> {
-						System.out.println(set);
-						set.forEach(System.out::println);
-					});
-					
 					candidateSets.removeIf(set -> 
 					// check each of the refactoring context settings, and remove sets that contain settings not wanted
 						set.stream().anyMatch(rcs.excludeNonComplying));

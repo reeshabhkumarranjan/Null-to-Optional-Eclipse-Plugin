@@ -32,6 +32,7 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
@@ -49,6 +50,7 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.BinaryElementEncounteredException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
 /**
@@ -234,6 +236,8 @@ public interface Util {
 		case IJavaElement.TYPE: {
 			return (IMember) elem;
 		}
+		// We are finding import declarations for some reason, they should be ignored
+		case IJavaElement.IMPORT_DECLARATION : throw new RefactoringJavaModelException("Encountered a Method Import Statement", elem);
 		}
 
 		return getIMember(elem.getParent());
