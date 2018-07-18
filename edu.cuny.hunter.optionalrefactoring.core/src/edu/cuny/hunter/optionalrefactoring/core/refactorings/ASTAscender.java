@@ -16,6 +16,7 @@ import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
+import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
@@ -107,6 +108,8 @@ class ASTAscender {
 			break;
 			case ASTNode.SINGLE_VARIABLE_DECLARATION : this.process((SingleVariableDeclaration)node);
 			break;
+			case ASTNode.CAST_EXPRESSION : this.process((CastExpression)node);
+			break;
 			case ASTNode.INFIX_EXPRESSION :
 			break;
 			default : throw new UndeterminedNodeBinding(node, "While trying to process the parent of an encountered NullLiteral: ");
@@ -121,6 +124,13 @@ class ASTAscender {
 		}
 	}
 
+	
+	private void process(CastExpression node) {
+		ASTNode parent = node.getParent();
+		if (parent != null) process(parent);
+		else throw new UndeterminedNodeBinding(node, "While trying to process a Cast Expression node: ");
+	}
+	
 	private void process(ConditionalExpression node2) {
 		ASTNode parent = node2.getParent();
 		if (parent != null) process(parent);
@@ -237,42 +247,56 @@ class ASTAscender {
 	private void process(ClassInstanceCreation cic) throws UndeterminedNodeBinding {
 		List<Integer> argPositions = getParamPositions(cic);
 		IMethodBinding binding = cic.resolveConstructorBinding();
-		if (binding != null) processInvocation(argPositions, binding);
-		else throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
+		if (binding != null) {
+			IMethod method = (IMethod)binding.getJavaElement();
+			if (method != null) 
+				processInvocation(argPositions, method);
+		} else throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
 	}
 	
 	private void process(MethodInvocation mi) throws UndeterminedNodeBinding {
 		List<Integer> argPositions = getParamPositions(mi);
 		IMethodBinding binding = mi.resolveMethodBinding();
-		if (binding != null) processInvocation(argPositions, binding);
-		else throw new UndeterminedNodeBinding(mi, "While trying to process a Method Invocation node: ");
+		if (binding != null) {
+			IMethod method = (IMethod)binding.getJavaElement();
+			if (method != null)
+				processInvocation(argPositions, method);
+		} else throw new UndeterminedNodeBinding(mi, "While trying to process a Method Invocation node: ");
 	}
 	
 	private void process(SuperMethodInvocation smi) throws UndeterminedNodeBinding {
 		List<Integer> argPositions = getParamPositions(smi);
 		IMethodBinding binding = smi.resolveMethodBinding();
-		if (binding != null) processInvocation(argPositions, binding);
-		else throw new UndeterminedNodeBinding(smi, "While trying to process a Super Method Invocation node: ");
+		if (binding != null) {
+			IMethod method = (IMethod)binding.getJavaElement();
+			if (method != null)
+				processInvocation(argPositions, method);
+		} else throw new UndeterminedNodeBinding(smi, "While trying to process a Super Method Invocation node: ");
 	}
 	
 	private void process(ConstructorInvocation ci) throws UndeterminedNodeBinding {
 		List<Integer> argPositions = getParamPositions(ci);
 		IMethodBinding binding = ci.resolveConstructorBinding();
-		if (binding != null) processInvocation(argPositions, binding);
-		else throw new UndeterminedNodeBinding(ci, "While trying to process a Constructor Invocation node: ");
+		if (binding != null) {
+			IMethod method = (IMethod)binding.getJavaElement();
+			if (method != null)
+				processInvocation(argPositions, method);
+		} else throw new UndeterminedNodeBinding(ci, "While trying to process a Constructor Invocation node: ");
 	}
 	
 	private void process(SuperConstructorInvocation sci) throws UndeterminedNodeBinding {
 		List<Integer> argPositions = getParamPositions(sci);
 		IMethodBinding binding = sci.resolveConstructorBinding();
-		if (binding != null) processInvocation(argPositions, binding);
-		else throw new UndeterminedNodeBinding(sci, "While trying to process a Super Constructor Invocation node: ");
+		if (binding != null) {
+			IMethod method = (IMethod)binding.getJavaElement();
+			if (method != null)
+				processInvocation(argPositions, method);
+		} else throw new UndeterminedNodeBinding(sci, "While trying to process a Super Constructor Invocation node: ");
 	}
 
-	private void processInvocation(List<Integer> argPositions, IMethodBinding binding) {
+	private void processInvocation(List<Integer> argPositions, IMethod declaration) {
 		
 		Set<SingleVariableDeclaration> svd = new LinkedHashSet<>();
-			IMethod declaration = (IMethod)binding.getJavaElement();
 			SearchRequestor requestor = new SearchRequestor() {
 				@Override
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {

@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
+
 import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -102,10 +104,10 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					// get the environmental variables for refactoring contexts to be considered
 					final RefactoringContextSettings rcs = this.getEnvSettings().orElse(DEFAULT_SETTINGS);
 					
-					List<Set<IJavaElement>> candidateSets = Lists.newArrayList(processor.getRefactorableSets());
+					Set<Set<IJavaElement>> candidateSets = processor.getRefactorableSets();
 					
 					candidateSets.removeIf(set -> 
-						// check each of the refactoring context settings, and remove sets that contain settings not wanted
+					// check each of the refactoring context settings, and remove sets that contain settings not wanted
 						set.stream().anyMatch(rcs.excludeNonComplying));
 					
 					// Now we have just the sets that we care about
@@ -123,6 +125,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					// Then let's refactor them
 					
 					// Then let's print some more information about the refactoring
+					Logger.getAnonymousLogger().info("DONE");
 					
 				}
 			} catch (Exception e) {

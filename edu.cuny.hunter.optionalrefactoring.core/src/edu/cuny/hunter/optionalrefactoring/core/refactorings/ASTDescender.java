@@ -19,6 +19,7 @@ import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
+import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
@@ -26,8 +27,10 @@ import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -53,6 +56,7 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.NotOptionizableException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -87,6 +91,7 @@ class ASTDescender {
 	 * @return The formal parameter number starting at zero.
 	 */
 	private static int getFormalParameterNumber(SingleVariableDeclaration svd) {
+		if (svd.getParent() instanceof CatchClause) return 0;
 		final MethodDeclaration decl = (MethodDeclaration) svd.getParent();
 		return decl.parameters().indexOf(svd);
 	}
@@ -166,6 +171,8 @@ class ASTDescender {
 				}
 			}
 		}
+		if (meth == null) throw new NotOptionizableException(Messages.ASTNodeProcessor_SourceNotPresent,
+				ctorCall);
 
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
@@ -381,7 +388,6 @@ class ASTDescender {
 
 		case ASTNode.INFIX_EXPRESSION: {
 			final InfixExpression iexp = (InfixExpression) node;
-			final InfixExpression.Operator op = iexp.getOperator();
 			this.processExpression(iexp.getLeftOperand());
 			this.processExpression(iexp.getRightOperand());
 			break;
@@ -528,7 +534,9 @@ class ASTDescender {
 			// if coming up from a argument.
 			if (containedIn(mi.arguments(), this.name)) {
 				// if we don't have the source, no can do.
-				if (!mi.resolveMethodBinding().getDeclaringClass()
+				IMethodBinding binding = mi.resolveMethodBinding();
+				if (binding == null) throw new NotOptionizableException(Messages.ASTNodeProcessor_IllegalNodeContext, node);
+				if (!binding.getDeclaringClass()
 						.isFromSource())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);

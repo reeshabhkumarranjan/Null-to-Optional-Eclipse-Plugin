@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -152,17 +153,10 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 			// if there are no fatal errors.
 			if (!status.hasFatalError()) {
-				// these are the nulls passing preconditions.
-				// Set<NullLiteral> passingNullSet = null; //TODO: this.getRefactorableNulls();
-
-				// add a fatal error if there are no passing nulls.
-				// if (passingNullSet.isEmpty())
-				// status.addFatalError(Messages.NoNullsHavePassedThePreconditions);
-				// else {
-				// TODO:
-				// Checks.addModifiedFilesToChecker(ResourceUtil.getFiles(fChangeManager.getAllCompilationUnits()),
-				// context);
-				// }
+				if (this.refactorableContexts.isEmpty()) Logger.getAnonymousLogger().severe("EMPTY SET OF SETS");
+				this.refactorableContexts.forEach(set -> {
+					if (set.isEmpty()) Logger.getAnonymousLogger().severe("empty candidate set");
+				});
 			}
 			return status;
 		} catch (
@@ -201,40 +195,40 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, 
 				compilationUnit, refactoringScope, subMonitor);
-		refactorableContexts = harvester.harvestRefactorableContexts();
-		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);
+		this.refactorableContexts = harvester.harvestRefactorableContexts();
+		for (Set<IJavaElement> set : this.refactorableContexts) Util.candidatePrinter(set);
 	}
 
 	private void process(IType type, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(type, 
 				compilationUnit, refactoringScope, subMonitor);
-		refactorableContexts = harvester.harvestRefactorableContexts();
-		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
+		this.refactorableContexts = harvester.harvestRefactorableContexts();
+		for (Set<IJavaElement> set : this.refactorableContexts) Util.candidatePrinter(set);	
 	}
 
 	private void process(IInitializer initializer, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(initializer, 
 				compilationUnit, refactoringScope, subMonitor);
-		refactorableContexts = harvester.harvestRefactorableContexts();
-		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
+		this.refactorableContexts = harvester.harvestRefactorableContexts();
+		for (Set<IJavaElement> set : this.refactorableContexts) Util.candidatePrinter(set);	
 	}
 
 	private void process(IMethod method, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(method, 
 				compilationUnit, refactoringScope, subMonitor);
-		refactorableContexts = harvester.harvestRefactorableContexts();
-		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
+		this.refactorableContexts = harvester.harvestRefactorableContexts();
+		for (Set<IJavaElement> set : this.refactorableContexts) Util.candidatePrinter(set);	
 	}
 
 	private void process(IField field, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(field, 
 				compilationUnit, refactoringScope, subMonitor);
-		refactorableContexts = harvester.harvestRefactorableContexts();
-		for (Set<IJavaElement> set : refactorableContexts) Util.candidatePrinter(set);	
+		this.refactorableContexts = harvester.harvestRefactorableContexts();
+		for (Set<IJavaElement> set : this.refactorableContexts) Util.candidatePrinter(set);	
 	}
 
 	@Override

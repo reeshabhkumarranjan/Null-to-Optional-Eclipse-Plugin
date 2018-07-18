@@ -12,6 +12,10 @@ public class BinaryElementEncounteredException extends NotOptionizableException 
 		super(message, null);
 		this.problemElement = problemElement;
 	}
+	
+	public IJavaElement getElement() {
+		return this.problemElement;
+	}
 
 	public String toString() {
 		final StringBuffer ret = new StringBuffer();
