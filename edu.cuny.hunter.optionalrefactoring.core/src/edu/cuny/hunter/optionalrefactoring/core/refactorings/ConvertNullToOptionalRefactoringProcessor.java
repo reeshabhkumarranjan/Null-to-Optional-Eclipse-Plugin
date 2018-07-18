@@ -5,6 +5,7 @@ import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -77,7 +78,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 
-	private Set<Set<IJavaElement>> refactorableContexts; // the forest of refactorable type-dependent entities
+	private Set<Set<IJavaElement>> refactorableContexts = new LinkedHashSet<>(); // the forest of refactorable type-dependent entities
 
 	private final IJavaElement[] javaElements;	// the input java model elements
 
@@ -195,40 +196,45 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, 
 				compilationUnit, refactoringScope, subMonitor);
-		this.refactorableContexts = harvester.harvestRefactorableContexts();
-		for (Set<IJavaElement> set : this.refactorableContexts) Util.candidatePrinter(set);
+		Set<Set<IJavaElement>> setOfSets = harvester.harvestRefactorableContexts();
+		this.refactorableContexts.addAll(setOfSets);
+		for (Set<IJavaElement> set : setOfSets) Util.candidatePrinter(set);
 	}
 
 	private void process(IType type, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(type, 
 				compilationUnit, refactoringScope, subMonitor);
-		this.refactorableContexts = harvester.harvestRefactorableContexts();
-		for (Set<IJavaElement> set : this.refactorableContexts) Util.candidatePrinter(set);	
+		Set<Set<IJavaElement>> setOfSets = harvester.harvestRefactorableContexts();
+		this.refactorableContexts.addAll(setOfSets);
+		for (Set<IJavaElement> set : setOfSets) Util.candidatePrinter(set);
 	}
 
 	private void process(IInitializer initializer, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(initializer, 
 				compilationUnit, refactoringScope, subMonitor);
-		this.refactorableContexts = harvester.harvestRefactorableContexts();
-		for (Set<IJavaElement> set : this.refactorableContexts) Util.candidatePrinter(set);	
+		Set<Set<IJavaElement>> setOfSets = harvester.harvestRefactorableContexts();
+		this.refactorableContexts.addAll(setOfSets);
+		for (Set<IJavaElement> set : setOfSets) Util.candidatePrinter(set);
 	}
 
 	private void process(IMethod method, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(method, 
 				compilationUnit, refactoringScope, subMonitor);
-		this.refactorableContexts = harvester.harvestRefactorableContexts();
-		for (Set<IJavaElement> set : this.refactorableContexts) Util.candidatePrinter(set);	
+		Set<Set<IJavaElement>> setOfSets = harvester.harvestRefactorableContexts();
+		this.refactorableContexts.addAll(setOfSets);
+		for (Set<IJavaElement> set : setOfSets) Util.candidatePrinter(set);
 	}
 
 	private void process(IField field, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(field, 
 				compilationUnit, refactoringScope, subMonitor);
-		this.refactorableContexts = harvester.harvestRefactorableContexts();
-		for (Set<IJavaElement> set : this.refactorableContexts) Util.candidatePrinter(set);	
+		Set<Set<IJavaElement>> setOfSets = harvester.harvestRefactorableContexts();
+		this.refactorableContexts.addAll(setOfSets);
+		for (Set<IJavaElement> set : setOfSets) Util.candidatePrinter(set);	
 	}
 
 	@Override

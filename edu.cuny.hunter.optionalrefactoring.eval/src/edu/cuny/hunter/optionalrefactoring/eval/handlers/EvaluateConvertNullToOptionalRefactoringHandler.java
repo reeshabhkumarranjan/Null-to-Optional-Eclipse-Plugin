@@ -39,7 +39,6 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOption
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringContextSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.ProgramEntity;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -106,9 +105,9 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					
 					Set<Set<IJavaElement>> candidateSets = processor.getRefactorableSets();
 					
-					candidateSets.removeIf(set -> 
+//					candidateSets.removeIf(set -> 
 					// check each of the refactoring context settings, and remove sets that contain settings not wanted
-						set.stream().anyMatch(rcs.excludeNonComplying));
+//						set.stream().anyMatch(rcs.excludeNonComplying));
 					
 					// Now we have just the sets that we care about
 					for (Set<IJavaElement> set : candidateSets) {
@@ -116,7 +115,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 						for (IJavaElement entity : set) {
 							resultsPrinter.printRecord( 
 									entity.getHandleIdentifier(),
-									entity.getParent().getHandleIdentifier(),
+									Optional.ofNullable(entity.getParent()).orElse(entity).getHandleIdentifier(),
 									entity.getPrimaryElement().getHandleIdentifier());
 						}
 					}
