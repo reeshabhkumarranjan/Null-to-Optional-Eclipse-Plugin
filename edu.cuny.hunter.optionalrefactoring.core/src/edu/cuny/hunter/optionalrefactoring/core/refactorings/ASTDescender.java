@@ -27,10 +27,9 @@ import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.ImportDeclaration;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -56,7 +55,6 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.NotOptionizableException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -146,8 +144,10 @@ class ASTDescender {
 	private void findFormalsForVariable(ClassInstanceCreation ctorCall)
 			throws JavaModelException, CoreException {
 		final int paramNumber = getParamNumber(ctorCall.arguments(), this.name);
-		IMethod meth = (IMethod) ctorCall.resolveConstructorBinding()
-				.getJavaElement();
+		final IMethodBinding b = ctorCall.resolveConstructorBinding();
+		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a ClassInstanceCreation: ", ctorCall);
+	
+		IMethod meth = (IMethod) b.getJavaElement();
 		if (meth == null && ctorCall.getAnonymousClassDeclaration() != null) {
 			// most likely an anonymous class.
 			final AnonymousClassDeclaration acd = ctorCall
@@ -185,8 +185,10 @@ class ASTDescender {
 
 	private void findFormalsForVariable(ConstructorInvocation ctorCall)
 			throws JavaModelException, CoreException {
-		final IMethod meth = (IMethod) ctorCall.resolveConstructorBinding()
-				.getJavaElement();
+		final IMethodBinding b = ctorCall.resolveConstructorBinding();
+		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a ConstructorInvocation: ", ctorCall);
+	
+		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
@@ -208,8 +210,10 @@ class ASTDescender {
 
 	private void findFormalsForVariable(MethodInvocation mi)
 			throws JavaModelException, CoreException {
-		final IMethod meth = (IMethod) mi.resolveMethodBinding()
-				.getJavaElement();
+		final IMethodBinding b = mi.resolveMethodBinding();
+		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a MethodInvocation: ", mi);
+	
+		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
@@ -221,8 +225,10 @@ class ASTDescender {
 
 	private void findFormalsForVariable(SuperConstructorInvocation ctorCall)
 			throws JavaModelException, CoreException {
-		final IMethod meth = (IMethod) ctorCall.resolveConstructorBinding()
-				.getJavaElement();
+		final IMethodBinding b = ctorCall.resolveConstructorBinding();
+		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperConstructorInvocation: ", ctorCall);
+	
+		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
@@ -234,6 +240,9 @@ class ASTDescender {
 
 	private void findFormalsForVariable(SuperMethodInvocation smi)
 			throws JavaModelException, CoreException {
+		final IMethodBinding b = smi.resolveMethodBinding();
+		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperMethodInvocation: ", smi);
+	
 		final IMethod meth = (IMethod) smi.resolveMethodBinding()
 				.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
@@ -281,8 +290,10 @@ class ASTDescender {
 			throws CoreException {
 
 		// Find invocations of the corresponding method.
-		final IMethod meth = (IMethod) svd.resolveBinding()
-				.getDeclaringMethod().getJavaElement();
+		final IVariableBinding b = svd.resolveBinding();
+		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SingleVariableDeclaration: ", svd);
+	
+		final IMethod meth = (IMethod) b.getDeclaringMethod().getJavaElement();
 
 		final SearchPattern pattern = SearchPattern.createPattern(meth,
 				IJavaSearchConstants.REFERENCES, SearchPattern.R_EXACT_MATCH);
@@ -343,7 +354,9 @@ class ASTDescender {
 			for (final Iterator it = vds.fragments().iterator(); it.hasNext();) {
 				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) it
 						.next();
-				final IJavaElement elem = vdf.resolveBinding().getJavaElement();
+				IVariableBinding b = vdf.resolveBinding();
+				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a VariableDeclarationStatement: ", node);
+				final IJavaElement elem = b.getJavaElement();
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, vdf);
@@ -355,7 +368,9 @@ class ASTDescender {
 
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT: {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) node;
-			final IJavaElement elem = vdf.resolveBinding().getJavaElement();
+			IVariableBinding b = vdf.resolveBinding();
+			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a VariableDeclarationFragment: ", node);
+			final IJavaElement elem = b.getJavaElement();
 			if (!this.constFields.contains(elem)) {
 				if (elem == null || vdf == null || vdf.getName() == null)
 					throw new NotOptionizableException(
@@ -371,10 +386,11 @@ class ASTDescender {
 
 		case ASTNode.FIELD_DECLARATION: {
 			final FieldDeclaration fd = (FieldDeclaration) node;
-			for (final Iterator it = fd.fragments().iterator(); it.hasNext();) {
-				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) it
-						.next();
-				final IJavaElement elem = vdf.resolveBinding().getJavaElement();
+			for (Object o : fd.fragments()) {
+				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
+				final IVariableBinding b = vdf.resolveBinding();
+				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a FieldDeclaration: ", node);
+				final IJavaElement elem = b.getJavaElement();
 				if (!this.constFields.contains(elem)) {
 					if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 						throw new NotOptionizableException(
@@ -396,10 +412,9 @@ class ASTDescender {
 		case ASTNode.SWITCH_STATEMENT: {
 			final SwitchStatement sw = (SwitchStatement) node;
 			this.processExpression(sw.getExpression());
-			for (final Iterator it = sw.statements().iterator(); it.hasNext();) {
-				final Object obj = it.next();
-				if (obj instanceof SwitchCase) {
-					final SwitchCase sc = (SwitchCase) obj;
+			for (Object o : sw.statements()) {
+				if (o instanceof SwitchCase) {
+					final SwitchCase sc = (SwitchCase) o;
 					this.processExpression(sc.getExpression());
 				}
 			}
@@ -423,8 +438,9 @@ class ASTDescender {
 			final MethodDeclaration methDecl = Util.getMethodDeclaration(rs);
 
 			// Get the corresponding method.
-			final IMethod meth = (IMethod) methDecl.resolveBinding()
-					.getJavaElement();
+			final IMethodBinding b = methDecl.resolveBinding();
+			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a MethodDeclaration: ", node);
+			final IMethod meth = (IMethod) b.getJavaElement();
 
 			// Get the top most method
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
@@ -472,59 +488,72 @@ class ASTDescender {
 		case ASTNode.CLASS_INSTANCE_CREATION: {
 			final ClassInstanceCreation ctorCall = (ClassInstanceCreation) node;
 			// if coming up from a argument.
-			if (containedIn(ctorCall.arguments(), this.name))
+			if (containedIn(ctorCall.arguments(), this.name)) {
 				// if we don't have the source, no can do.
-				if (!ctorCall.getType().resolveBinding().isFromSource())
+				final ITypeBinding b = ctorCall.getType().resolveBinding();
+				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a ClassInstanceCreation: ", node);
+			
+				if (!b.isFromSource())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
+			}
 			break;
 		}
 
 		case ASTNode.CONSTRUCTOR_INVOCATION: {
 			final ConstructorInvocation ctorCall = (ConstructorInvocation) node;
 			// if coming up from a argument.
-			if (containedIn(ctorCall.arguments(), this.name))
+			if (containedIn(ctorCall.arguments(), this.name)) {
 				// if we don't have the source, no can do.
-				if (!ctorCall.resolveConstructorBinding().getDeclaringClass()
-						.isFromSource())
+				final IMethodBinding b = ctorCall.resolveConstructorBinding();
+				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a ConstructorInvocation: ", node);
+			
+				if (!b.getDeclaringClass().isFromSource())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
+			}
 			break;
 		}
 
 		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION: {
 			final SuperConstructorInvocation ctorCall = (SuperConstructorInvocation) node;
 			// if coming up from a argument.
-			if (containedIn(ctorCall.arguments(), this.name))
+			if (containedIn(ctorCall.arguments(), this.name)) {
 				// if we don't have the source, no can do.
-				if (!ctorCall.resolveConstructorBinding().getDeclaringClass()
-						.isFromSource())
+				final IMethodBinding b = ctorCall.resolveConstructorBinding();
+				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperConstructorInvocation: ", node);
+			
+				if (!b.getDeclaringClass().isFromSource())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
+			}
 			break;
 		}
 
 		case ASTNode.SUPER_METHOD_INVOCATION: {
 			final SuperMethodInvocation smi = (SuperMethodInvocation) node;
 			// if coming up from a argument.
-			if (containedIn(smi.arguments(), this.name))
+			if (containedIn(smi.arguments(), this.name)) {
 				// if we don't have the source, no can do.
-				if (!smi.resolveMethodBinding().getDeclaringClass()
-						.isFromSource())
+				final IMethodBinding b = smi.resolveMethodBinding();
+				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperMethodInvocation: ", node);
+			
+				if (!b.getDeclaringClass().isFromSource())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				else
 					// go find the formals.
 					this.findFormalsForVariable(smi);
+			}
 			break;
 		}
 
@@ -558,7 +587,9 @@ class ASTDescender {
 			// its a formal parameter.
 			final SingleVariableDeclaration svd = (SingleVariableDeclaration) node;
 			// take care of local usage.
-			final IJavaElement elem = svd.resolveBinding().getJavaElement();
+			final IVariableBinding b = svd.resolveBinding();
+			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SingleVariableDeclaration: ", node);
+			final IJavaElement elem = b.getJavaElement();
 
 			if (elem.isReadOnly() || svd.getName().resolveBoxing())
 				throw new NotOptionizableException(
@@ -575,7 +606,9 @@ class ASTDescender {
 
 		case ASTNode.ENHANCED_FOR_STATEMENT : {
 			final SingleVariableDeclaration svd = ((EnhancedForStatement)node).getParameter();
-			final IJavaElement elem = svd.resolveBinding().getJavaElement();
+			final IVariableBinding b = svd.resolveBinding();
+			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SingleVariableDeclaration: ", node);
+			final IJavaElement elem = b.getJavaElement();
 			this.found.add(elem);
 			break;
 		}
@@ -611,13 +644,13 @@ class ASTDescender {
 		case ASTNode.SIMPLE_NAME:
 		case ASTNode.QUALIFIED_NAME: {
 			final Name name = (Name) node;
-
-			if (name.resolveBinding().getJavaElement() == null)
+			final IVariableBinding b = (IVariableBinding)name.resolveBinding();
+			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a Name: ", node);
+			if (b.getJavaElement() == null)
 				throw new NotOptionizableException(
 						Messages.ASTNodeProcessor_NonEnumerizableTypeEncountered, node);
 			else {
-				final IJavaElement elem = name.resolveBinding()
-						.getJavaElement();
+				final IJavaElement elem = b.getJavaElement();
 				if (elem.isReadOnly() || name.resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
@@ -640,10 +673,8 @@ class ASTDescender {
 
 		case ASTNode.ARRAY_INITIALIZER: {
 			final ArrayInitializer init = (ArrayInitializer) node;
-			for (final Iterator it = init.expressions().iterator(); it
-					.hasNext();) {
-				final Expression exp = (Expression) it.next();
-				this.processExpression(exp);
+			for (Object exp : init.expressions()) {
+				this.processExpression((Expression)exp);
 			}
 			break;
 		}
@@ -678,8 +709,9 @@ class ASTDescender {
 
 		case ASTNode.FIELD_ACCESS: {
 			final FieldAccess fieldAccess = (FieldAccess) node;
-
-			if (fieldAccess.resolveFieldBinding().getJavaElement() == null)
+			IVariableBinding b = fieldAccess.resolveFieldBinding();
+			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a FieldAccess: ", node);
+			if (b.getJavaElement() == null)
 				throw new NotOptionizableException(
 						Messages.ASTNodeProcessor_NonEnumerizableTypeEncountered, node);
 			else {
@@ -695,8 +727,9 @@ class ASTDescender {
 
 		case ASTNode.METHOD_INVOCATION: {
 			final MethodInvocation m = (MethodInvocation) node;
-			final IMethod meth = (IMethod) m.resolveMethodBinding()
-					.getJavaElement();
+			final IMethodBinding b = m.resolveMethodBinding();
+			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a MethodInvocation: ", node);
+			final IMethod meth = (IMethod) b.getJavaElement();
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 			if (top == null)
@@ -719,8 +752,9 @@ class ASTDescender {
 
 		case ASTNode.SUPER_FIELD_ACCESS: {
 			final SuperFieldAccess superFieldAccess = (SuperFieldAccess) node;
-			final IJavaElement elem = superFieldAccess.resolveFieldBinding()
-					.getJavaElement();
+			final IVariableBinding b = superFieldAccess.resolveFieldBinding();
+			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperFieldAccess: ", node);
+			final IJavaElement elem = b.getJavaElement();
 			if (elem.isReadOnly() || superFieldAccess.resolveBoxing())
 				throw new NotOptionizableException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
@@ -730,8 +764,9 @@ class ASTDescender {
 
 		case ASTNode.SUPER_METHOD_INVOCATION: {
 			final SuperMethodInvocation sm = (SuperMethodInvocation) node;
-			final IMethod meth = (IMethod) sm.resolveMethodBinding()
-					.getJavaElement();
+			final IMethodBinding b = sm.resolveMethodBinding();
+			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperMethodInvocation: ", node);
+			final IMethod meth = (IMethod) b.getJavaElement();
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 			if (top == null)
@@ -752,7 +787,9 @@ class ASTDescender {
 					.hasNext();) {
 				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) it
 						.next();
-				final IJavaElement elem = vdf.resolveBinding().getJavaElement();
+				final IVariableBinding b = vdf.resolveBinding();
+				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a VariableDeclarationFragment: ", vdf);
+				final IJavaElement elem = b.getJavaElement();
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 					throw new NotOptionizableException(
 							Messages.ASTNodeProcessor_SourceNotPresent, vdf);

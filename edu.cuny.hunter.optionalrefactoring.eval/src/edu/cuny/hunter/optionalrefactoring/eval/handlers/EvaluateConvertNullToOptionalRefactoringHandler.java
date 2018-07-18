@@ -60,12 +60,12 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
-			List<String> resultsHeader = Lists.newArrayList("Program Entity", 
-															"Is Seed", 
-															"Dependency", 
-															"Dependents",
-															"Type Binding",
-															"Context");
+			List<String> resultsHeader = Lists.newArrayList("Type Dependent Set ID",
+															"Project Name",
+															"Entity Name",
+															"Entity Type", 
+															"Containing Class",
+															"In a Library");
 			/* TODO: can the dependency on org.apache.commons.csv.CSVPrinter can potentially be resolved by linking
 			 with an updated version of edu.cuny.citytech.refactoring.eval that exports it?? */
 			try (CSVPrinter resultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("results.csv", 
@@ -86,6 +86,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 
 
 					resultsPrinter.print(javaProject.getElementName());
+					resultsPrinter.println();
 
 					TimeCollector resultsTimeCollector = new TimeCollector();
 
@@ -113,10 +114,14 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					for (Set<IJavaElement> set : candidateSets) {
 						// Let's print some information about what's inside
 						for (IJavaElement entity : set) {
-							resultsPrinter.printRecord( 
-									entity.getHandleIdentifier(),
-									Optional.ofNullable(entity.getParent()).orElse(entity).getHandleIdentifier(),
-									entity.getPrimaryElement().getHandleIdentifier());
+							resultsPrinter.printRecord(
+									set.toString(),
+									entity.getJavaProject().getElementName(),
+									entity.getElementName(),
+									entity.getClass(),
+									entity.getAncestor(IJavaElement.TYPE),
+									entity.isReadOnly() && entity.getResource().isDerived(),
+									entity);
 						}
 					}
 					resultsPrinter.println();
