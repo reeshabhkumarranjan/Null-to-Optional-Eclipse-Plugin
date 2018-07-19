@@ -1,9 +1,14 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -107,21 +112,27 @@ public class RefactorableHarvester {
 		return new ASTAscender(refactoringRootNode).seedNulls();
 	}
 
-	public Set<Set<IJavaElement>> harvestRefactorableContexts() throws CoreException {
+	public Set<TypeDependentElementTree> harvestRefactorableContexts() throws CoreException {
 		// this worklist starts with the immediate type-dependent entities on null expressions. 
 		Set<IJavaElement> nullSeeds = new ASTAscender(refactoringRootNode).seedNulls();
 
 		this.reset();
+		
+		Map<IJavaElement,Set<IJavaElement>> dependents = new LinkedHashMap<>();
+		Map<IJavaElement,Set<IJavaElement>> dependencies = new LinkedHashMap<>();
 
 		this.workList.addAll(nullSeeds);
 
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
 			// grab the next element.
-			final IJavaElement element = (IJavaElement) this.workList.next();
+			final IJavaElement searchElement = (IJavaElement) this.workList.next();
+			
+			// initialize it's set of dependents if empty
+			dependents.putIfAbsent(searchElement, new LinkedHashSet<IJavaElement>());
 
-			// build a search pattern to find all occurrences of the java element.
-			final SearchPattern pattern = SearchPattern.createPattern(element, 
+			// build a search pattern to find all occurrences of the searchElement.
+			final SearchPattern pattern = SearchPattern.createPattern(searchElement, 
 					IJavaSearchConstants.ALL_OCCURRENCES, 
 					SearchPattern.R_EXACT_MATCH);
 
@@ -132,18 +143,34 @@ public class RefactorableHarvester {
 							&& !match.isInsideDocComment()) {
 						// here, we have search match. 
 
-						IJavaElement element = (IJavaElement) match.getElement();
-						if (element.isReadOnly()) {
-							RefactorableHarvester.this.workList.add(element);
-							throw new BinaryElementEncounteredException("Match found a dependency in a non-writable location.", element);
+						IJavaElement matchingElement = (IJavaElement) match.getElement();
+						// put the matchingElement in searchElement's dependents set
+						Set<IJavaElement> elementDependents = dependents.get(searchElement);
+						elementDependents.add(matchingElement);
+						dependents.put(searchElement, elementDependents);
+						
+						// now initialize the matchingElement's sets of dependencies and dependents if empty
+						dependencies.putIfAbsent(matchingElement, new LinkedHashSet<IJavaElement>());
+						dependents.putIfAbsent(matchingElement, new LinkedHashSet<IJavaElement>());
+						
+						
+						// put the searchElement in the matchingElement's dependencies set
+						Set<IJavaElement> matchingElementsDependencies = dependencies.get(matchingElement);
+						matchingElementsDependencies.add(searchElement);
+						dependencies.put(matchingElement, matchingElementsDependencies);
+						
+						// check if we are in a Jar or generated code, and stop searching deeper						
+						if (matchingElement.isReadOnly()) {
+							RefactorableHarvester.this.workList.add(matchingElement);
+							throw new BinaryElementEncounteredException("Match found a dependent element in a non-writable location.", matchingElement);
 						}
 						
-						if (element.getResource().isDerived()) {
-							RefactorableHarvester.this.workList.add(element);
-							throw new BinaryElementEncounteredException("Match found a dependency in generated code.", element);
+						if (matchingElement.getResource().isDerived()) {
+							RefactorableHarvester.this.workList.add(matchingElement);
+							throw new BinaryElementEncounteredException("Match found a dependent element in generated code.", matchingElement);
 						}
 						
-						// convert the match to an ASTNode.
+						// convert the matchingElement to an ASTNode.
 						ASTNode node = Util.getExactASTNode(match,
 								RefactorableHarvester.this.monitor);
 
@@ -159,6 +186,19 @@ public class RefactorableHarvester {
 
 						// add to the worklist all of the type-dependent stuff we found.
 						RefactorableHarvester.this.workList.addAll(processor.getFound());
+						
+						// add to the matchingElement's dependents all the stuff we found
+						Set<IJavaElement> foundSet = processor.getFound();
+						foundSet.forEach(foundElement -> {
+							Set<IJavaElement> matchingElementsDependents = dependents.get(matchingElement);
+							matchingElementsDependents.add(foundElement);
+							dependents.put(matchingElement, matchingElementsDependents);
+							// and for each foundElement add matchingElement as a dependency
+							dependencies.putIfAbsent(foundElement, new LinkedHashSet<>());
+							Set<IJavaElement> foundElementsDependencies = dependencies.get(foundElement);
+							foundElementsDependencies.add(matchingElement);
+							dependencies.put(foundElement, foundElementsDependencies);
+						});
 					}
 				}
 			};
@@ -194,7 +234,14 @@ public class RefactorableHarvester {
 		final Set<Set<IJavaElement>> candidateSets = Util
 				.getElementForest(computationForest);
 
+		// drop from the table of dependents and dependencies all keys that are not in the candidateSets
+		Set<IJavaElement> setUnion = candidateSets.stream().flatMap(Collection::stream).collect(Collectors.toSet());
+		dependents.entrySet().removeIf(entry -> !setUnion.contains(entry.getKey()));
+		dependencies.entrySet().removeIf(entry -> !setUnion.contains(entry.getKey()));
+		
 		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
-		return candidateSets;
+		Set<TypeDependentElementTree> typeDependentElementForest = candidateSets.stream().map(
+				set -> TypeDependentElementTree.of(set, dependents, dependencies)).collect(Collectors.toSet());
+		return typeDependentElementForest;
 	}
 }

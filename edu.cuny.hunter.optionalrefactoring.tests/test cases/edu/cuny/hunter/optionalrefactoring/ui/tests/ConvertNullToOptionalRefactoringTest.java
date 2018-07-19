@@ -21,6 +21,9 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
+
+import com.google.common.collect.Sets;
+
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -134,7 +137,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				expectedElements.containsAll(actualElements));
 
 		// Here we are getting all the sets of type dependent entities
-		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts();
+		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts().stream().collect(Collectors.toSet());
 
 		// print to console
 		System.out.println(this.getName());

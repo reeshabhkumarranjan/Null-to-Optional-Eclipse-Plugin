@@ -73,7 +73,7 @@ public class RefactoringContextSettings {
 		return settings.contains(ContextType.IMPLICIT_FIELDS);
 	}*/
 
-	public Predicate<IJavaElement> excludeNonComplying = element -> {
+	public Predicate<IJavaElement> nonComplying = element -> {
 		if (element instanceof IMethod)
 			return !this.refactorsMethodReturns();
 

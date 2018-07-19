@@ -10,7 +10,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -110,8 +109,6 @@ class ASTDescender {
 
 	private final Set<IJavaElement> found = new LinkedHashSet<>();
 
-	private final Set<ISourceRange> legalEncounteredN2ORefactorableSourceLocations = new LinkedHashSet<>();
-
 	private final IProgressMonitor monitor;
 
 	private final Expression name;
@@ -128,12 +125,6 @@ class ASTDescender {
 
 	public Set<IJavaElement> getFound() {
 		return this.found;
-	}
-
-
-	public Set<ISourceRange> getN2ORefactorableSourceLocations() {
-		// TODO Auto-generated method stub
-		return this.legalEncounteredN2ORefactorableSourceLocations;
 	}
 
 	public void process() throws CoreException {
