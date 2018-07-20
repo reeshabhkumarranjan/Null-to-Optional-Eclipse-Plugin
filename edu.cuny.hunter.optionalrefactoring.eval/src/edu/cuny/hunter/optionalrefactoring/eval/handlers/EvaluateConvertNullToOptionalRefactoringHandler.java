@@ -3,16 +3,12 @@ package edu.cuny.hunter.optionalrefactoring.eval.handlers;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOptionalRefactoringProcessor;
 
 import com.google.common.collect.Lists;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import org.apache.commons.csv.*;
 import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -24,14 +20,8 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.osgi.framework.FrameworkUtil;
@@ -39,7 +29,7 @@ import org.osgi.framework.FrameworkUtil;
 import edu.cuny.citytech.refactoring.common.eval.handlers.EvaluateRefactoringHandler;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringContextSettings;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementTree;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementSet;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
 
@@ -110,14 +100,14 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					// get the environmental variables for refactoring contexts to be considered
 					final RefactoringContextSettings rcs = this.getEnvSettings().orElse(DEFAULT_SETTINGS);
 					
-					Set<TypeDependentElementTree> candidateSets = processor.getRefactorableSets();
+					Set<TypeDependentElementSet> candidateSets = processor.getRefactorableSets();
 					
 //					candidateSets.removeIf(set -> 
 					// check each of the refactoring context settings, and remove sets that contain settings not wanted
 //						set.stream().anyMatch(rcs.excludeNonComplying));
 					
 					// Now we have just the sets that we care about
-					for (TypeDependentElementTree set : candidateSets) {
+					for (TypeDependentElementSet set : candidateSets) {
 						// Let's print some information about what's inside
 						setSummaryPrinter.printRecord(set.hashCode(), set);
 						for (IJavaElement entity : set) {
@@ -129,7 +119,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 									entity.getElementType() == IJavaElement.LOCAL_VARIABLE ?
 											entity.getAncestor(IJavaElement.METHOD).getElementName()+"\n"+entity.getAncestor(IJavaElement.METHOD).getAncestor(IJavaElement.TYPE).getElementName() 
 										:	entity.getAncestor(IJavaElement.TYPE).getElementName(),
-									set.getDependency(entity).stream()
+									set.getDependencies(entity).stream()
 										.map(element -> element.getElementName())
 										.collect(Collectors.joining(":")),
 									set.getDependents(entity).stream()
@@ -159,13 +149,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 		return null;
 	}
 
-	private static IType[] getAllDeclaringTypeSubtypes(IMethod method) throws JavaModelException {
-		IType declaringType = method.getDeclaringType();
-		ITypeHierarchy typeHierarchy = declaringType.newTypeHierarchy(new NullProgressMonitor());
-		IType[] allSubtypes = typeHierarchy.getAllSubtypes(declaringType);
-		return allSubtypes;
-	}
-
 	private Optional<RefactoringContextSettings> getEnvSettings() {
 		Map<String,String> performChangePropertyValue = System.getenv();
 
@@ -173,22 +156,5 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 			return Optional.empty();
 		else
 			return Optional.of(RefactoringContextSettings.of(performChangePropertyValue));
-	}
-
-	private static Set<IMethod> getAllMethods(IJavaProject javaProject) throws JavaModelException {
-		Set<IMethod> methods = new HashSet<>();
-
-		// collect all methods from this project.
-		IPackageFragment[] packageFragments = javaProject.getPackageFragments();
-		for (IPackageFragment iPackageFragment : packageFragments) {
-			ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
-			for (ICompilationUnit iCompilationUnit : compilationUnits) {
-				IType[] allTypes = iCompilationUnit.getAllTypes();
-				for (IType type : allTypes) {
-					Collections.addAll(methods, type.getMethods());
-				}
-			}
-		}
-		return methods;
 	}
 }
