@@ -8,6 +8,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -17,14 +19,15 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 
-import com.google.common.collect.Sets;
-
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementSet;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.*;
@@ -114,6 +117,51 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			return unit;
 	}
 
+	public void testTypeDependentElementSet() throws Exception {
+		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(icu);
+		parser.setResolveBindings(true);
+		CompilationUnit c = (CompilationUnit)parser.createAST(null);
+		Set<IJavaElement> elements = new LinkedHashSet<>();
+		ASTVisitor visitor = new ASTVisitor() {
+			@Override
+			public boolean visit(SimpleName node) {
+				elements.add(node.resolveBinding().getJavaElement());
+				return super.visit(node);
+			}
+		};
+		c.accept(visitor);
+		LinkedHashMap<IJavaElement, Set<IJavaElement>> m = new LinkedHashMap<>(), n = new LinkedHashMap<>();
+		elements.forEach(element -> {
+			m.put(element, elements);
+			n.put(element, elements);
+		});
+		TypeDependentElementSet tdes = TypeDependentElementSet.of(elements, m, n);
+		assertTrue("TDES is not empty.", !tdes.isEmpty());
+		tdes.forEach(element -> assertNotNull(element));
+		tdes.forEach(element -> assertNotNull(tdes.getDependencies(element)));
+		tdes.forEach(
+				element -> assertTrue(
+						"Dependencies for "+element.getElementName()+" are "+tdes.getDependencies(element).toString()+".",
+						elements.containsAll(tdes.getDependencies(element))));
+		tdes.forEach(element -> assertNotNull(tdes.getDependents(element)));
+		tdes.forEach(
+				element -> assertTrue(
+						"Dependents for "+element.getElementName()+" are "+tdes.getDependents(element).toString()+".",
+						elements.containsAll(tdes.getDependents(element))));
+		
+		// try to form an invalid TypeDependentElementSet where the number of dependents and dependencies don't match
+		IJavaElement ije = n.keySet().stream().findAny().get();
+		n.remove(ije);
+		try {
+			TypeDependentElementSet.of(elements, m, n);
+		} catch (IllegalArgumentException e) {
+			assertNotNull(e);
+		}
+	}
+
 	private void helper(Set<String> expectedElements, Set<Set<String>> expectedSets) throws Exception {
 
 		// compute the actual results.
@@ -152,7 +200,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		Set<Set<String>> actualSets = sets.stream()
 				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
 				.collect(Collectors.toSet());
-		
+
 		assertNotNull(actualSets);		
 
 		assertTrue("Expected sets contain "+expectedSets.toString()+" and are the same.", 
@@ -242,7 +290,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("farray"),
 						setOf("finitializedarray")));
 	}
-	
+
 	public void testDeclarationFieldArray() throws Exception {
 		this.helper(setOf("a","nullControl"), 
 				setOf(setOf("a","b"),
@@ -273,7 +321,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("d","e"),
 						setOf("control")));
 	}
-	
+
 	public void testInvocationConstructor() throws Exception {
 		this.helper(setOf("a","f","o"), 
 				setOf(setOf("a","b","d","g","k"),
