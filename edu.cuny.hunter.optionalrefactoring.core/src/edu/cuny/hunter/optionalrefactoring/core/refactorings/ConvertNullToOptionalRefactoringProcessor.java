@@ -59,6 +59,8 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  * 
  * @author <a href="mailto:raffi.khatchadourian@hunter.cuny.edu">Raffi
  *         Khatchadourian</a>
+ * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>
+ * 
  */
 @SuppressWarnings({ "restriction", "deprecation" })
 public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProcessor {
@@ -78,7 +80,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	
 	private Map<IType, ITypeHierarchy> typeToTypeHierarchyMap = new HashMap<>();
 
-	private Set<TypeDependentElementTree> refactorableContexts = new LinkedHashSet<>(); // the forest of refactorable type-dependent entities
+	private Set<TypeDependentElementSet> refactorableContexts = new LinkedHashSet<>(); // the forest of refactorable type-dependent entities
 
 	private final IJavaElement[] javaElements;	// the input java model elements
 
@@ -196,7 +198,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, 
 				compilationUnit, refactoringScope, subMonitor);
-		Set<TypeDependentElementTree> typeDependentElementForest = harvester.harvestRefactorableContexts();
+		Set<TypeDependentElementSet> typeDependentElementForest = harvester.harvestRefactorableContexts();
 		this.refactorableContexts.addAll(typeDependentElementForest);
 		for (Set<IJavaElement> set : typeDependentElementForest) Util.candidatePrinter(set);
 	}
@@ -205,7 +207,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(type, 
 				compilationUnit, refactoringScope, subMonitor);
-		Set<TypeDependentElementTree> typeDependentElementForest = harvester.harvestRefactorableContexts();
+		Set<TypeDependentElementSet> typeDependentElementForest = harvester.harvestRefactorableContexts();
 		this.refactorableContexts.addAll(typeDependentElementForest);
 		for (Set<IJavaElement> set : typeDependentElementForest) Util.candidatePrinter(set);
 	}
@@ -214,7 +216,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(initializer, 
 				compilationUnit, refactoringScope, subMonitor);
-		Set<TypeDependentElementTree> typeDependentElementForest = harvester.harvestRefactorableContexts();
+		Set<TypeDependentElementSet> typeDependentElementForest = harvester.harvestRefactorableContexts();
 		this.refactorableContexts.addAll(typeDependentElementForest);
 		for (Set<IJavaElement> set : typeDependentElementForest) Util.candidatePrinter(set);
 	}
@@ -223,7 +225,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(method, 
 				compilationUnit, refactoringScope, subMonitor);
-		Set<TypeDependentElementTree> typeDependentElementForest = harvester.harvestRefactorableContexts();
+		Set<TypeDependentElementSet> typeDependentElementForest = harvester.harvestRefactorableContexts();
 		this.refactorableContexts.addAll(typeDependentElementForest);
 		for (Set<IJavaElement> set : typeDependentElementForest) Util.candidatePrinter(set);
 	}
@@ -232,7 +234,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		CompilationUnit compilationUnit = getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(field, 
 				compilationUnit, refactoringScope, subMonitor);
-		Set<TypeDependentElementTree> typeDependentElementForest = harvester.harvestRefactorableContexts();
+		Set<TypeDependentElementSet> typeDependentElementForest = harvester.harvestRefactorableContexts();
 		this.refactorableContexts.addAll(typeDependentElementForest);
 		for (Set<IJavaElement> set : typeDependentElementForest) Util.candidatePrinter(set);	
 	}
@@ -346,7 +348,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		return this.compilationUnitToCompilationUnitRewriteMap;
 	}
 
-	public Set<TypeDependentElementTree> getRefactorableSets() {
+	public Set<TypeDependentElementSet> getRefactorableSets() {
 		return this.refactorableContexts;
 	}
 	

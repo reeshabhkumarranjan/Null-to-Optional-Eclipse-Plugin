@@ -34,6 +34,7 @@ import junit.framework.TestSuite;
 /**
  * @author <a href="mailto:raffi.khatchadourian@hunter.cuny.edu">Raffi
  *         Khatchadourian</a>
+ * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>
  *
  */
 @SuppressWarnings("restriction")

@@ -1,7 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -39,6 +37,19 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import edu.cuny.hunter.optionalrefactoring.core.utils.WorkList;
 
+/**
+ * 
+ * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>
+ * 
+ * This class controls the parsing and accumulation of NullLiteral dependent program elements from the AST.
+ * It uses static factory methods for each type of IJavaElement from the model which the plugin can be run on.
+ * 
+ * It's main driver method harvestRefactorableContexts() produces a Set<TypeDependentElementSet> which is
+ * passed to the caller. It also retains a TypeDependentElementSet for all of the program elements which are
+ * null dependent but that do not meet the criteria for refactoring, for example, due to being dependent on
+ * generated code or code in read only resources.
+ *
+ */
 public class RefactorableHarvester {
 
 	private final IJavaElement refactoringRootElement;
@@ -49,6 +60,8 @@ public class RefactorableHarvester {
 	private final WorkList workList = new WorkList();
 	private final Set<IJavaElement> notN2ORefactorable = new LinkedHashSet<>();
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
+	
+	private TypeDependentElementSet notRefactorableTypeDependentSet;
 
 	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope, IProgressMonitor m) {
 		this.refactoringRootElement = rootElement;
@@ -111,8 +124,12 @@ public class RefactorableHarvester {
 	public Set<IJavaElement> getSeeds() {
 		return new ASTAscender(refactoringRootNode).seedNulls();
 	}
+	
+	public TypeDependentElementSet getNonRefactorableEntities() {
+		return this.notRefactorableTypeDependentSet;
+	}
 
-	public Set<TypeDependentElementTree> harvestRefactorableContexts() throws CoreException {
+	public Set<TypeDependentElementSet> harvestRefactorableContexts() throws CoreException {
 		// this worklist starts with the immediate type-dependent entities on null expressions. 
 		Set<IJavaElement> nullSeeds = new ASTAscender(refactoringRootNode).seedNulls();
 
@@ -128,8 +145,9 @@ public class RefactorableHarvester {
 			// grab the next element.
 			final IJavaElement searchElement = (IJavaElement) this.workList.next();
 			
-			// initialize it's set of dependents if empty
+			// initialize it's set of dependents and dependencies if empty
 			dependents.putIfAbsent(searchElement, new LinkedHashSet<IJavaElement>());
+			dependencies.putIfAbsent(searchElement, new LinkedHashSet<IJavaElement>());
 
 			// build a search pattern to find all occurrences of the searchElement.
 			final SearchPattern pattern = SearchPattern.createPattern(searchElement, 
@@ -235,13 +253,17 @@ public class RefactorableHarvester {
 				.getElementForest(computationForest);
 
 		// drop from the table of dependents and dependencies all keys that are not in the candidateSets
-		Set<IJavaElement> setUnion = candidateSets.stream().flatMap(Collection::stream).collect(Collectors.toSet());
+/*		Set<IJavaElement> setUnion = candidateSets.stream().flatMap(Collection::stream).collect(Collectors.toSet());
 		dependents.entrySet().removeIf(entry -> !setUnion.contains(entry.getKey()));
-		dependencies.entrySet().removeIf(entry -> !setUnion.contains(entry.getKey()));
+		dependencies.entrySet().removeIf(entry -> !setUnion.contains(entry.getKey()));*/
 		
+		// build the type dependency set for the non-refactorable null literals
+		this.notRefactorableTypeDependentSet = TypeDependentElementSet.of(this.notN2ORefactorable, dependents, dependencies);
+		
+		// build the set of type dependency sets for the refactorable null literals
 		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
-		Set<TypeDependentElementTree> typeDependentElementForest = candidateSets.stream().map(
-				set -> TypeDependentElementTree.of(set, dependents, dependencies)).collect(Collectors.toSet());
+		Set<TypeDependentElementSet> typeDependentElementForest = candidateSets.stream().map(
+				set -> TypeDependentElementSet.of(set, dependents, dependencies)).collect(Collectors.toSet());
 		return typeDependentElementForest;
 	}
 }
