@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -37,6 +38,7 @@ import org.osgi.framework.FrameworkUtil;
 import edu.cuny.citytech.refactoring.common.eval.handlers.EvaluateRefactoringHandler;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringContextSettings;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementTree;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
 
@@ -60,16 +62,23 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
-			List<String> resultsHeader = Lists.newArrayList("Type Dependent Set ID",
-															"Project Name",
+			List<String> setSummaryHeader = Lists.newArrayList("Type Dependent Set ID",
+															"Elements");
+			
+			List<String> elementResultsHeader = Lists.newArrayList("Project Name",
+															"Type Dependent Set ID",
 															"Entity Name",
 															"Entity Type", 
-															"Containing Class",
-															"In a Library");
-			/* TODO: can the dependency on org.apache.commons.csv.CSVPrinter can potentially be resolved by linking
-			 with an updated version of edu.cuny.citytech.refactoring.eval that exports it?? */
-			try (CSVPrinter resultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("results.csv", 
-					resultsHeader.toArray(new String[resultsHeader.size()])))	{
+															"Containing Entities",
+															"Dependencies",
+															"Dependents",
+															"Read Only",
+															"Generated");
+			
+			try (	CSVPrinter elementResultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("elementResults.csv", 
+						elementResultsHeader.toArray(new String[elementResultsHeader.size()]));
+					CSVPrinter setSummaryPrinter = EvaluateRefactoringHandler.createCSVPrinter("setSummary.csv", 
+						setSummaryHeader.toArray(new String[setSummaryHeader.size()]))		)	{
 				if (BUILD_WORKSPACE) {
 					// build the workspace.
 					monitor.beginTask("Building workspace ...", IProgressMonitor.UNKNOWN);
@@ -83,10 +92,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					if (!javaProject.isStructureKnown())
 						throw new IllegalStateException(
 								String.format("Project: %s should compile beforehand.", javaProject.getElementName()));
-
-
-					resultsPrinter.print(javaProject.getElementName());
-					resultsPrinter.println();
 
 					TimeCollector resultsTimeCollector = new TimeCollector();
 
@@ -104,32 +109,41 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					// get the environmental variables for refactoring contexts to be considered
 					final RefactoringContextSettings rcs = this.getEnvSettings().orElse(DEFAULT_SETTINGS);
 					
-					Set<Set<IJavaElement>> candidateSets = processor.getRefactorableSets();
+					Set<TypeDependentElementTree> candidateSets = processor.getRefactorableSets();
 					
 //					candidateSets.removeIf(set -> 
 					// check each of the refactoring context settings, and remove sets that contain settings not wanted
 //						set.stream().anyMatch(rcs.excludeNonComplying));
 					
 					// Now we have just the sets that we care about
-					for (Set<IJavaElement> set : candidateSets) {
+					for (TypeDependentElementTree set : candidateSets) {
 						// Let's print some information about what's inside
+						setSummaryPrinter.printRecord(set.hashCode(), set);
 						for (IJavaElement entity : set) {
-							resultsPrinter.printRecord(
-									set.toString(),
+							elementResultsPrinter.printRecord(
 									entity.getJavaProject().getElementName(),
+									set.hashCode(),
 									entity.getElementName(),
-									entity.getClass(),
-									entity.getAncestor(IJavaElement.TYPE),
-									entity.isReadOnly() && entity.getResource().isDerived(),
-									entity);
+									entity.getClass().getSimpleName(),
+									entity.getElementType() == IJavaElement.LOCAL_VARIABLE ?
+											entity.getAncestor(IJavaElement.METHOD).getElementName()+"\n"+entity.getAncestor(IJavaElement.METHOD).getAncestor(IJavaElement.TYPE).getElementName() 
+										:	entity.getAncestor(IJavaElement.TYPE).getElementName(),
+									set.getDependency(entity).stream()
+										.map(element -> element.getElementName())
+										.collect(Collectors.joining(":")),
+									set.getDependents(entity).stream()
+										.map(element -> element.getElementName())
+										.collect(Collectors.joining(":")),
+									entity.isReadOnly(),
+									entity.getResource().isDerived());
 						}
 					}
-					resultsPrinter.println();
+					setSummaryPrinter.println();
+					elementResultsPrinter.println();
 					
 					// Then let's refactor them
 					
 					// Then let's print some more information about the refactoring
-					Logger.getAnonymousLogger().info("DONE");
 					
 				}
 			} catch (Exception e) {
