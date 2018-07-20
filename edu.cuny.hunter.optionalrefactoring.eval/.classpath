@@ -10,6 +10,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.optionalrefactoring.core"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.optionalrefactoring.tests"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/edu.cuny.hunter.optionalrefactoring.ui"/>
-	<classpathentry kind="lib" path="/edu.cuny.citytech.refactoring.common.eval/lib/commons-csv-1.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-csv-1.1.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
