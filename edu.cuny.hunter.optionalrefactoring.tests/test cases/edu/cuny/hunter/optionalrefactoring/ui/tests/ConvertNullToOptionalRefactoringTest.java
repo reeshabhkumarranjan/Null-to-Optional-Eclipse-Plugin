@@ -133,33 +133,12 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			}
 		};
 		c.accept(visitor);
-		LinkedHashMap<IJavaElement, Set<IJavaElement>> m = new LinkedHashMap<>(), n = new LinkedHashMap<>();
-		elements.forEach(element -> {
-			m.put(element, elements);
-			n.put(element, elements);
-		});
-		TypeDependentElementSet tdes = TypeDependentElementSet.of(elements, m, n);
+		Set<IJavaElement> seeds = elements.stream().limit(1).collect(Collectors.toSet());
+
+		TypeDependentElementSet tdes = TypeDependentElementSet.of(elements, seeds);
 		assertTrue("TDES is not empty.", !tdes.isEmpty());
-		tdes.forEach(element -> assertNotNull(element));
-		tdes.forEach(element -> assertNotNull(tdes.getDependencies(element)));
-		tdes.forEach(
-				element -> assertTrue(
-						"Dependencies for "+element.getElementName()+" are "+tdes.getDependencies(element).toString()+".",
-						elements.containsAll(tdes.getDependencies(element))));
-		tdes.forEach(element -> assertNotNull(tdes.getDependents(element)));
-		tdes.forEach(
-				element -> assertTrue(
-						"Dependents for "+element.getElementName()+" are "+tdes.getDependents(element).toString()+".",
-						elements.containsAll(tdes.getDependents(element))));
+		assertNotNull("TDES has a seed element.", tdes.seed());
 		
-		// try to form an invalid TypeDependentElementSet where the number of dependents and dependencies don't match
-		IJavaElement ije = n.keySet().stream().findAny().get();
-		n.remove(ije);
-		try {
-			TypeDependentElementSet.of(elements, m, n);
-		} catch (IllegalArgumentException e) {
-			assertNotNull(e);
-		}
 	}
 
 	private void helper(Set<String> expectedElements, Set<Set<String>> expectedSets) throws Exception {

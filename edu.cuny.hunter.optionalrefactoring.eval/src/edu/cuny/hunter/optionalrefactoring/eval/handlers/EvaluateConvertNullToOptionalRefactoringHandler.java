@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -109,7 +108,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					// Now we have just the sets that we care about
 					for (TypeDependentElementSet set : candidateSets) {
 						// Let's print some information about what's inside
-						setSummaryPrinter.printRecord(set.hashCode(), set);
+						setSummaryPrinter.printRecord(set.hashCode(), set.seed().getElementName());
 						for (IJavaElement entity : set) {
 							elementResultsPrinter.printRecord(
 									entity.getJavaProject().getElementName(),
@@ -119,12 +118,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 									entity.getElementType() == IJavaElement.LOCAL_VARIABLE ?
 											entity.getAncestor(IJavaElement.METHOD).getElementName()+"\n"+entity.getAncestor(IJavaElement.METHOD).getAncestor(IJavaElement.TYPE).getElementName() 
 										:	entity.getAncestor(IJavaElement.TYPE).getElementName(),
-									set.getDependencies(entity).stream()
-										.map(element -> element.getElementName())
-										.collect(Collectors.joining(":")),
-									set.getDependents(entity).stream()
-										.map(element -> element.getElementName())
-										.collect(Collectors.joining(":")),
 									entity.isReadOnly(),
 									entity.getResource().isDerived());
 						}

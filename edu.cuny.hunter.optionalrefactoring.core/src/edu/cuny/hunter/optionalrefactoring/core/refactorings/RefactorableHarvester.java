@@ -130,13 +130,10 @@ public class RefactorableHarvester {
 	}
 
 	public Set<TypeDependentElementSet> harvestRefactorableContexts() throws CoreException {
-		// this worklist starts with the immediate type-dependent entities on null expressions. 
-		Set<IJavaElement> nullSeeds = new ASTAscender(refactoringRootNode).seedNulls();
 
 		this.reset();
-		
-		Map<IJavaElement,Set<IJavaElement>> dependents = new LinkedHashMap<>();
-		Map<IJavaElement,Set<IJavaElement>> dependencies = new LinkedHashMap<>();
+		// this worklist starts with the immediate type-dependent entities on null expressions. 
+		Set<IJavaElement> nullSeeds = new ASTAscender(refactoringRootNode).seedNulls();
 
 		this.workList.addAll(nullSeeds);
 
@@ -145,10 +142,6 @@ public class RefactorableHarvester {
 			// grab the next element.
 			final IJavaElement searchElement = (IJavaElement) this.workList.next();
 			
-			// initialize it's set of dependents and dependencies if empty
-			dependents.putIfAbsent(searchElement, new LinkedHashSet<IJavaElement>());
-			dependencies.putIfAbsent(searchElement, new LinkedHashSet<IJavaElement>());
-
 			// build a search pattern to find all occurrences of the searchElement.
 			final SearchPattern pattern = SearchPattern.createPattern(searchElement, 
 					IJavaSearchConstants.ALL_OCCURRENCES, 
@@ -162,21 +155,7 @@ public class RefactorableHarvester {
 						// here, we have search match. 
 
 						IJavaElement matchingElement = (IJavaElement) match.getElement();
-						// put the matchingElement in searchElement's dependents set
-						Set<IJavaElement> elementDependents = dependents.get(searchElement);
-						elementDependents.add(matchingElement);
-						dependents.put(searchElement, elementDependents);
-						
-						// now initialize the matchingElement's sets of dependencies and dependents if empty
-						dependencies.putIfAbsent(matchingElement, new LinkedHashSet<IJavaElement>());
-						dependents.putIfAbsent(matchingElement, new LinkedHashSet<IJavaElement>());
-						
-						
-						// put the searchElement in the matchingElement's dependencies set
-						Set<IJavaElement> matchingElementsDependencies = dependencies.get(matchingElement);
-						matchingElementsDependencies.add(searchElement);
-						dependencies.put(matchingElement, matchingElementsDependencies);
-						
+		
 						// check if we are in a Jar or generated code, and stop searching deeper						
 						if (matchingElement.isReadOnly()) {
 							RefactorableHarvester.this.workList.add(matchingElement);
@@ -204,19 +183,6 @@ public class RefactorableHarvester {
 
 						// add to the worklist all of the type-dependent stuff we found.
 						RefactorableHarvester.this.workList.addAll(processor.getFound());
-						
-						// add to the matchingElement's dependents all the stuff we found
-						Set<IJavaElement> foundSet = processor.getFound();
-						foundSet.forEach(foundElement -> {
-							Set<IJavaElement> matchingElementsDependents = dependents.get(matchingElement);
-							matchingElementsDependents.add(foundElement);
-							dependents.put(matchingElement, matchingElementsDependents);
-							// and for each foundElement add matchingElement as a dependency
-							dependencies.putIfAbsent(foundElement, new LinkedHashSet<>());
-							Set<IJavaElement> foundElementsDependencies = dependencies.get(foundElement);
-							foundElementsDependencies.add(matchingElement);
-							dependencies.put(foundElement, foundElementsDependencies);
-						});
 					}
 				}
 			};
@@ -252,18 +218,10 @@ public class RefactorableHarvester {
 		final Set<Set<IJavaElement>> candidateSets = Util
 				.getElementForest(computationForest);
 
-		// drop from the table of dependents and dependencies all keys that are not in the candidateSets
-/*		Set<IJavaElement> setUnion = candidateSets.stream().flatMap(Collection::stream).collect(Collectors.toSet());
-		dependents.entrySet().removeIf(entry -> !setUnion.contains(entry.getKey()));
-		dependencies.entrySet().removeIf(entry -> !setUnion.contains(entry.getKey()));*/
-		
-		// build the type dependency set for the non-refactorable null literals
-		this.notRefactorableTypeDependentSet = TypeDependentElementSet.of(this.notN2ORefactorable, dependents, dependencies);
-		
 		// build the set of type dependency sets for the refactorable null literals
 		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
 		Set<TypeDependentElementSet> typeDependentElementForest = candidateSets.stream().map(
-				set -> TypeDependentElementSet.of(set, dependents, dependencies)).collect(Collectors.toSet());
+				set -> TypeDependentElementSet.of(set, nullSeeds)).collect(Collectors.toSet());
 		return typeDependentElementForest;
 	}
 }
