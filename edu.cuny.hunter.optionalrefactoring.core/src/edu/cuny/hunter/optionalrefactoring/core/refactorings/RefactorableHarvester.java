@@ -122,7 +122,7 @@ public class RefactorableHarvester {
 	}
 
 	public Set<IJavaElement> getSeeds() {
-		return new ASTAscender(refactoringRootNode).seedNulls();
+		return new NullSeeder(refactoringRootNode).seedNulls();
 	}
 	
 	public TypeDependentElementSet getNonRefactorableEntities() {
@@ -133,7 +133,7 @@ public class RefactorableHarvester {
 
 		this.reset();
 		// this worklist starts with the immediate type-dependent entities on null expressions. 
-		Set<IJavaElement> nullSeeds = new ASTAscender(refactoringRootNode).seedNulls();
+		Set<IJavaElement> nullSeeds = new NullSeeder(refactoringRootNode).seedNulls();
 
 		this.workList.addAll(nullSeeds);
 
@@ -173,7 +173,7 @@ public class RefactorableHarvester {
 
 						// now we have the ASTNode corresponding to the match.
 						// process the matching ASTNode.
-						ASTDescender processor = new ASTDescender(node,
+						NullPropagator processor = new NullPropagator(node,
 								Collections.singleton(RefactorableHarvester.this.refactoringRootElement),
 								RefactorableHarvester.this.scopeRoot,
 								RefactorableHarvester.this.monitor);

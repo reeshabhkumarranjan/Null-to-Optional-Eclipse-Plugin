@@ -58,7 +58,12 @@ import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 
-class ASTDescender {
+/**
+ * @author <a href="mailto:raffi.khatchadourian@hunter.cuny.edu">Raffi
+ *         Khatchadourian</a>
+ * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>
+ */
+class NullPropagator {
 
 	private static boolean containedIn(ASTNode node, Expression name) {
 		ASTNode curr = name;
@@ -115,7 +120,7 @@ class ASTDescender {
 
 	private final IJavaSearchScope scope;
 
-	public ASTDescender(ASTNode node, Set<IJavaElement> constFields,
+	public NullPropagator(ASTNode node, Set<IJavaElement> constFields,
 			IJavaSearchScope scope, IProgressMonitor monitor) {
 		this.name = (Expression) node;
 		this.constFields = constFields;
@@ -257,16 +262,16 @@ class ASTDescender {
 						&& !match.isInsideDocComment()) {
 					IJavaElement elem = (IJavaElement) match.getElement();
 					ASTNode node = Util.getASTNode(elem,
-							ASTDescender.this.monitor);
+							NullPropagator.this.monitor);
 					ParameterProcessingVisitor visitor = new ParameterProcessingVisitor(
 							paramNumber, match.getOffset());
 					node.accept(visitor);
-					ASTDescender.this.found.addAll(visitor.getElements());
+					NullPropagator.this.found.addAll(visitor.getElements());
 
 					for (Iterator it = visitor.getExpressions().iterator(); it
 							.hasNext();) {
 						Expression exp = (Expression) it.next();
-						ASTDescender.this.processExpression(exp);
+						NullPropagator.this.processExpression(exp);
 					}
 				}
 			}
@@ -304,6 +309,8 @@ class ASTDescender {
 		}
 
 		case ASTNode.ARRAY_CREATION: {
+			/* TODO: we may not need this check as we are not going 
+			 to have null dependent elements inside array dimensions which can only be primitive? */			
 			final ArrayCreation creation = (ArrayCreation) node;
 			boolean legal = true;
 			for (Object o : creation.dimensions()) {
@@ -323,6 +330,8 @@ class ASTDescender {
 		}
 
 		case ASTNode.ARRAY_ACCESS: {
+			/* TODO: we may not need this check as we are not going 
+			 to have null dependent elements inside array dimensions which can only be primitive? */			
 			final ArrayAccess access = (ArrayAccess) node;
 			// if coming up from the index.
 			if (containedIn(access.getIndex(), this.name))
@@ -347,6 +356,10 @@ class ASTDescender {
 						.next();
 				IVariableBinding b = vdf.resolveBinding();
 				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a VariableDeclarationStatement: ", node);
+				if (!b.getDeclaringClass().isFromSource())
+					; /*TODO: we need to throw an exception here and stop searching
+						and we need to add the element to a type dependent set but
+						also mark it for further handling as a library reference*/
 				final IJavaElement elem = b.getJavaElement();
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
 					throw new NotOptionizableException(
@@ -460,7 +473,7 @@ class ASTDescender {
 			final ASTVisitor visitor = new ASTVisitor() {
 				public boolean visit(ReturnStatement node) {
 					try {
-						ASTDescender.this.processExpression(node
+						NullPropagator.this.processExpression(node
 								.getExpression());
 					} catch (JavaModelException E) {
 						throw new RuntimeException(E);

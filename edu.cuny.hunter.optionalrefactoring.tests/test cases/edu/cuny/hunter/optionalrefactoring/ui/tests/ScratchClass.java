@@ -28,6 +28,10 @@ class ScratchClass {
 			}
 
 			public B(Object k, Object l, Object m, Object n, Object o) {	}
-		}	
+		}
+		
+		A a;
+		A b = a;
+		A c, d, localVarControl = new A();
 	}
 }

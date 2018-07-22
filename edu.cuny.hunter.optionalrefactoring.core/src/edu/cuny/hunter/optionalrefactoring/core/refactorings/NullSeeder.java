@@ -13,7 +13,6 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
-import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CastExpression;
@@ -23,8 +22,10 @@ import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
@@ -50,23 +51,39 @@ import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTExcepti
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.UndeterminedNodeBinding;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
-class ASTAscender {
+/**
+ * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>
+ *
+ */
+class NullSeeder {
 
 	private final SearchEngine searchEngine = new SearchEngine();
 	private final ASTNode node;
 	private final Set<IJavaElement> candidates = new LinkedHashSet<>();
 
-	public ASTAscender(ASTNode node) {
+	public NullSeeder(ASTNode node) {
 		this.node = node;
 	}
-
+	
 	public Set<IJavaElement> seedNulls() {
 		ASTVisitor visitor = new ASTVisitor() {
 			@Override
 			public boolean visit(NullLiteral nl) {
-				ASTAscender.this.process(nl.getParent());
+				NullSeeder.this.process(nl.getParent());
 				return super.visit(nl);
 			}
+/*			@Override
+			public boolean visit(VariableDeclarationFragment vdf) {
+				if (vdf.getInitializer() == null) {
+					IVariableBinding b = vdf.resolveBinding();
+					if (b != null)
+						candidates.add(b.getJavaElement());
+					else throw new UndeterminedNodeBinding(
+							vdf, 
+							"While trying to process an uninitialized VariableDeclarationFragment: ");
+				}
+				return super.visit(vdf);
+			}*/
 		};
 		node.accept(visitor);
 		return candidates;
@@ -110,7 +127,7 @@ class ASTAscender {
 			break;
 			case ASTNode.CAST_EXPRESSION : this.process((CastExpression)node);
 			break;
-			case ASTNode.INFIX_EXPRESSION :
+			case ASTNode.INFIX_EXPRESSION : 
 			break;
 			default : throw new UndeterminedNodeBinding(node, "While trying to process the parent of an encountered NullLiteral: ");
 			}
@@ -298,6 +315,7 @@ class ASTAscender {
 		
 		Set<SingleVariableDeclaration> svd = new LinkedHashSet<>();
 			SearchRequestor requestor = new SearchRequestor() {
+				@SuppressWarnings("unchecked")
 				@Override
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {
 					
@@ -340,6 +358,7 @@ class ASTAscender {
 			}
 	}
 
+	@SuppressWarnings("unchecked")
 	private <T extends ASTNode> List<Integer> getParamPositions(T invocation) {
 		List<Expression> args;
 		switch (invocation.getNodeType()) {
@@ -363,6 +382,7 @@ class ASTAscender {
 		return argPositions;
 	}
 
+	@SuppressWarnings("unchecked")
 	private void process(VariableDeclarationFragment vdf) throws UndeterminedNodeBinding {
 		ASTNode node = vdf.getParent();
 		List<VariableDeclarationFragment> fragments;

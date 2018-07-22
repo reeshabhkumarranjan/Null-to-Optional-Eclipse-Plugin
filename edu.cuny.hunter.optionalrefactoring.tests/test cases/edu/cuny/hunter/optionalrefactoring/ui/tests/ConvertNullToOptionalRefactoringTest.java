@@ -143,6 +143,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	private void helper(Set<String> expectedElements, Set<Set<String>> expectedSets) throws Exception {
 
+		System.out.println(this.getName());
 		// compute the actual results.
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 		ASTParser parser = ASTParser.newParser(AST.JLS8);
@@ -155,7 +156,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		// Here we are getting just the seeds without transitive dependencies
 		Set<IJavaElement> seeds = harvester.getSeeds();
-
+		Util.candidatePrinter(seeds);
+		System.out.println();
 		Set<String> actualElements = seeds.stream()
 				.map(element -> element.getElementName())
 				.collect(Collectors.toSet());
@@ -168,7 +170,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts().stream().collect(Collectors.toSet());
 
 		// print to console
-		System.out.println(this.getName());
 		System.out.print("{");
 		sets.forEach(set -> {
 			Util.candidatePrinter(set);
@@ -184,6 +185,13 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		assertTrue("Expected sets contain "+expectedSets.toString()+" and are the same.", 
 				expectedSets.containsAll(actualSets));
+	}
+	
+	public void testImplicitlyNullVariableDecl() throws Exception {
+		this.helper(setOf("a","c","d"), 
+				setOf(setOf("a","b"),
+						setOf("c"),
+						setOf("d")));
 	}
 
 	public void testAssignmentFieldSimpleName() throws Exception {
