@@ -11,6 +11,6 @@ public class A {
 		A d = null;
 		A e = d;
 		A control = null;
-		A notNull;
+		A notNull = new Object();
 	}
 }

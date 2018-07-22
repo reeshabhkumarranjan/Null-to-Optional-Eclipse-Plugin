@@ -2,10 +2,10 @@ package p;
 
 public class A {
 
-	A a;
-	A b;
-	A nullControl;
-	A control;
+	A a = new Object();
+	A b = new Object();
+	A nullControl = new Object();
+	A control = new Object();
 
 	void fieldAssignmentTest() {
 		/** should seed: { "a","nullControl" }

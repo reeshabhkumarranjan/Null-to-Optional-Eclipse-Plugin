@@ -9,6 +9,6 @@ public class A {
 	A[] a = { null };
 	A[] b = { a[0] };
 	A[] nullControl = { null };
-	A[] control; // this should not be seeded or propagated
+	A[] control = new A[1]; // this should not be seeded or propagated
 
 }
