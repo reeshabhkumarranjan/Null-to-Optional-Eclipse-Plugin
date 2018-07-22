@@ -72,7 +72,7 @@ class NullSeeder {
 				NullSeeder.this.process(nl.getParent());
 				return super.visit(nl);
 			}
-/*			@Override
+			@Override
 			public boolean visit(VariableDeclarationFragment vdf) {
 				if (vdf.getInitializer() == null) {
 					IVariableBinding b = vdf.resolveBinding();
@@ -83,7 +83,7 @@ class NullSeeder {
 							"While trying to process an uninitialized VariableDeclarationFragment: ");
 				}
 				return super.visit(vdf);
-			}*/
+			}
 		};
 		node.accept(visitor);
 		return candidates;

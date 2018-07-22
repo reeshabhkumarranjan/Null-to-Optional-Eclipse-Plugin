@@ -2,13 +2,13 @@ package p;
 
 public class A {
 
-	A a;
-	A b;
-	A c;
-	A d;
-	A e;
-	A controlNullDependent;
-	A controlNonNullDependent;
+	A a = new Object();
+	A b = new Object();
+	A c = new Object();
+	A d = new Object();
+	A e = new Object();
+	A controlNullDependent = new Object();
+	A controlNonNullDependent = new Object();
 
 	// should produce seeds {a,controlNullDependent,d} 
 	//should propagate transitive dependency sets: {{a,b,c},{controllNullDependent},{d,e}}
