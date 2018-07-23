@@ -3,6 +3,7 @@
  */
 package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -14,6 +15,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
+
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -114,8 +119,38 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		if (!unit.isStructureKnown())
 			throw new IllegalArgumentException(cuName + " has structural errors.");
-		else
-			return unit;
+
+		// full path of where the CU exists.
+		Path directory = Paths.get(unit.getParent().getParent().getParent().getResource().getLocation().toString());
+
+		// compile it to make and store the class file.
+		assertTrue("Input should compile", compiles(unit.getSource(), directory));
+		
+		return unit;
+	}
+
+	@SuppressWarnings("unused")
+	private static boolean compiles(String source) throws IOException {
+		return compiles(source, Files.createTempDirectory(null));
+	}
+
+	private static boolean compiles(String source, Path directory) throws IOException {
+		// Save source in .java file.
+		File sourceFile = new File(directory.toFile(), "bin/p/A.java");
+		sourceFile.getParentFile().mkdirs();
+		Files.write(sourceFile.toPath(), source.getBytes());
+
+		// Compile source file.
+		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+
+		boolean compileSuccess = compiler.run(null, null, null, "-classpath",
+				System.getProperty("user.dir") + File.separator + "resources" + File.separator
+						+ "ConvertStreamToParallel" + File.separator + "lib" + File.separator
+						+ "stream-refactoring-annotations.jar",
+				sourceFile.getPath()) == 0;
+
+		sourceFile.delete();
+		return compileSuccess;
 	}
 
 	public void testTypeDependentElementSet() throws Exception {
