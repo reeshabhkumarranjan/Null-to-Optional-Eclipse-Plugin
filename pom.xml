@@ -10,10 +10,52 @@
     <module>edu.cuny.hunter.optionalrefactoring.core</module>
     <module>edu.cuny.hunter.optionalrefactoring.eval</module>
     <module>edu.cuny.hunter.optionalrefactoring.tests</module>
+    <module>edu.cuny.hunter.optionalrefactoring.tests.report</module>
   </modules>
+  <profiles>
+    <profile>
+      <id>jacoco</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco-version}</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.eluder.coveralls</groupId>
+              <artifactId>coveralls-maven-plugin</artifactId>
+              <version>4.3.0</version>
+              <configuration>
+                <jacocoReports>
+                  <jacocoReport>${project.basedir}/edu.cuny.hunter.optionalrefactoring.tests.report/target/site/jacoco-aggregate/jacoco.xml</jacocoReport>
+                </jacocoReports>
+                <repoToken>A6zEYTCheTRBcuXpjb0pjXXFghpPmDhpU</repoToken>
+                <serviceName>travis-pro</serviceName>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+  </profiles>
   <properties>
     <tycho-version>0.26.0</tycho-version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jacoco-version>0.7.8</jacoco-version>
   </properties>
   <repositories>
     <repository>
