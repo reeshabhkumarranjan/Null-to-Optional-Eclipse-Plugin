@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
@@ -68,6 +69,9 @@ class NullSeeder {
 		this.node = node;
 	}
 	
+	/**
+	 * @return Map of IJavaElement to whether it is implicitly null field
+	 */
 	public Map<IJavaElement, Boolean> seedNulls() {
 		ASTVisitor visitor = new ASTVisitor() {
 			@Override
@@ -77,14 +81,16 @@ class NullSeeder {
 			}
 			@Override
 			public boolean visit(VariableDeclarationFragment vdf) {
-				if (vdf.getInitializer() == null) {
-					IVariableBinding b = vdf.resolveBinding();
-					if (b != null)
-						candidates.put(b.getJavaElement(),Boolean.TRUE);
-					else throw new UndeterminedNodeBinding(
-							vdf, 
-							"While trying to process an uninitialized VariableDeclarationFragment: ");
-				}
+				IVariableBinding b = vdf.resolveBinding();
+				if (b != null) {
+					if (b.getJavaElement() instanceof IField)
+						if (vdf.getInitializer() == null)
+							/*this element gets added to the Map candidates with 
+							 * boolean true indicating an implict null*/
+							candidates.put(b.getJavaElement(),Boolean.TRUE);
+				} else throw new UndeterminedNodeBinding(
+						vdf, 
+						"While trying to process an uninitialized VariableDeclarationFragment: ");
 				return super.visit(vdf);
 			}
 		};

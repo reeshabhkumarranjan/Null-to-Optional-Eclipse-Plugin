@@ -14,9 +14,9 @@ public class A {
 		c = d;
 		d = e;
 		e = null;
-		A[] f = new A[1];
+		A[] f = new A[];
 		f[0] = e;
-		A[] g = new A[1];
+		A[] g = new A[];
 		g[0] = f[0];
 		A control = new Object();
 		control = null;

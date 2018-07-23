@@ -190,7 +190,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 	
 	public void testImplicitlyNullVariableDecl() throws Exception {
-		this.helper(setOf("a","c","d"), 
+		this.helper(setOf("a"), 
 				setOf(setOf("a","b"),
 						setOf("c"),
 						setOf("d")));
