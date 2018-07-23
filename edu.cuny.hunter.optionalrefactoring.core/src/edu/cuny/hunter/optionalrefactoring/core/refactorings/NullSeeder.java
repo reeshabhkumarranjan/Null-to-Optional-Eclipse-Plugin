@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -62,6 +63,7 @@ class NullSeeder {
 	private final SearchEngine searchEngine = new SearchEngine();
 	private final ASTNode node;
 	private final Map<IJavaElement, Boolean> candidates = new LinkedHashMap<>();
+	private final Set<Set<IJavaElement>> notRefactorable = new LinkedHashSet<>(); 
 
 	public NullSeeder(ASTNode node) {
 		this.node = node;
@@ -313,7 +315,7 @@ class NullSeeder {
 		} else throw new UndeterminedNodeBinding(sci, "While trying to process a Super Constructor Invocation node: ");
 	}
 
-	private void processInvocation(List<Integer> argPositions, IMethod declaration) {
+	private void processInvocation(List<Integer> argPositions, IMethod invocation) {
 		
 		Set<SingleVariableDeclaration> svd = new LinkedHashSet<>();
 			SearchRequestor requestor = new SearchRequestor() {
@@ -321,7 +323,7 @@ class NullSeeder {
 				@Override
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {
 					
-					IJavaElement element = (IJavaElement) match.getElement();
+					IMethod element = (IMethod) match.getElement();
 					if (element.isReadOnly()) {
 						throw new BinaryElementEncounteredException("Match found a dependency in a non-writable location.", element);
 					}
@@ -340,7 +342,7 @@ class NullSeeder {
 
 			try {
 				this.searchEngine.search(
-						SearchPattern.createPattern(declaration, IJavaSearchConstants.DECLARATIONS),
+						SearchPattern.createPattern(invocation, IJavaSearchConstants.DECLARATIONS),
 						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, 
 						SearchEngine.createWorkspaceScope(),
 						requestor, new NullProgressMonitor());
@@ -350,10 +352,10 @@ class NullSeeder {
 			}
 			
 			for (SingleVariableDeclaration node : svd) {
-				IBinding b = node.resolveBinding();
+				IVariableBinding b = node.resolveBinding();
 				if (b != null) {
-					IJavaElement e = b.getJavaElement();
-					if (e != null) {
+					ILocalVariable e = (ILocalVariable) b.getJavaElement();
+					if (e.exists()) {
 						this.candidates.put(e,Boolean.FALSE);
 					}
 				}
