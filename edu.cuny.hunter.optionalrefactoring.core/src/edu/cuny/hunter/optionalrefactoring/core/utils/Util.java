@@ -39,6 +39,7 @@ import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
+import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.refactoring.rename.MethodChecks;
 import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
@@ -278,10 +279,7 @@ public interface Util {
 	}
 	
 	public static MethodDeclaration getMethodDeclaration(ASTNode node) {
-		ASTNode trav = node;
-		while (trav.getNodeType() != ASTNode.METHOD_DECLARATION)
-			trav = trav.getParent();
-		return (MethodDeclaration) trav;
+		return (MethodDeclaration) ASTNodes.getParent(node, ASTNode.METHOD_DECLARATION);
 	}
 	
 	public static Set<Set<IJavaElement>> getElementForest(Set<ComputationNode> computationForest) {
