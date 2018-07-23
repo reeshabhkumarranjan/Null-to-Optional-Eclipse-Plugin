@@ -53,15 +53,14 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
 			List<String> setSummaryHeader = Lists.newArrayList("Type Dependent Set ID",
-															"Elements");
+															"Seed",
+															"Implicit Null");
 			
 			List<String> elementResultsHeader = Lists.newArrayList("Project Name",
 															"Type Dependent Set ID",
 															"Entity Name",
 															"Entity Type", 
 															"Containing Entities",
-															"Dependencies",
-															"Dependents",
 															"Read Only",
 															"Generated");
 			
@@ -101,14 +100,15 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					
 					Set<TypeDependentElementSet> candidateSets = processor.getRefactorableSets();
 					
-//					candidateSets.removeIf(set -> 
+					// candidateSets.removeIf(rcs.nonComplying);
 					// check each of the refactoring context settings, and remove sets that contain settings not wanted
-//						set.stream().anyMatch(rcs.excludeNonComplying));
 					
 					// Now we have just the sets that we care about
 					for (TypeDependentElementSet set : candidateSets) {
 						// Let's print some information about what's inside
-						setSummaryPrinter.printRecord(set.hashCode(), set.seed().getElementName());
+						setSummaryPrinter.printRecord(set.hashCode(), 
+								set.seed().getElementName(),
+								set.seedImplicit());
 						for (IJavaElement entity : set) {
 							elementResultsPrinter.printRecord(
 									entity.getJavaProject().getElementName(),
@@ -116,7 +116,9 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 									entity.getElementName(),
 									entity.getClass().getSimpleName(),
 									entity.getElementType() == IJavaElement.LOCAL_VARIABLE ?
-											entity.getAncestor(IJavaElement.METHOD).getElementName()+"\n"+entity.getAncestor(IJavaElement.METHOD).getAncestor(IJavaElement.TYPE).getElementName() 
+											entity.getAncestor(IJavaElement.METHOD).getElementName()+"\n"+
+												entity.getAncestor(IJavaElement.METHOD)
+													.getAncestor(IJavaElement.TYPE).getElementName() 
 										:	entity.getAncestor(IJavaElement.TYPE).getElementName(),
 									entity.isReadOnly(),
 									entity.getResource().isDerived());

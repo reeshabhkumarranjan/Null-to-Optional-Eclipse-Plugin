@@ -121,7 +121,7 @@ public class RefactorableHarvester {
 		return ret;
 	}
 
-	public Set<IJavaElement> getSeeds() {
+	public Map<IJavaElement, Boolean> getSeeds() {
 		return new NullSeeder(refactoringRootNode).seedNulls();
 	}
 	
@@ -133,9 +133,9 @@ public class RefactorableHarvester {
 
 		this.reset();
 		// this worklist starts with the immediate type-dependent entities on null expressions. 
-		Set<IJavaElement> nullSeeds = new NullSeeder(refactoringRootNode).seedNulls();
+		Map<IJavaElement,Boolean> nullSeeds = new NullSeeder(refactoringRootNode).seedNulls();
 
-		this.workList.addAll(nullSeeds);
+		this.workList.addAll(nullSeeds.keySet());
 
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
@@ -210,7 +210,7 @@ public class RefactorableHarvester {
 			}
 		}
 
-		this.notN2ORefactorable.retainAll(nullSeeds);
+		this.notN2ORefactorable.retainAll(nullSeeds.keySet());
 
 		final Set<ComputationNode> computationForest = this.trimForest(this.workList
 				.getComputationForest(), this.notRefactorable);

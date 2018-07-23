@@ -6,12 +6,15 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import org.eclipse.jdt.core.IField;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 
 import com.google.common.collect.Sets;
 
+/**
+ * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>
+ *
+ */
 public class RefactoringContextSettings {
 	
 	private static enum ContextType {
@@ -28,7 +31,7 @@ public class RefactoringContextSettings {
 		return new RefactoringContextSettings(Sets.newHashSet(ContextType.FIELDS, 
 				ContextType.LOCAL_VARS, ContextType.METHOD_PARAMS, ContextType.METHOD_RETURNS));
 	}
-	
+
 	public static RefactoringContextSettings  of(final Map<String,String> choices) {
 		Set<ContextType> set = new LinkedHashSet<>();
 		for (String s : choices.keySet()) {
@@ -68,27 +71,25 @@ public class RefactoringContextSettings {
 		return settings.contains(ContextType.METHOD_RETURNS);
 	}
 	
-/*	TODO: implement necessary Utility Method isNotInitialized(IField)
- *  private boolean refactorsUninitializedFields() {
+	private boolean refactorsUninitializedFields() {
 		return settings.contains(ContextType.IMPLICIT_FIELDS);
-	}*/
+	}
 
-	public Predicate<IJavaElement> nonComplying = element -> {
-		if (element instanceof IMethod)
+	public Predicate<TypeDependentElementSet> nonComplying = set -> {
+		if (set.stream().anyMatch(element -> element instanceof IMethod))
 			return !this.refactorsMethodReturns();
 
-		if (element instanceof IField) {
+		if (set.stream().anyMatch(element -> element instanceof IField)) {
 			if (!this.refactorsFields()) return true;
-
-			/* TODO: implement this static method
-			 * if (Util.isNotInitialized((IField)element))
-			 * 	return !this.refactorsUninitializedFields();
-			*/
+			
+			if (set.seedImplicit())
+				return !this.refactorsUninitializedFields();
 		}
-		if (element instanceof ILocalVariable) {
+		if (set.stream().anyMatch(element -> element instanceof ILocalVariable)) {
 			if (!this.refactorsLocalVars()) return true;
 			
-			if (((ILocalVariable) element).isParameter())
+			if (set.stream().filter(element -> element instanceof ILocalVariable)
+					.anyMatch(element -> ((ILocalVariable)element).isParameter()))
 				return !this.refactorsMethodParams();
 		}
 		return false;

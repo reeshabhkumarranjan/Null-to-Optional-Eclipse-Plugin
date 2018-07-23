@@ -2,6 +2,7 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jdt.core.IJavaElement;
@@ -22,6 +23,7 @@ public class TypeDependentElementSet implements Set<IJavaElement> {
 	
 	private final Set<IJavaElement> elements;
 	private final IJavaElement seed;
+	private final boolean implicit;
 	
 	/**
 	 * 
@@ -31,21 +33,28 @@ public class TypeDependentElementSet implements Set<IJavaElement> {
 	 * @see						RefactorableHarvester
 	 */
 	public static TypeDependentElementSet of (Set<IJavaElement> elements,
-			Set<IJavaElement> seeds) {
+			Map<IJavaElement,Boolean> seeds) {
 		
 		IJavaElement seed = elements.stream().filter(
-				element -> seeds.contains(element)).findFirst().get();
+				element -> seeds.keySet().contains(element)).findFirst().get();
 				
-		return new TypeDependentElementSet(elements, seed);
+		return new TypeDependentElementSet(elements, seed, seeds.get(seed));
 	}
 	
-	private TypeDependentElementSet(Set<IJavaElement> elements, IJavaElement seed) {
+	private TypeDependentElementSet(Set<IJavaElement> elements, 
+			IJavaElement seed, Boolean implicit) {
 		this.elements = elements;
 		this.seed = seed;
+		this.implicit = implicit;
 	}
 
 	public IJavaElement seed() {
 		return this.seed;
+	}
+	
+
+	public boolean seedImplicit() {
+		return this.implicit;
 	}
 	
 	@Override
