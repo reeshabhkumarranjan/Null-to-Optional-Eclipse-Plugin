@@ -52,8 +52,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.NotOptionizableException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -141,7 +140,7 @@ class NullPropagator {
 			throws JavaModelException, CoreException {
 		final int paramNumber = getParamNumber(ctorCall.arguments(), this.name);
 		final IMethodBinding b = ctorCall.resolveConstructorBinding();
-		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a ClassInstanceCreation: ", ctorCall);
+		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ClassInstanceCreation: ", ctorCall);
 	
 		IMethod meth = (IMethod) b.getJavaElement();
 		if (meth == null && ctorCall.getAnonymousClassDeclaration() != null) {
@@ -167,13 +166,13 @@ class NullPropagator {
 				}
 			}
 		}
-		if (meth == null) throw new NotOptionizableException(Messages.ASTNodeProcessor_SourceNotPresent,
+		if (meth == null) throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
 				ctorCall);
 
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
-			throw new NotOptionizableException(Messages.ASTNodeProcessor_SourceNotPresent,
+			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
 					ctorCall);
 		else
 			this.findFormalsForVariable(top, paramNumber);
@@ -182,13 +181,13 @@ class NullPropagator {
 	private void findFormalsForVariable(ConstructorInvocation ctorCall)
 			throws JavaModelException, CoreException {
 		final IMethodBinding b = ctorCall.resolveConstructorBinding();
-		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a ConstructorInvocation: ", ctorCall);
+		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ConstructorInvocation: ", ctorCall);
 	
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
-			throw new NotOptionizableException(Messages.ASTNodeProcessor_SourceNotPresent,
+			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
 					ctorCall);
 		else
 			this.findFormalsForVariable(top, getParamNumber(ctorCall.arguments(), this.name));
@@ -207,13 +206,13 @@ class NullPropagator {
 	private void findFormalsForVariable(MethodInvocation mi)
 			throws JavaModelException, CoreException {
 		final IMethodBinding b = mi.resolveMethodBinding();
-		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a MethodInvocation: ", mi);
+		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a MethodInvocation: ", mi);
 	
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
-			throw new NotOptionizableException(Messages.ASTNodeProcessor_SourceNotPresent,
+			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
 					mi);
 		else
 			this.findFormalsForVariable(top, getParamNumber(mi.arguments(), this.name));
@@ -222,13 +221,13 @@ class NullPropagator {
 	private void findFormalsForVariable(SuperConstructorInvocation ctorCall)
 			throws JavaModelException, CoreException {
 		final IMethodBinding b = ctorCall.resolveConstructorBinding();
-		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperConstructorInvocation: ", ctorCall);
+		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a SuperConstructorInvocation: ", ctorCall);
 	
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
-			throw new NotOptionizableException(Messages.ASTNodeProcessor_SourceNotPresent,
+			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
 					ctorCall);
 		else
 			this.findFormalsForVariable(top, getParamNumber(ctorCall.arguments(), this.name));
@@ -237,14 +236,14 @@ class NullPropagator {
 	private void findFormalsForVariable(SuperMethodInvocation smi)
 			throws JavaModelException, CoreException {
 		final IMethodBinding b = smi.resolveMethodBinding();
-		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperMethodInvocation: ", smi);
+		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a SuperMethodInvocation: ", smi);
 	
 		final IMethod meth = (IMethod) smi.resolveMethodBinding()
 				.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
-			throw new NotOptionizableException(Messages.ASTNodeProcessor_SourceNotPresent,
+			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
 					smi);
 		else
 			this.findFormalsForVariable(top, getParamNumber(smi.arguments(),
@@ -287,7 +286,7 @@ class NullPropagator {
 
 		// Find invocations of the corresponding method.
 		final IVariableBinding b = svd.resolveBinding();
-		if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SingleVariableDeclaration: ", svd);
+		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a SingleVariableDeclaration: ", svd);
 	
 		final IMethod meth = (IMethod) b.getDeclaringMethod().getJavaElement();
 
@@ -318,7 +317,7 @@ class NullPropagator {
 				// if coming up from the index.
 				if (containedIn(dimension, this.name)) {
 					legal = false;
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_IllegalNodeContext, node);
 				}
 			}
@@ -335,7 +334,7 @@ class NullPropagator {
 			final ArrayAccess access = (ArrayAccess) node;
 			// if coming up from the index.
 			if (containedIn(access.getIndex(), this.name))
-				throw new NotOptionizableException(
+				throw new HarvesterASTException(
 						Messages.ASTNodeProcessor_IllegalNodeContext, node);
 			else
 				this.process(node.getParent());
@@ -355,14 +354,14 @@ class NullPropagator {
 				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) it
 						.next();
 				IVariableBinding b = vdf.resolveBinding();
-				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a VariableDeclarationStatement: ", node);
+				if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a VariableDeclarationStatement: ", node);
 				if (!b.getDeclaringClass().isFromSource())
 					; /*TODO: we need to throw an exception here and stop searching
 						and we need to add the element to a type dependent set but
 						also mark it for further handling as a library reference*/
 				final IJavaElement elem = b.getJavaElement();
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, vdf);
 				this.found.add(elem);
 				this.processExpression(vdf.getInitializer());
@@ -373,14 +372,14 @@ class NullPropagator {
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT: {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) node;
 			IVariableBinding b = vdf.resolveBinding();
-			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a VariableDeclarationFragment: ", node);
+			if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a VariableDeclarationFragment: ", node);
 			final IJavaElement elem = b.getJavaElement();
 			if (!this.constFields.contains(elem)) {
 				if (elem == null || vdf == null || vdf.getName() == null)
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				this.found.add(elem);
 				this.processExpression(vdf.getInitializer());
@@ -393,11 +392,11 @@ class NullPropagator {
 			for (Object o : fd.fragments()) {
 				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 				final IVariableBinding b = vdf.resolveBinding();
-				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a FieldDeclaration: ", node);
+				if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a FieldDeclaration: ", node);
 				final IJavaElement elem = b.getJavaElement();
 				if (!this.constFields.contains(elem)) {
 					if (elem.isReadOnly() || vdf.getName().resolveBoxing())
-						throw new NotOptionizableException(
+						throw new HarvesterASTException(
 								Messages.ASTNodeProcessor_SourceNotPresent, vdf);
 					this.found.add(elem);
 					this.processExpression(vdf.getInitializer());
@@ -443,19 +442,19 @@ class NullPropagator {
 
 			// Get the corresponding method.
 			final IMethodBinding b = methDecl.resolveBinding();
-			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a MethodDeclaration: ", node);
+			if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a MethodDeclaration: ", node);
 			final IMethod meth = (IMethod) b.getJavaElement();
 
 			// Get the top most method
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 			if (top == null)
-				throw new NotOptionizableException(
+				throw new HarvesterASTException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
 			else {
 				// Find the topmost method.
 				if (top.isReadOnly())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 
 				this.found.add(top);
@@ -495,10 +494,10 @@ class NullPropagator {
 			if (containedIn(ctorCall.arguments(), this.name)) {
 				// if we don't have the source, no can do.
 				final ITypeBinding b = ctorCall.getType().resolveBinding();
-				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a ClassInstanceCreation: ", node);
+				if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ClassInstanceCreation: ", node);
 			
 				if (!b.isFromSource())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				else
 					// go find the formals.
@@ -513,10 +512,10 @@ class NullPropagator {
 			if (containedIn(ctorCall.arguments(), this.name)) {
 				// if we don't have the source, no can do.
 				final IMethodBinding b = ctorCall.resolveConstructorBinding();
-				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a ConstructorInvocation: ", node);
+				if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ConstructorInvocation: ", node);
 			
 				if (!b.getDeclaringClass().isFromSource())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				else
 					// go find the formals.
@@ -531,10 +530,10 @@ class NullPropagator {
 			if (containedIn(ctorCall.arguments(), this.name)) {
 				// if we don't have the source, no can do.
 				final IMethodBinding b = ctorCall.resolveConstructorBinding();
-				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperConstructorInvocation: ", node);
+				if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a SuperConstructorInvocation: ", node);
 			
 				if (!b.getDeclaringClass().isFromSource())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				else
 					// go find the formals.
@@ -549,10 +548,10 @@ class NullPropagator {
 			if (containedIn(smi.arguments(), this.name)) {
 				// if we don't have the source, no can do.
 				final IMethodBinding b = smi.resolveMethodBinding();
-				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperMethodInvocation: ", node);
+				if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a SuperMethodInvocation: ", node);
 			
 				if (!b.getDeclaringClass().isFromSource())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				else
 					// go find the formals.
@@ -568,10 +567,10 @@ class NullPropagator {
 			if (containedIn(mi.arguments(), this.name)) {
 				// if we don't have the source, no can do.
 				IMethodBinding binding = mi.resolveMethodBinding();
-				if (binding == null) throw new NotOptionizableException(Messages.ASTNodeProcessor_IllegalNodeContext, node);
+				if (binding == null) throw new HarvesterASTException(Messages.ASTNodeProcessor_IllegalNodeContext, node);
 				if (!binding.getDeclaringClass()
 						.isFromSource())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				else
 					// go find the formals.
@@ -592,11 +591,11 @@ class NullPropagator {
 			final SingleVariableDeclaration svd = (SingleVariableDeclaration) node;
 			// take care of local usage.
 			final IVariableBinding b = svd.resolveBinding();
-			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SingleVariableDeclaration: ", node);
+			if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a SingleVariableDeclaration: ", node);
 			final IJavaElement elem = b.getJavaElement();
 
 			if (elem.isReadOnly() || svd.getName().resolveBoxing())
-				throw new NotOptionizableException(
+				throw new HarvesterASTException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
 
 			this.found.add(elem);
@@ -611,7 +610,7 @@ class NullPropagator {
 		case ASTNode.ENHANCED_FOR_STATEMENT : {
 			final SingleVariableDeclaration svd = ((EnhancedForStatement)node).getParameter();
 			final IVariableBinding b = svd.resolveBinding();
-			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SingleVariableDeclaration: ", node);
+			if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a SingleVariableDeclaration: ", node);
 			final IJavaElement elem = b.getJavaElement();
 			this.found.add(elem);
 			break;
@@ -635,7 +634,7 @@ class NullPropagator {
 			break;
 
 		default: {
-			throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalNodeContext, node);
+			throw new HarvesterASTException(Messages.ASTNodeProcessor_IllegalNodeContext, node);
 		}
 		}
 	}
@@ -649,14 +648,14 @@ class NullPropagator {
 		case ASTNode.QUALIFIED_NAME: {
 			final Name name = (Name) node;
 			final IVariableBinding b = (IVariableBinding)name.resolveBinding();
-			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a Name: ", node);
+			if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a Name: ", node);
 			if (b.getJavaElement() == null)
-				throw new NotOptionizableException(
+				throw new HarvesterASTException(
 						Messages.ASTNodeProcessor_NonEnumerizableTypeEncountered, node);
 			else {
 				final IJavaElement elem = b.getJavaElement();
 				if (elem.isReadOnly() || name.resolveBoxing())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				this.found.add(elem);
 			}
@@ -696,7 +695,7 @@ class NullPropagator {
 			if (containedIn(ctorCall.arguments(), this.name))
 				// if we don't have the source, no can do.
 				if (!ctorCall.getType().resolveBinding().isFromSource())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				else
 					// go find the formals.
@@ -714,15 +713,15 @@ class NullPropagator {
 		case ASTNode.FIELD_ACCESS: {
 			final FieldAccess fieldAccess = (FieldAccess) node;
 			IVariableBinding b = fieldAccess.resolveFieldBinding();
-			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a FieldAccess: ", node);
+			if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a FieldAccess: ", node);
 			if (b.getJavaElement() == null)
-				throw new NotOptionizableException(
+				throw new HarvesterASTException(
 						Messages.ASTNodeProcessor_NonEnumerizableTypeEncountered, node);
 			else {
 				final IJavaElement elem = fieldAccess.resolveFieldBinding()
 						.getJavaElement();
 				if (elem.isReadOnly() || fieldAccess.resolveBoxing())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				this.found.add(elem);
 			}
@@ -732,16 +731,16 @@ class NullPropagator {
 		case ASTNode.METHOD_INVOCATION: {
 			final MethodInvocation m = (MethodInvocation) node;
 			final IMethodBinding b = m.resolveMethodBinding();
-			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a MethodInvocation: ", node);
+			if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a MethodInvocation: ", node);
 			final IMethod meth = (IMethod) b.getJavaElement();
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 			if (top == null)
-				throw new NotOptionizableException(
+				throw new HarvesterASTException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
 			else {
 				if (top.isReadOnly())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				this.found.add(top);
 			}
@@ -757,10 +756,10 @@ class NullPropagator {
 		case ASTNode.SUPER_FIELD_ACCESS: {
 			final SuperFieldAccess superFieldAccess = (SuperFieldAccess) node;
 			final IVariableBinding b = superFieldAccess.resolveFieldBinding();
-			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperFieldAccess: ", node);
+			if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a SuperFieldAccess: ", node);
 			final IJavaElement elem = b.getJavaElement();
 			if (elem.isReadOnly() || superFieldAccess.resolveBoxing())
-				throw new NotOptionizableException(
+				throw new HarvesterASTException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
 			this.found.add(elem);
 			break;
@@ -769,16 +768,16 @@ class NullPropagator {
 		case ASTNode.SUPER_METHOD_INVOCATION: {
 			final SuperMethodInvocation sm = (SuperMethodInvocation) node;
 			final IMethodBinding b = sm.resolveMethodBinding();
-			if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a SuperMethodInvocation: ", node);
+			if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a SuperMethodInvocation: ", node);
 			final IMethod meth = (IMethod) b.getJavaElement();
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 			if (top == null)
-				throw new NotOptionizableException(
+				throw new HarvesterASTException(
 						Messages.ASTNodeProcessor_SourceNotPresent, node);
 			else {
 				if (top.isReadOnly())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, node);
 				this.found.add(top);
 			}
@@ -792,10 +791,10 @@ class NullPropagator {
 				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) it
 						.next();
 				final IVariableBinding b = vdf.resolveBinding();
-				if (b == null) throw new RefactoringASTException("While trying to resolve the binding for a VariableDeclarationFragment: ", vdf);
+				if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a VariableDeclarationFragment: ", vdf);
 				final IJavaElement elem = b.getJavaElement();
 				if (elem.isReadOnly() || vdf.getName().resolveBoxing())
-					throw new NotOptionizableException(
+					throw new HarvesterASTException(
 							Messages.ASTNodeProcessor_SourceNotPresent, vdf);
 				this.found.add(elem);
 			}
@@ -817,7 +816,7 @@ class NullPropagator {
 			break;
 
 		default: {
-			throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalExpression, node);
+			throw new HarvesterASTException(Messages.ASTNodeProcessor_IllegalExpression, node);
 		}
 		}
 	}

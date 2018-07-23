@@ -49,9 +49,8 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.BinaryElementEncounteredException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.UndeterminedNodeBinding;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -88,9 +87,9 @@ class NullSeeder {
 							/*this element gets added to the Map candidates with 
 							 * boolean true indicating an implict null*/
 							candidates.put(b.getJavaElement(),Boolean.TRUE);
-				} else throw new UndeterminedNodeBinding(
-						vdf, 
-						"While trying to process an uninitialized VariableDeclarationFragment: ");
+				} else throw new HarvesterASTException(
+						"While trying to process an uninitialized VariableDeclarationFragment: ", 
+						vdf);
 				return super.visit(vdf);
 			}
 		};
@@ -104,9 +103,12 @@ class NullSeeder {
 			curr = curr.getParent();
 		}
 		if (curr != null) return curr;
-		throw new RefactoringASTException("While finding the declaring block for: ", node);
+		throw new HarvesterASTException("While finding the declaring block for: ", node);
 	}
 
+	/**
+	 * @param node Any of the possible AST nodes where a null literal could appear as an immediate child
+	 */
 	private void process(ASTNode node) {
 		try {
 			switch (node.getNodeType()) {
@@ -136,16 +138,13 @@ class NullSeeder {
 			break;
 			case ASTNode.CAST_EXPRESSION : this.process((CastExpression)node);
 			break;
-			case ASTNode.INFIX_EXPRESSION : 
+			case ASTNode.INFIX_EXPRESSION : /*This may appear in some edge cases, we do nothing*/
 			break;
-			default : throw new UndeterminedNodeBinding(node, "While trying to process the parent of an encountered NullLiteral: ");
+			default : throw new HarvesterASTException("While trying to process the parent of an encountered NullLiteral: ", node);
 			}
-		} catch (UndeterminedNodeBinding e) {
-			// TODO: save the ambiguous nodes ?
-			Logger.getAnonymousLogger().warning("Unable to process AST node: "+e+".");
-		} catch (BinaryElementEncounteredException e) {
+		} catch (HarvesterJavaModelPreconditionException e) {
 			Logger.getAnonymousLogger().warning("Unable to process an ASTNode in binary code: "+e+".");		
-		} catch (RefactoringASTException e) {
+		} catch (HarvesterASTException e) {
 			Logger.getAnonymousLogger().warning("Problem with traversing the AST: "+e+".");
 		}
 	}
@@ -154,22 +153,22 @@ class NullSeeder {
 	private void process(CastExpression node) {
 		ASTNode parent = node.getParent();
 		if (parent != null) process(parent);
-		else throw new UndeterminedNodeBinding(node, "While trying to process a Cast Expression node: ");
+		else throw new HarvesterASTException("While trying to process a Cast Expression node: ", node);
 	}
 	
 	private void process(ConditionalExpression node2) {
 		ASTNode parent = node2.getParent();
 		if (parent != null) process(parent);
-		else throw new UndeterminedNodeBinding(node2, "While trying to process a Conditional Expression node: ");
+		else throw new HarvesterASTException("While trying to process a Conditional Expression node: ", node2);
 	}
 
 	private void process(ParenthesizedExpression node2) {
 		ASTNode parent = node2.getParent();
 		if (parent != null) process(parent);
-		else throw new UndeterminedNodeBinding(node2, "While trying to process a Parenthesized Expression node: ");
+		else throw new HarvesterASTException("While trying to process a Parenthesized Expression node: ", node2);
 	}
 
-	private void process(ReturnStatement node) throws RefactoringASTException {
+	private void process(ReturnStatement node) throws HarvesterASTException {
 		ASTNode methodDecl = getContaining(MethodDeclaration.class, node); 
 		if (methodDecl instanceof MethodDeclaration){
 			IMethodBinding imb = ((MethodDeclaration)methodDecl).resolveBinding();
@@ -181,10 +180,10 @@ class NullSeeder {
 				}
 			}
 		}
-		throw new UndeterminedNodeBinding(node, "While trying to process a null return statement in a Method Declaration: ");
+		throw new HarvesterASTException("While trying to process a null return statement in a Method Declaration: ", node);
 	}
 
-	private void process(Expression node) throws UndeterminedNodeBinding {
+	private void process(Expression node) throws HarvesterASTException {
 		switch (node.getNodeType()) {
 		case ASTNode.QUALIFIED_NAME : processName((Name)node);
 		break;
@@ -196,11 +195,11 @@ class NullSeeder {
 		break;
 		case ASTNode.SUPER_FIELD_ACCESS : processSuperFieldAccess(node);
 		break;
-		default : throw new UndeterminedNodeBinding(node, "While trying to process left side of assignment: ");
+		default : throw new HarvesterASTException("While trying to process left side of assignment: ", node);
 		}
 	}
 
-	private void processName(Name node) throws UndeterminedNodeBinding {
+	private void processName(Name node) throws HarvesterASTException {
 		IBinding b = node.resolveBinding();
 		if (b != null) {
 			IJavaElement element = b.getJavaElement();
@@ -209,10 +208,10 @@ class NullSeeder {
 				return;
 			}
 		}
-		throw new UndeterminedNodeBinding(node, "While trying to process a Name node: ");
+		throw new HarvesterASTException("While trying to process a Name node: ", node);
 	}
 
-	private void processSuperFieldAccess(Expression node) throws UndeterminedNodeBinding {
+	private void processSuperFieldAccess(Expression node) throws HarvesterASTException {
 		switch (node.getNodeType()) {
 		case ASTNode.SUPER_FIELD_ACCESS : {
 			IBinding ib = ((SuperFieldAccess)node).resolveFieldBinding();
@@ -224,11 +223,11 @@ class NullSeeder {
 				}
 			}
 		}
-		default : throw new UndeterminedNodeBinding(node, "While trying to process a Super-field Access Node: ");
+		default : throw new HarvesterASTException("While trying to process a Super-field Access Node: ", node);
 		}
 	}
 
-	private void processFieldAccess(Expression node) throws UndeterminedNodeBinding {
+	private void processFieldAccess(Expression node) throws HarvesterASTException {
 		switch (node.getNodeType()) {
 		case ASTNode.FIELD_ACCESS : {
 			IBinding ib = ((FieldAccess)node).resolveFieldBinding();
@@ -240,7 +239,7 @@ class NullSeeder {
 				}
 			}
 		}
-		default : throw new UndeterminedNodeBinding(node, "While trying to process a Field Access node: ");
+		default : throw new HarvesterASTException("While trying to process a Field Access node: ", node);
 		}
 	}
 
@@ -256,68 +255,68 @@ class NullSeeder {
 		}
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT : process(arrayCreationOrVariableDeclarationFragment);
 		break;
-		default : throw new UndeterminedNodeBinding(node, "While trying to process an Array Initializer node: ");
+		default : throw new HarvesterASTException("While trying to process an Array Initializer node: ", node);
 		}
 	}
 
-	private void processArrayAccess(Expression node) throws UndeterminedNodeBinding {
+	private void processArrayAccess(Expression node) throws HarvesterASTException {
 		switch (node.getNodeType()) {
 		case ASTNode.ARRAY_ACCESS : {
 			Expression e = ((ArrayAccess)node).getArray();
 			process(e);
 		} break;
-		default : throw new UndeterminedNodeBinding(node, "While trying to process an Array Access node: ");
+		default : throw new HarvesterASTException("While trying to process an Array Access node: ", node);
 		}
 	}
 
-	private void process(ClassInstanceCreation cic) throws UndeterminedNodeBinding {
+	private void process(ClassInstanceCreation cic) throws HarvesterASTException {
 		List<Integer> argPositions = getParamPositions(cic);
 		IMethodBinding binding = cic.resolveConstructorBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			if (method != null) 
 				processInvocation(argPositions, method);
-		} else throw new UndeterminedNodeBinding(cic, "While trying to process a Class Instance Creation node: ");
+		} else throw new HarvesterASTException("While trying to process a Class Instance Creation node: ", cic);
 	}
 	
-	private void process(MethodInvocation mi) throws UndeterminedNodeBinding {
+	private void process(MethodInvocation mi) throws HarvesterASTException {
 		List<Integer> argPositions = getParamPositions(mi);
 		IMethodBinding binding = mi.resolveMethodBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			if (method != null)
 				processInvocation(argPositions, method);
-		} else throw new UndeterminedNodeBinding(mi, "While trying to process a Method Invocation node: ");
+		} else throw new HarvesterASTException("While trying to process a Method Invocation node: ", mi);
 	}
 	
-	private void process(SuperMethodInvocation smi) throws UndeterminedNodeBinding {
+	private void process(SuperMethodInvocation smi) throws HarvesterASTException {
 		List<Integer> argPositions = getParamPositions(smi);
 		IMethodBinding binding = smi.resolveMethodBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			if (method != null)
 				processInvocation(argPositions, method);
-		} else throw new UndeterminedNodeBinding(smi, "While trying to process a Super Method Invocation node: ");
+		} else throw new HarvesterASTException("While trying to process a Super Method Invocation node: ", smi);
 	}
 	
-	private void process(ConstructorInvocation ci) throws UndeterminedNodeBinding {
+	private void process(ConstructorInvocation ci) throws HarvesterASTException {
 		List<Integer> argPositions = getParamPositions(ci);
 		IMethodBinding binding = ci.resolveConstructorBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			if (method != null)
 				processInvocation(argPositions, method);
-		} else throw new UndeterminedNodeBinding(ci, "While trying to process a Constructor Invocation node: ");
+		} else throw new HarvesterASTException("While trying to process a Constructor Invocation node: ", ci);
 	}
 	
-	private void process(SuperConstructorInvocation sci) throws UndeterminedNodeBinding {
+	private void process(SuperConstructorInvocation sci) throws HarvesterASTException {
 		List<Integer> argPositions = getParamPositions(sci);
 		IMethodBinding binding = sci.resolveConstructorBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			if (method != null)
 				processInvocation(argPositions, method);
-		} else throw new UndeterminedNodeBinding(sci, "While trying to process a Super Constructor Invocation node: ");
+		} else throw new HarvesterASTException("While trying to process a Super Constructor Invocation node: ", sci);
 	}
 
 	private void processInvocation(List<Integer> argPositions, IMethod invocation) {
@@ -330,11 +329,11 @@ class NullSeeder {
 					
 					IMethod element = (IMethod) match.getElement();
 					if (element.isReadOnly()) {
-						throw new BinaryElementEncounteredException("Match found a dependency in a non-writable location.", element);
+						throw new HarvesterJavaModelPreconditionException("Match found a dependency in a non-writable location.", element);
 					}
 					
 					if (element.getResource().isDerived()) {
-						throw new BinaryElementEncounteredException("Match found a dependency in generated code.", element);
+						throw new HarvesterJavaModelPreconditionException("Match found a dependency in generated code.", element);
 					}
 					
 					MethodDeclaration methodDecl = Util.getMethodDeclaration(Util.getExactASTNode(match, new NullProgressMonitor()));
@@ -379,7 +378,7 @@ class NullSeeder {
 		break;
 		case ASTNode.CLASS_INSTANCE_CREATION : args = ((ClassInstanceCreation)invocation).arguments();
 		break;
-		default : throw new RefactoringASTException("Tried processing parameters for something other than an invocation.", invocation);
+		default : throw new HarvesterASTException("Tried processing parameters for something other than an invocation.", invocation);
 		}
 		
 		List<Integer> argPositions = new ArrayList<>();
@@ -392,7 +391,7 @@ class NullSeeder {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void process(VariableDeclarationFragment vdf) throws UndeterminedNodeBinding {
+	private void process(VariableDeclarationFragment vdf) throws HarvesterASTException {
 		ASTNode node = vdf.getParent();
 		List<VariableDeclarationFragment> fragments;
 		switch (node.getNodeType()) {
@@ -402,7 +401,7 @@ class NullSeeder {
 		break;
 		case ASTNode.VARIABLE_DECLARATION_STATEMENT : fragments = ((VariableDeclarationStatement)node).fragments();
 		break;
-		default : throw new UndeterminedNodeBinding(node, "While trying to process the parent of a Variable Declaration Fragment: ");
+		default : throw new HarvesterASTException("While trying to process the parent of a Variable Declaration Fragment: ", node);
 		}
 		Map<IJavaElement,Boolean> elements = new LinkedHashMap<>();
 		for (Object o : fragments) {
@@ -411,12 +410,12 @@ class NullSeeder {
 				IJavaElement element = ib.getJavaElement();
 				if (element != null) elements.put(element,Boolean.FALSE);
 			}
-			else throw new UndeterminedNodeBinding(vdf, "While trying to process the fragments in a Variable Declaration Expression: ");
+			else throw new HarvesterASTException("While trying to process the fragments in a Variable Declaration Expression: ", vdf);
 		}
 		this.candidates.putAll(elements);
 	}
 
-	private void process(SingleVariableDeclaration node) throws UndeterminedNodeBinding {
+	private void process(SingleVariableDeclaration node) throws HarvesterASTException {
 		// Single variable declaration nodes are used in a limited number of places, including formal parameter lists and catch clauses. They are not used for field declarations and regular variable declaration statements. 
 		IBinding b = node.resolveBinding();
 		if (b != null) {
@@ -426,7 +425,7 @@ class NullSeeder {
 				return;
 			}
 		}
-		throw new UndeterminedNodeBinding(node, "While trying to process a Single Variable Declaration: ");
+		throw new HarvesterASTException("While trying to process a Single Variable Declaration: ", node);
 	}
 
 }

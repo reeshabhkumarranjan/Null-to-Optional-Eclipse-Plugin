@@ -50,8 +50,8 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.BinaryElementEncounteredException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringJavaModelException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
 /**
@@ -238,7 +238,8 @@ public interface Util {
 			return (IMember) elem;
 		}
 		// We are finding import declarations for some reason, they should be ignored
-		case IJavaElement.IMPORT_DECLARATION : throw new RefactoringJavaModelException("Encountered a Method Import Statement", elem);
+		case IJavaElement.IMPORT_DECLARATION : 
+			throw new HarvesterJavaModelException("Encountered a Method Import Statement", elem);
 		}
 
 		return getIMember(elem.getParent());
@@ -272,7 +273,7 @@ public interface Util {
 		final IMember mem = getIMember(elem);
 		final ICompilationUnit icu = mem.getCompilationUnit();
 		if (icu == null)
-			throw new BinaryElementEncounteredException(Messages.ASTNodeProcessor_SourceNotPresent,
+			throw new HarvesterJavaModelPreconditionException(Messages.ASTNodeProcessor_SourceNotPresent,
 					mem);
 		final ASTNode root = Util.getCompilationUnit(icu, monitor);
 		return root;

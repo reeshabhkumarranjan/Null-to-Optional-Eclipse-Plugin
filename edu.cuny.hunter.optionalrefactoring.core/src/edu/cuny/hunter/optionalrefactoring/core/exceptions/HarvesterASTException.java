@@ -4,7 +4,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 
-public class RefactoringASTException extends RefactoringException {
+public class HarvesterASTException extends HarvesterException {
 
 	/**
 	 * 
@@ -13,7 +13,7 @@ public class RefactoringASTException extends RefactoringException {
 
 	private final ASTNode problem;
 
-	public RefactoringASTException(String message, ASTNode problem) {
+	public HarvesterASTException(String message, ASTNode problem) {
 		super(message);
 		this.problem = problem;
 	}
