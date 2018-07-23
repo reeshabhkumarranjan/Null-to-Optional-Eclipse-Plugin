@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import org.eclipse.jdt.core.IField;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 
@@ -76,22 +75,21 @@ public class RefactoringContextSettings {
 		return settings.contains(ContextType.IMPLICIT_FIELDS);
 	}
 
-	public Predicate<ProgramEntity> nonComplying = entity -> {
-		if (entity.element() instanceof IMethod)
+	public Predicate<TypeDependentElementSet> nonComplying = set -> {
+		if (set.stream().anyMatch(element -> element instanceof IMethod))
 			return !this.refactorsMethodReturns();
 
-		if (entity.element() instanceof IField) {
+		if (set.stream().anyMatch(element -> element instanceof IField)) {
 			if (!this.refactorsFields()) return true;
-
 			
-			if (entity.implicitlyNull())
+			if (set.seedImplicit())
 				return !this.refactorsUninitializedFields();
-			
 		}
-		if (entity instanceof ILocalVariable) {
+		if (set.stream().anyMatch(element -> element instanceof ILocalVariable)) {
 			if (!this.refactorsLocalVars()) return true;
 			
-			if (((ILocalVariable) entity).isParameter())
+			if (set.stream().filter(element -> element instanceof ILocalVariable)
+					.anyMatch(element -> ((ILocalVariable)element).isParameter()))
 				return !this.refactorsMethodParams();
 		}
 		return false;

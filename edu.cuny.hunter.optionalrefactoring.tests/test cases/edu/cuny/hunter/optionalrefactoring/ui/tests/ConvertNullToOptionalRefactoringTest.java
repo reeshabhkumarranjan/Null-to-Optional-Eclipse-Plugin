@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -133,7 +134,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			}
 		};
 		c.accept(visitor);
-		Set<IJavaElement> seeds = elements.stream().limit(1).collect(Collectors.toSet());
+		Map<IJavaElement,Boolean> seeds = new LinkedHashMap<>();
+		seeds.put(elements.stream().findFirst().get(), Boolean.FALSE);
 
 		TypeDependentElementSet tdes = TypeDependentElementSet.of(elements, seeds);
 		assertTrue("TDES is not empty.", !tdes.isEmpty());
@@ -155,7 +157,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
 
 		// Here we are getting just the seeds without transitive dependencies
-		Set<IJavaElement> seeds = harvester.getSeeds();
+		Set<IJavaElement> seeds = harvester.getSeeds().keySet();
 		Util.candidatePrinter(seeds);
 		System.out.println();
 		Set<String> actualElements = seeds.stream()

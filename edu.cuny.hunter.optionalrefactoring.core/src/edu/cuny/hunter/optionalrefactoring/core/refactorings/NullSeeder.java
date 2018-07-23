@@ -1,8 +1,10 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -59,13 +61,13 @@ class NullSeeder {
 
 	private final SearchEngine searchEngine = new SearchEngine();
 	private final ASTNode node;
-	private final Set<IJavaElement> candidates = new LinkedHashSet<>();
+	private final Map<IJavaElement, Boolean> candidates = new LinkedHashMap<>();
 
 	public NullSeeder(ASTNode node) {
 		this.node = node;
 	}
 	
-	public Set<IJavaElement> seedNulls() {
+	public Map<IJavaElement, Boolean> seedNulls() {
 		ASTVisitor visitor = new ASTVisitor() {
 			@Override
 			public boolean visit(NullLiteral nl) {
@@ -77,7 +79,7 @@ class NullSeeder {
 				if (vdf.getInitializer() == null) {
 					IVariableBinding b = vdf.resolveBinding();
 					if (b != null)
-						candidates.add(b.getJavaElement());
+						candidates.put(b.getJavaElement(),Boolean.TRUE);
 					else throw new UndeterminedNodeBinding(
 							vdf, 
 							"While trying to process an uninitialized VariableDeclarationFragment: ");
@@ -167,7 +169,7 @@ class NullSeeder {
 			if (imb != null) {
 				IJavaElement im = imb.getJavaElement();
 				if (im != null) {
-					this.candidates.add(im);
+					this.candidates.put(im,Boolean.FALSE);
 					return;
 				}
 			}
@@ -196,7 +198,7 @@ class NullSeeder {
 		if (b != null) {
 			IJavaElement element = b.getJavaElement();
 			if (element != null) {
-				this.candidates.add(element);
+				this.candidates.put(element,Boolean.FALSE);
 				return;
 			}
 		}
@@ -210,7 +212,7 @@ class NullSeeder {
 			if (ib != null) {
 				IJavaElement element = ib.getJavaElement();
 				if (element != null) {
-					this.candidates.add(element);
+					this.candidates.put(element,Boolean.FALSE);
 					return;
 				}
 			}
@@ -226,7 +228,7 @@ class NullSeeder {
 			if (ib != null) {
 				IJavaElement element = ib.getJavaElement();
 				if (element != null) {
-					this.candidates.add(element);
+					this.candidates.put(element,Boolean.FALSE);
 					return;
 				}
 			}
@@ -352,7 +354,7 @@ class NullSeeder {
 				if (b != null) {
 					IJavaElement e = b.getJavaElement();
 					if (e != null) {
-						this.candidates.add(e);
+						this.candidates.put(e,Boolean.FALSE);
 					}
 				}
 			}
@@ -395,16 +397,16 @@ class NullSeeder {
 		break;
 		default : throw new UndeterminedNodeBinding(node, "While trying to process the parent of a Variable Declaration Fragment: ");
 		}
-		Set<IJavaElement> elements = new LinkedHashSet<>();
+		Map<IJavaElement,Boolean> elements = new LinkedHashMap<>();
 		for (Object o : fragments) {
 			IBinding ib = ((VariableDeclarationFragment)o).resolveBinding();
 			if (ib != null) {
 				IJavaElement element = ib.getJavaElement();
-				if (element != null) elements.add(element);
+				if (element != null) elements.put(element,Boolean.FALSE);
 			}
 			else throw new UndeterminedNodeBinding(vdf, "While trying to process the fragments in a Variable Declaration Expression: ");
 		}
-		this.candidates.addAll(elements);
+		this.candidates.putAll(elements);
 	}
 
 	private void process(SingleVariableDeclaration node) throws UndeterminedNodeBinding {
@@ -413,7 +415,7 @@ class NullSeeder {
 		if (b != null) {
 			IJavaElement element = b.getJavaElement();
 			if (element != null) {
-				this.candidates.add(element);
+				this.candidates.put(element,Boolean.FALSE);
 				return;
 			}
 		}
