@@ -12,6 +12,11 @@
     <module>edu.cuny.hunter.optionalrefactoring.tests</module>
     <module>edu.cuny.hunter.optionalrefactoring.tests.report</module>
   </modules>
+  <properties>
+    <tycho-version>0.26.0</tycho-version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jacoco-version>0.7.8</jacoco-version>
+  </properties>
   <profiles>
     <profile>
       <id>jacoco</id>
@@ -52,11 +57,6 @@
       </build>
     </profile>
   </profiles>
-  <properties>
-    <tycho-version>0.26.0</tycho-version>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jacoco-version>0.7.8</jacoco-version>
-  </properties>
   <repositories>
     <repository>
       <id>neon</id>
