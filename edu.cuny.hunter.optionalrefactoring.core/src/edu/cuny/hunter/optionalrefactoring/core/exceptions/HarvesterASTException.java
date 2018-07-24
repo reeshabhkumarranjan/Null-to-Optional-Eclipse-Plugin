@@ -17,6 +17,10 @@ public class HarvesterASTException extends HarvesterException {
 		super(message);
 		this.problem = problem;
 	}
+	
+	public ASTNode getNode() {
+		return this.problem;
+	}
 
 	public String toString() {
 		final CompilationUnit root = (CompilationUnit) this.problem.getRoot();

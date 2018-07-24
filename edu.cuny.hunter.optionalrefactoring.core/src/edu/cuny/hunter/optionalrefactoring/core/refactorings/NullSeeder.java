@@ -36,6 +36,7 @@ import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
@@ -48,9 +49,13 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
+import org.eclipse.jdt.internal.ui.text.correction.ASTResolving;
+
+import com.google.common.collect.Sets;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -62,7 +67,7 @@ class NullSeeder {
 	private final SearchEngine searchEngine = new SearchEngine();
 	private final ASTNode node;
 	private final Map<IJavaElement, Boolean> candidates = new LinkedHashMap<>();
-	private final Set<Set<IJavaElement>> notRefactorable = new LinkedHashSet<>(); 
+	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>(); 
 
 	public NullSeeder(ASTNode node) {
 		this.node = node;
@@ -143,17 +148,35 @@ class NullSeeder {
 			default : throw new HarvesterASTException("While trying to process the parent of an encountered NullLiteral: ", node);
 			}
 		} catch (HarvesterJavaModelPreconditionException e) {
-			Logger.getAnonymousLogger().warning("Unable to process an ASTNode in binary code: "+e+".");		
+			Logger.getAnonymousLogger().warning("Unable to process an ASTNode in binary code: "+e+".");
+		} catch (HarvesterASTPreconditionException e) {
+			Logger.getAnonymousLogger().warning("Entity cannot be refactored: ");
+			IJavaElement failing = Util.getEnclosingTypeDependentExpression(e.getNode());
+			this.notRefactorable.add(failing);
 		} catch (HarvesterASTException e) {
 			Logger.getAnonymousLogger().warning("Problem with traversing the AST: "+e+".");
 		}
 	}
 
+	private void process(Expression node) throws HarvesterASTException {
+		switch (node.getNodeType()) {
+		case ASTNode.QUALIFIED_NAME : process((Name)node);
+		break;
+		case ASTNode.SIMPLE_NAME : process((Name)node);
+		break;
+		case ASTNode.ARRAY_ACCESS : process((ArrayAccess)node);
+		break;
+		case ASTNode.FIELD_ACCESS : process((FieldAccess)node);
+		break;
+		case ASTNode.SUPER_FIELD_ACCESS : process((SuperFieldAccess)node);
+		break;
+		default : throw new HarvesterASTException("While trying to process left side of assignment: ", node);
+		}
+	}
 	
 	private void process(CastExpression node) {
-		ASTNode parent = node.getParent();
-		if (parent != null) process(parent);
-		else throw new HarvesterASTException("While trying to process a Cast Expression node: ", node);
+		// Cast expressions cannot be refactored as Optionals
+		throw new HarvesterASTPreconditionException("Null-dependent CastExpression node encountered: ", node);
 	}
 	
 	private void process(ConditionalExpression node2) {
@@ -183,23 +206,7 @@ class NullSeeder {
 		throw new HarvesterASTException("While trying to process a null return statement in a Method Declaration: ", node);
 	}
 
-	private void process(Expression node) throws HarvesterASTException {
-		switch (node.getNodeType()) {
-		case ASTNode.QUALIFIED_NAME : processName((Name)node);
-		break;
-		case ASTNode.SIMPLE_NAME : processName((Name)node);
-		break;
-		case ASTNode.ARRAY_ACCESS : processArrayAccess(node);
-		break;
-		case ASTNode.FIELD_ACCESS : processFieldAccess(node);
-		break;
-		case ASTNode.SUPER_FIELD_ACCESS : processSuperFieldAccess(node);
-		break;
-		default : throw new HarvesterASTException("While trying to process left side of assignment: ", node);
-		}
-	}
-
-	private void processName(Name node) throws HarvesterASTException {
+	private void process(Name node) throws HarvesterASTException {
 		IBinding b = node.resolveBinding();
 		if (b != null) {
 			IJavaElement element = b.getJavaElement();
@@ -211,7 +218,7 @@ class NullSeeder {
 		throw new HarvesterASTException("While trying to process a Name node: ", node);
 	}
 
-	private void processSuperFieldAccess(Expression node) throws HarvesterASTException {
+	private void process(SuperFieldAccess node) throws HarvesterASTException {
 		switch (node.getNodeType()) {
 		case ASTNode.SUPER_FIELD_ACCESS : {
 			IBinding ib = ((SuperFieldAccess)node).resolveFieldBinding();
@@ -227,7 +234,7 @@ class NullSeeder {
 		}
 	}
 
-	private void processFieldAccess(Expression node) throws HarvesterASTException {
+	private void process(FieldAccess node) throws HarvesterASTException {
 		switch (node.getNodeType()) {
 		case ASTNode.FIELD_ACCESS : {
 			IBinding ib = ((FieldAccess)node).resolveFieldBinding();
@@ -259,7 +266,7 @@ class NullSeeder {
 		}
 	}
 
-	private void processArrayAccess(Expression node) throws HarvesterASTException {
+	private void process(ArrayAccess node) throws HarvesterASTException {
 		switch (node.getNodeType()) {
 		case ASTNode.ARRAY_ACCESS : {
 			Expression e = ((ArrayAccess)node).getArray();
@@ -275,7 +282,7 @@ class NullSeeder {
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			if (method != null) 
-				processInvocation(argPositions, method);
+				process(argPositions, method);
 		} else throw new HarvesterASTException("While trying to process a Class Instance Creation node: ", cic);
 	}
 	
@@ -285,7 +292,7 @@ class NullSeeder {
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			if (method != null)
-				processInvocation(argPositions, method);
+				process(argPositions, method);
 		} else throw new HarvesterASTException("While trying to process a Method Invocation node: ", mi);
 	}
 	
@@ -295,7 +302,7 @@ class NullSeeder {
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			if (method != null)
-				processInvocation(argPositions, method);
+				process(argPositions, method);
 		} else throw new HarvesterASTException("While trying to process a Super Method Invocation node: ", smi);
 	}
 	
@@ -305,7 +312,7 @@ class NullSeeder {
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			if (method != null)
-				processInvocation(argPositions, method);
+				process(argPositions, method);
 		} else throw new HarvesterASTException("While trying to process a Constructor Invocation node: ", ci);
 	}
 	
@@ -315,11 +322,11 @@ class NullSeeder {
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			if (method != null)
-				processInvocation(argPositions, method);
+				process(argPositions, method);
 		} else throw new HarvesterASTException("While trying to process a Super Constructor Invocation node: ", sci);
 	}
 
-	private void processInvocation(List<Integer> argPositions, IMethod invocation) {
+	private void process(List<Integer> argPositions, IMethod invocation) {
 		
 		Set<SingleVariableDeclaration> svd = new LinkedHashSet<>();
 			SearchRequestor requestor = new SearchRequestor() {
@@ -427,5 +434,4 @@ class NullSeeder {
 		}
 		throw new HarvesterASTException("While trying to process a Single Variable Declaration: ", node);
 	}
-
 }

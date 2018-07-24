@@ -30,12 +30,22 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Assignment;
+import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ConstructorInvocation;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
+import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
@@ -51,6 +61,7 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
@@ -281,6 +292,58 @@ public interface Util {
 	
 	public static MethodDeclaration getMethodDeclaration(ASTNode node) {
 		return (MethodDeclaration) ASTNodes.getParent(node, ASTNode.METHOD_DECLARATION);
+	}
+	
+	public static IJavaElement getEnclosingTypeDependentExpression(ASTNode node) {
+		ASTNode parent = node.getParent();
+		if (parent != null) {
+			parent = stripParenthesizedExpressions(parent);
+			switch (parent.getNodeType()) {
+			case ASTNode.ASSIGNMENT : {
+				Name n = (Name)resolveAssignmentExpression((Assignment)parent);
+				IBinding b = n.resolveBinding();
+				if (b != null) return b.getJavaElement();
+				break;
+			}
+			case ASTNode.METHOD_INVOCATION : {
+				MethodInvocation m = (MethodInvocation) parent;
+				IBinding b = m.resolveMethodBinding();
+				if (b != null) return b.getJavaElement();
+				break;
+			}
+			case ASTNode.SUPER_METHOD_INVOCATION : {
+				SuperMethodInvocation m = (SuperMethodInvocation) parent;
+				IBinding b = m.resolveMethodBinding();
+				if (b != null) return b.getJavaElement();
+				break;
+			}
+			case ASTNode.CONSTRUCTOR_INVOCATION : {
+				ConstructorInvocation m = (ConstructorInvocation) parent;
+				IBinding b = m.resolveConstructorBinding();
+				if (b != null) return b.getJavaElement();
+				break;
+			}
+			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : {
+				SuperConstructorInvocation m = (SuperConstructorInvocation) parent;
+				IBinding b = m.resolveConstructorBinding();
+				if (b != null) return b.getJavaElement();
+				break;
+			}
+			case ASTNode.CLASS_INSTANCE_CREATION : {
+				ClassInstanceCreation m = (ClassInstanceCreation) parent;
+				IBinding b = m.resolveConstructorBinding();
+				if (b != null) return b.getJavaElement();
+				break;
+			}
+			default : return getEnclosingTypeDependentExpression(node);
+			}
+		} throw new HarvesterASTException("While trying to parse the type dependent entity of a node: ", node);
+	}
+	
+	public static ASTNode resolveAssignmentExpression(Assignment node) {
+		Expression n = node.getLeftHandSide();
+		if (n instanceof Name) return n;
+		return resolveAssignmentExpression((Assignment)n);
 	}
 	
 	public static Set<Set<IJavaElement>> getElementForest(Set<ComputationNode> computationForest) {
