@@ -57,12 +57,11 @@ public class RefactorableHarvester {
 	private final IJavaSearchScope scopeRoot;
 	private final IProgressMonitor monitor;
 	private final SearchEngine searchEngine = new SearchEngine();
+	private final Map<IJavaElement,Boolean> nullSeeds = new LinkedHashMap<>();
 	private final WorkList workList = new WorkList();
-	private final Set<IJavaElement> notN2ORefactorable = new LinkedHashSet<>();
+	private final Set<IJavaElement> potentiallyRefactorable = new LinkedHashSet<>();
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
 	
-	private TypeDependentElementSet notRefactorableTypeDependentSet;
-
 	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope, IProgressMonitor m) {
 		this.refactoringRootElement = rootElement;
 		this.refactoringRootNode = rootNode;
@@ -105,7 +104,8 @@ public class RefactorableHarvester {
 
 	private void reset() {
 		this.workList.clear();
-		this.notN2ORefactorable.clear();
+		this.nullSeeds.clear();
+		this.potentiallyRefactorable.clear();
 		this.notRefactorable.clear();
 	}
 
@@ -122,20 +122,31 @@ public class RefactorableHarvester {
 	}
 
 	public Map<IJavaElement, Boolean> getSeeds() {
-		return new NullSeeder(refactoringRootNode).seedNulls();
+		if (this.nullSeeds.isEmpty()) {
+			NullSeeder n = new NullSeeder(refactoringRootNode);
+			this.nullSeeds.putAll(n.seedNulls());
+			this.notRefactorable.addAll(n.getPreconditionFailures());
+		}
+		return this.nullSeeds;
 	}
 	
-	public TypeDependentElementSet getNonRefactorableEntities() {
-		return this.notRefactorableTypeDependentSet;
+	public Set<IJavaElement> getPreconditionFailures() {
+		if (this.notRefactorable.isEmpty()) {
+			NullSeeder n = new NullSeeder(refactoringRootNode);
+			this.notRefactorable.addAll(n.getPreconditionFailures());
+		}
+		return this.notRefactorable;
 	}
 
 	public Set<TypeDependentElementSet> harvestRefactorableContexts() throws CoreException {
 
 		this.reset();
-		// this worklist starts with the immediate type-dependent entities on null expressions. 
-		Map<IJavaElement,Boolean> nullSeeds = new NullSeeder(refactoringRootNode).seedNulls();
+		// this worklist starts with the immediate type-dependent entities on null expressions.
+		NullSeeder seeder = new NullSeeder(refactoringRootNode);
+		this.nullSeeds.putAll(seeder.seedNulls());
+		this.notRefactorable.addAll(seeder.getPreconditionFailures());
 
-		this.workList.addAll(nullSeeds.keySet());
+		this.workList.addAll(this.nullSeeds.keySet());
 
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
@@ -196,7 +207,7 @@ public class RefactorableHarvester {
 						this.monitor);
 
 			} catch (final HarvesterASTPreconditionException e) {
-				this.notN2ORefactorable.addAll(this.workList
+				this.potentiallyRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.notRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
@@ -210,7 +221,7 @@ public class RefactorableHarvester {
 			}
 		}
 
-		this.notN2ORefactorable.retainAll(nullSeeds.keySet());
+		this.potentiallyRefactorable.retainAll(nullSeeds.keySet());
 
 		final Set<ComputationNode> computationForest = this.trimForest(this.workList
 				.getComputationForest(), this.notRefactorable);

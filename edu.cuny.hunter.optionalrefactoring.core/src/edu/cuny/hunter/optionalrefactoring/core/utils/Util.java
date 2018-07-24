@@ -44,9 +44,11 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
+import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
@@ -299,6 +301,21 @@ public interface Util {
 		if (parent != null) {
 			parent = stripParenthesizedExpressions(parent);
 			switch (parent.getNodeType()) {
+			case ASTNode.RETURN_STATEMENT : {
+				ReturnStatement r = (ReturnStatement)parent;
+				MethodDeclaration m = (MethodDeclaration) ASTNodes.getParent(r, ASTNode.METHOD_DECLARATION);
+				if (m != null) {
+					IBinding b = m.resolveBinding();
+					if (m != null) return b.getJavaElement();
+				}
+				break;
+			}
+			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : {
+				VariableDeclarationFragment f = (VariableDeclarationFragment) parent;
+				IBinding b = f.resolveBinding();
+				if (b != null) return b.getJavaElement();
+				break;
+			}
 			case ASTNode.ASSIGNMENT : {
 				Name n = (Name)resolveAssignmentExpression((Assignment)parent);
 				IBinding b = n.resolveBinding();
@@ -335,7 +352,7 @@ public interface Util {
 				if (b != null) return b.getJavaElement();
 				break;
 			}
-			default : return getEnclosingTypeDependentExpression(node);
+			default : return getEnclosingTypeDependentExpression(parent);
 			}
 		} throw new HarvesterASTException("While trying to parse the type dependent entity of a node: ", node);
 	}

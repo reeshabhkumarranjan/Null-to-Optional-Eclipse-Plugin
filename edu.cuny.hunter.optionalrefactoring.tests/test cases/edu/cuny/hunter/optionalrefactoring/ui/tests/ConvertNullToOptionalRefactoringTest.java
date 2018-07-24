@@ -220,6 +220,39 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				expectedSets.containsAll(actualSets));
 	}
 	
+	public void testCastExpression() throws Exception {
+		System.out.println(this.getName());
+		// compute the actual results.
+		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(icu);
+		parser.setResolveBindings(true);
+		CompilationUnit c = (CompilationUnit)parser.createAST(null);
+		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
+				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
+		Map<IJavaElement,Boolean> seeds = harvester.getSeeds();
+		Set<IJavaElement> failures = harvester.getPreconditionFailures();
+		Util.candidatePrinter(seeds.keySet());
+		Util.candidatePrinter(failures);
+		System.out.println();
+		
+		Set<String> actualElements = seeds.keySet().stream()
+				.map(element -> element.getElementName())
+				.collect(Collectors.toSet());
+		Set<String> failingElements = failures.stream()
+				.map(element -> element.getElementName())
+				.collect(Collectors.toSet());
+		Set<String> expectedPassing = setOf("d");
+		Set<String> expectedFailing = setOf("parseInt", "b", "m");
+		
+		assertTrue("Passing seeds are: d.", actualElements.containsAll(expectedPassing) 
+				&& expectedPassing.containsAll(actualElements));
+		assertTrue("Failing seeds are: parseInt, b, m", 
+				failingElements.containsAll(expectedFailing) 
+				&& expectedFailing.containsAll(failingElements));
+	}
+	
 	public void testImplicitlyNullVariableDecl() throws Exception {
 		this.helper(setOf("a"), 
 				setOf(setOf("a","b"),

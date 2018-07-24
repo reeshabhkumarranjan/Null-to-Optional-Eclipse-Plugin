@@ -36,7 +36,6 @@ import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
@@ -49,9 +48,6 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
-import org.eclipse.jdt.internal.ui.text.correction.ASTResolving;
-
-import com.google.common.collect.Sets;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
@@ -76,7 +72,7 @@ class NullSeeder {
 	/**
 	 * @return Map of IJavaElement to whether it is implicitly null field
 	 */
-	public Map<IJavaElement, Boolean> seedNulls() {
+	Map<IJavaElement, Boolean> seedNulls() {
 		ASTVisitor visitor = new ASTVisitor() {
 			@Override
 			public boolean visit(NullLiteral nl) {
@@ -100,6 +96,10 @@ class NullSeeder {
 		};
 		node.accept(visitor);
 		return candidates;
+	}
+	
+	Set<IJavaElement> getPreconditionFailures() {
+		return this.notRefactorable;
 	}
 
 	private <T extends ASTNode> ASTNode getContaining(Class<T> type, ASTNode node) {
@@ -150,7 +150,7 @@ class NullSeeder {
 		} catch (HarvesterJavaModelPreconditionException e) {
 			Logger.getAnonymousLogger().warning("Unable to process an ASTNode in binary code: "+e+".");
 		} catch (HarvesterASTPreconditionException e) {
-			Logger.getAnonymousLogger().warning("Entity cannot be refactored: ");
+			Logger.getAnonymousLogger().warning("Entity cannot be refactored: "+e+".");
 			IJavaElement failing = Util.getEnclosingTypeDependentExpression(e.getNode());
 			this.notRefactorable.add(failing);
 		} catch (HarvesterASTException e) {
