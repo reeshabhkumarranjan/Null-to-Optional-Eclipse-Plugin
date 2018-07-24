@@ -1,14 +1,14 @@
 package p;
 
-static class Super {
-	A a;
+class Super {
+	Object a = new Object();
 }
 
 public class A extends Super {
 
-	A b;
-	A nullControl;
-	A control;
+	Object b = new Object();
+	Object nullControl = new Object();
+	Object control = new Object();
 
 	void fieldAssignmentTest() {
 

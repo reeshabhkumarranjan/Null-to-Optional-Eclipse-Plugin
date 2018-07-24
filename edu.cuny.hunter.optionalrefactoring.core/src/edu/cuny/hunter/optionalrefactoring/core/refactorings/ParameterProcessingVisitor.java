@@ -14,8 +14,8 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.NotOptionizableException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.RefactoringASTException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
 class ParameterProcessingVisitor extends ASTVisitor {
@@ -71,12 +71,8 @@ class ParameterProcessingVisitor extends ASTVisitor {
 
 			final IJavaElement elem = svd.resolveBinding().getJavaElement();
 			if (elem.isReadOnly() || svd.getName().resolveBoxing())
-				throw new NotOptionizableException(
+				throw new HarvesterASTPreconditionException(
 						Messages.ASTNodeProcessor_SourceNotPresent, svd);
-//			if (svd.resolveBinding().getType().isEqualTo(
-//					node.getAST().resolveWellKnownType("java.lang.Object"))) //$NON-NLS-1$
-//				throw new RefactoringASTException(Messages.ASTNodeProcessor_IllegalArrayUpcast,
-//						svd);
 			this.elements.add(elem);
 		}
 

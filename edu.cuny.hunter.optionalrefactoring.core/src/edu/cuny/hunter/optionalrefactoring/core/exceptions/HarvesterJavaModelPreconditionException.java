@@ -2,15 +2,19 @@ package edu.cuny.hunter.optionalrefactoring.core.exceptions;
 
 import org.eclipse.jdt.core.IJavaElement;
 
-public class BinaryElementEncounteredException extends NotOptionizableException {
+public class HarvesterJavaModelPreconditionException extends HarvesterJavaModelException {
 	private static final long serialVersionUID = 8044384732970184194L;
 
 	private final IJavaElement problemElement;
 
-	public BinaryElementEncounteredException(String message,
+	public HarvesterJavaModelPreconditionException(String message,
 			IJavaElement problemElement) {
-		super(message, null);
+		super(message, problemElement);
 		this.problemElement = problemElement;
+	}
+	
+	public IJavaElement getElement() {
+		return this.problemElement;
 	}
 
 	public String toString() {

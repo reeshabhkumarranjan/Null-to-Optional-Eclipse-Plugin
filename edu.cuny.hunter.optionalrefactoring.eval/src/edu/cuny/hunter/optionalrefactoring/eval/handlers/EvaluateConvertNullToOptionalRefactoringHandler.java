@@ -2,47 +2,33 @@ package edu.cuny.hunter.optionalrefactoring.eval.handlers;
 
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOptionalRefactoringProcessor;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
+import com.google.common.collect.Lists;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.csv.CSVFormat;
+
 import org.apache.commons.csv.CSVPrinter;
-import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeHierarchy;
-import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.search.IJavaSearchConstants;
-import org.eclipse.jdt.core.search.SearchEngine;
-import org.eclipse.jdt.core.search.SearchMatch;
-import org.eclipse.jdt.core.search.SearchParticipant;
-import org.eclipse.jdt.core.search.SearchPattern;
-import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.osgi.framework.FrameworkUtil;
 
+import edu.cuny.citytech.refactoring.common.eval.handlers.EvaluateRefactoringHandler;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringContextSettings;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementSet;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
 
@@ -53,13 +39,11 @@ import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
  * @see org.eclipse.core.commands.AbstractHandler
  */
 @SuppressWarnings("deprecation")
-public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHandler {
+public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRefactoringHandler {
 
 	private static final boolean BUILD_WORKSPACE = false;
 	private static final RefactoringContextSettings DEFAULT_SETTINGS = RefactoringContextSettings.getDefault();
 	
-	private RefactoringContextSettings refactoringContextSettings;
-
 	/**
 	 * the command has been executed, so extract extract the needed information
 	 * from the application context.
@@ -68,7 +52,22 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
-			try {
+			List<String> setSummaryHeader = Lists.newArrayList("Type Dependent Set ID",
+															"Seed",
+															"Implicit Null");
+			
+			List<String> elementResultsHeader = Lists.newArrayList("Project Name",
+															"Type Dependent Set ID",
+															"Entity Name",
+															"Entity Type", 
+															"Containing Entities",
+															"Read Only",
+															"Generated");
+			
+			try (	CSVPrinter elementResultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("elementResults.csv", 
+						elementResultsHeader.toArray(new String[elementResultsHeader.size()]));
+					CSVPrinter setSummaryPrinter = EvaluateRefactoringHandler.createCSVPrinter("setSummary.csv", 
+						setSummaryHeader.toArray(new String[setSummaryHeader.size()]))		)	{
 				if (BUILD_WORKSPACE) {
 					// build the workspace.
 					monitor.beginTask("Building workspace ...", IProgressMonitor.UNKNOWN);
@@ -82,9 +81,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 					if (!javaProject.isStructureKnown())
 						throw new IllegalStateException(
 								String.format("Project: %s should compile beforehand.", javaProject.getElementName()));
-
-					// subject.
-					// resultsPrinter.print(javaProject.getElementName());
 
 					TimeCollector resultsTimeCollector = new TimeCollector();
 
@@ -100,19 +96,45 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 					resultsTimeCollector.stop();
 					
 					// get the environmental variables for refactoring contexts to be considered
-					refactoringContextSettings = this.shouldPerformChange().orElse(DEFAULT_SETTINGS);
-
+					final RefactoringContextSettings rcs = this.getEnvSettings().orElse(DEFAULT_SETTINGS);
+					
+					Set<TypeDependentElementSet> candidateSets = processor.getRefactorableSets();
+					
+					// candidateSets.removeIf(rcs.nonComplying);
+					// check each of the refactoring context settings, and remove sets that contain settings not wanted
+					
+					// Now we have just the sets that we care about
+					for (TypeDependentElementSet set : candidateSets) {
+						// Let's print some information about what's inside
+						setSummaryPrinter.printRecord(set.hashCode(), 
+								set.seed().getElementName(),
+								set.seedImplicit());
+						for (IJavaElement entity : set) {
+							elementResultsPrinter.printRecord(
+									entity.getJavaProject().getElementName(),
+									set.hashCode(),
+									entity.getElementName(),
+									entity.getClass().getSimpleName(),
+									entity.getElementType() == IJavaElement.LOCAL_VARIABLE ?
+											entity.getAncestor(IJavaElement.METHOD).getElementName()+"\n"+
+												entity.getAncestor(IJavaElement.METHOD)
+													.getAncestor(IJavaElement.TYPE).getElementName() 
+										:	entity.getAncestor(IJavaElement.TYPE).getElementName(),
+									entity.isReadOnly(),
+									entity.getResource().isDerived());
+						}
+					}
+					setSummaryPrinter.println();
+					elementResultsPrinter.println();
+					
+					// Then let's refactor them
+					
+					// Then let's print some more information about the refactoring
+					
 				}
 			} catch (Exception e) {
 				return new Status(IStatus.ERROR, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
 						"Encountered exception during evaluation", e);
-			} finally {
-//				try {
-					// closing the files writer after done writing
-//				} catch (IOException e) {
-//					return new Status(IStatus.ERROR, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
-//							"Encountered exception during file closing", e);
-//				}
 			}
 
 			return new Status(IStatus.OK, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
@@ -122,57 +144,12 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends AbstractHan
 		return null;
 	}
 
-	private Set<SearchMatch> findReferences(Set<? extends IJavaElement> elements) throws CoreException {
-		Set<SearchMatch> ret = new HashSet<>();
-		for (IJavaElement elem : elements) {
-			new SearchEngine().search(
-					SearchPattern.createPattern(elem, IJavaSearchConstants.REFERENCES, SearchPattern.R_EXACT_MATCH),
-					new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() },
-					SearchEngine.createWorkspaceScope(), new SearchRequestor() {
-
-						@Override
-						public void acceptSearchMatch(SearchMatch match) throws CoreException {
-							ret.add(match);
-						}
-					}, new NullProgressMonitor());
-		}
-		return ret;
-	}
-
-	private static IType[] getAllDeclaringTypeSubtypes(IMethod method) throws JavaModelException {
-		IType declaringType = method.getDeclaringType();
-		ITypeHierarchy typeHierarchy = declaringType.newTypeHierarchy(new NullProgressMonitor());
-		IType[] allSubtypes = typeHierarchy.getAllSubtypes(declaringType);
-		return allSubtypes;
-	}
-
-	private Optional<RefactoringContextSettings> shouldPerformChange() {
+	private Optional<RefactoringContextSettings> getEnvSettings() {
 		Map<String,String> performChangePropertyValue = System.getenv();
 
 		if (performChangePropertyValue == null)
 			return Optional.empty();
 		else
 			return Optional.of(RefactoringContextSettings.of(performChangePropertyValue));
-	}
-
-	private static Set<IMethod> getAllMethods(IJavaProject javaProject) throws JavaModelException {
-		Set<IMethod> methods = new HashSet<>();
-
-		// collect all methods from this project.
-		IPackageFragment[] packageFragments = javaProject.getPackageFragments();
-		for (IPackageFragment iPackageFragment : packageFragments) {
-			ICompilationUnit[] compilationUnits = iPackageFragment.getCompilationUnits();
-			for (ICompilationUnit iCompilationUnit : compilationUnits) {
-				IType[] allTypes = iCompilationUnit.getAllTypes();
-				for (IType type : allTypes) {
-					Collections.addAll(methods, type.getMethods());
-				}
-			}
-		}
-		return methods;
-	}
-
-	private static CSVPrinter createCSVPrinter(String fileName, String[] header) throws IOException {
-		return new CSVPrinter(new FileWriter(fileName, true), CSVFormat.EXCEL.withHeader(header));
 	}
 }

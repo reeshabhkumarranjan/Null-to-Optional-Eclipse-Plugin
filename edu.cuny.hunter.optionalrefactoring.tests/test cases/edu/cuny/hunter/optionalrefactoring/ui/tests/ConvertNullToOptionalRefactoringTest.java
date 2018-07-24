@@ -3,25 +3,37 @@
  */
 package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
+
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
+
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementSet;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.*;
@@ -31,6 +43,7 @@ import junit.framework.TestSuite;
 /**
  * @author <a href="mailto:raffi.khatchadourian@hunter.cuny.edu">Raffi
  *         Khatchadourian</a>
+ * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>
  *
  */
 @SuppressWarnings("restriction")
@@ -106,12 +119,64 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		if (!unit.isStructureKnown())
 			throw new IllegalArgumentException(cuName + " has structural errors.");
-		else
-			return unit;
+
+		// full path of where the CU exists.
+		Path directory = Paths.get(unit.getParent().getParent().getParent().getResource().getLocation().toString());
+
+		// compile it to make and store the class file.
+		assertTrue("Input should compile", compiles(unit.getSource(), directory));
+		
+		return unit;
+	}
+
+	@SuppressWarnings("unused")
+	private static boolean compiles(String source) throws IOException {
+		return compiles(source, Files.createTempDirectory(null));
+	}
+
+	private static boolean compiles(String source, Path directory) throws IOException {
+		// Save source in .java file.
+		File sourceFile = new File(directory.toFile(), "bin/p/A.java");
+		sourceFile.getParentFile().mkdirs();
+		Files.write(sourceFile.toPath(), source.getBytes());
+
+		// Compile source file.
+		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+
+		boolean compileSuccess = compiler.run(null, null, null, sourceFile.getPath()) == 0;
+
+		sourceFile.delete();
+		return compileSuccess;
+	}
+
+	public void testTypeDependentElementSet() throws Exception {
+		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setSource(icu);
+		parser.setResolveBindings(true);
+		CompilationUnit c = (CompilationUnit)parser.createAST(null);
+		Set<IJavaElement> elements = new LinkedHashSet<>();
+		ASTVisitor visitor = new ASTVisitor() {
+			@Override
+			public boolean visit(SimpleName node) {
+				elements.add(node.resolveBinding().getJavaElement());
+				return super.visit(node);
+			}
+		};
+		c.accept(visitor);
+		Map<IJavaElement,Boolean> seeds = new LinkedHashMap<>();
+		seeds.put(elements.stream().findFirst().get(), Boolean.FALSE);
+
+		TypeDependentElementSet tdes = TypeDependentElementSet.of(elements, seeds);
+		assertTrue("TDES is not empty.", !tdes.isEmpty());
+		assertNotNull("TDES has a seed element.", tdes.seed());
+		
 	}
 
 	private void helper(Set<String> expectedElements, Set<Set<String>> expectedSets) throws Exception {
 
+		System.out.println(this.getName());
 		// compute the actual results.
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 		ASTParser parser = ASTParser.newParser(AST.JLS8);
@@ -123,8 +188,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
 
 		// Here we are getting just the seeds without transitive dependencies
-		Set<IJavaElement> seeds = harvester.getSeeds();
-
+		Set<IJavaElement> seeds = harvester.getSeeds().keySet();
+		Util.candidatePrinter(seeds);
+		System.out.println();
 		Set<String> actualElements = seeds.stream()
 				.map(element -> element.getElementName())
 				.collect(Collectors.toSet());
@@ -134,10 +200,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				expectedElements.containsAll(actualElements));
 
 		// Here we are getting all the sets of type dependent entities
-		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts();
+		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts().stream().collect(Collectors.toSet());
 
 		// print to console
-		System.out.println(this.getName());
 		System.out.print("{");
 		sets.forEach(set -> {
 			Util.candidatePrinter(set);
@@ -148,11 +213,18 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		Set<Set<String>> actualSets = sets.stream()
 				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
 				.collect(Collectors.toSet());
-		
+
 		assertNotNull(actualSets);		
 
 		assertTrue("Expected sets contain "+expectedSets.toString()+" and are the same.", 
 				expectedSets.containsAll(actualSets));
+	}
+	
+	public void testImplicitlyNullVariableDecl() throws Exception {
+		this.helper(setOf("a"), 
+				setOf(setOf("a","b"),
+						setOf("c"),
+						setOf("d")));
 	}
 
 	public void testAssignmentFieldSimpleName() throws Exception {
@@ -238,7 +310,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("farray"),
 						setOf("finitializedarray")));
 	}
-	
+
 	public void testDeclarationFieldArray() throws Exception {
 		this.helper(setOf("a","nullControl"), 
 				setOf(setOf("a","b"),
@@ -269,7 +341,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("d","e"),
 						setOf("control")));
 	}
-	
+
 	public void testInvocationConstructor() throws Exception {
 		this.helper(setOf("a","f","o"), 
 				setOf(setOf("a","b","d","g","k"),

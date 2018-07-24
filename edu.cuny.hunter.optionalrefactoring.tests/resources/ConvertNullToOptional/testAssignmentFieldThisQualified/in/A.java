@@ -2,10 +2,10 @@ package p;
 
 public class A {
 
-	A a;
-	A b;
-	A nullControl;
-	A control;
+	Object a = new Object();
+	Object b = new Object();
+	Object nullControl = new Object();
+	Object control = new Object();
 
 	void fieldAssignmentTest() {
 

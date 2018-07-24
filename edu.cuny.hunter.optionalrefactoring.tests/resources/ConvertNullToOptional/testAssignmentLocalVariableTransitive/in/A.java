@@ -4,22 +4,22 @@ public class A {
 	// expect seed {a,e,control}
 	// expect propagate {{a,b},{c,d,e,f,g},{control}}
 	void m() {
-		A a;
+		Object a = new Object();
 		a = null;
-		A b;
+		Object b = new Object();
 		b = a;
-		A c;
-		A d;
-		A e;
+		Object c = new Object();
+		Object d = new Object();
+		Object e = new Object();
 		c = d;
 		d = e;
 		e = null;
-		A[] f;
+		Object[] f = new Object[1];
 		f[0] = e;
-		A[] g;
+		Object[] g = new Object[1];
 		g[0] = f[0];
-		A control;
+		Object control = new Object();
 		control = null;
-		A noSeed;
+		Object noSeed = new Object();
 	}
 }

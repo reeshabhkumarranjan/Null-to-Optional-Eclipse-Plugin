@@ -1,5 +1,7 @@
 package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
+import org.eclipse.jdt.core.dom.Assignment;
+
 class ScratchClass {
 	
 	public class A {
@@ -28,6 +30,12 @@ class ScratchClass {
 			}
 
 			public B(Object k, Object l, Object m, Object n, Object o) {	}
-		}	
+		}
+		
+		Assignment x;
+		
+		A a;
+		A b = a;
+		A c, d, localVarControl = new A();
 	}
 }

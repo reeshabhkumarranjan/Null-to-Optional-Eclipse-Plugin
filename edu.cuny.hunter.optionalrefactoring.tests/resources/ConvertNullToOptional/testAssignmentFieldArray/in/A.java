@@ -2,10 +2,10 @@ package p;
 
 public class A {
 
-	A[] a;
-	A[] b;
-	A[] nullControl;
-	A[] control; // this should not be seeded or propagated
+	A[] a = new A[1];
+	A[] b = new A[1];
+	A[] nullControl = new A[1];
+	A[] control = new A[1]; // this should not be seeded or propagated
 
 	void fieldAssignmentTest() {
 
