@@ -143,11 +143,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		// Compile source file.
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
-		boolean compileSuccess = compiler.run(null, null, null, "-classpath",
-				System.getProperty("user.dir") + File.separator + "resources" + File.separator
-						+ "ConvertNullToOptional" + File.separator + "lib" + File.separator
-						+ "ConvertNullToOptionalRefactoringTest.jar",
-				sourceFile.getPath()) == 0;
+		boolean compileSuccess = compiler.run(null, null, null, sourceFile.getPath()) == 0;
 
 		sourceFile.delete();
 		return compileSuccess;
