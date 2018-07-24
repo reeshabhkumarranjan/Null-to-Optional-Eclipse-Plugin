@@ -59,7 +59,7 @@ public class RefactorableHarvester {
 	private final SearchEngine searchEngine = new SearchEngine();
 	private final Map<IJavaElement,Boolean> nullSeeds = new LinkedHashMap<>();
 	private final WorkList workList = new WorkList();
-	private final Set<IJavaElement> potentiallyRefactorable = new LinkedHashSet<>();
+	private final WorkList bridgeable = new WorkList();
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
 	
 	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope, IProgressMonitor m) {
@@ -105,7 +105,7 @@ public class RefactorableHarvester {
 	private void reset() {
 		this.workList.clear();
 		this.nullSeeds.clear();
-		this.potentiallyRefactorable.clear();
+		this.bridgeable.clear();
 		this.notRefactorable.clear();
 	}
 
@@ -207,7 +207,7 @@ public class RefactorableHarvester {
 						this.monitor);
 
 			} catch (final HarvesterASTPreconditionException e) {
-				this.potentiallyRefactorable.addAll(this.workList
+				this.bridgeable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.notRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
@@ -217,22 +217,38 @@ public class RefactorableHarvester {
 				this.notRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
+				this.bridgeable.removeAll(this.notRefactorable);
 				continue;
 			}
 		}
-
-		this.potentiallyRefactorable.retainAll(nullSeeds.keySet());
 
 		final Set<ComputationNode> computationForest = this.trimForest(this.workList
 				.getComputationForest(), this.notRefactorable);
 
 		final Set<Set<IJavaElement>> candidateSets = Util
 				.getElementForest(computationForest);
-
-		// build the set of type dependency sets for the refactorable null literals
+		
 		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
 		Set<TypeDependentElementSet> typeDependentElementForest = candidateSets.stream().map(
 				set -> TypeDependentElementSet.of(set, nullSeeds)).collect(Collectors.toSet());
+		
 		return typeDependentElementForest;
+	}
+	
+	public Set<TypeDependentElementSet> getBridgeable() {
+		
+		final Set<ComputationNode> bridgeableForest = this.trimForest(this.bridgeable
+				.getComputationForest(), this.notRefactorable);
+		
+
+		final Set<Set<IJavaElement>> bridgeableSets = Util
+				.getElementForest(bridgeableForest);
+
+
+		// here is the larger, bridgeable set
+		Set<TypeDependentElementSet> bridgeableSetForest = bridgeableSets.stream().map(
+				set -> TypeDependentElementSet.of(set, nullSeeds)).collect(Collectors.toSet());
+		
+		return bridgeableSetForest;
 	}
 }

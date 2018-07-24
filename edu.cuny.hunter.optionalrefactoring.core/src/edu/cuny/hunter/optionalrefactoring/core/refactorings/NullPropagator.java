@@ -18,6 +18,7 @@ import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
+import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
@@ -53,6 +54,7 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -621,7 +623,9 @@ class NullPropagator {
 			break;
 		}
 
-		case ASTNode.CAST_EXPRESSION:
+		case ASTNode.CAST_EXPRESSION: {
+			this.process((CastExpression) node);
+		} break;
 		case ASTNode.INSTANCEOF_EXPRESSION:
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
 		case ASTNode.IF_STATEMENT:
@@ -801,8 +805,10 @@ class NullPropagator {
 			break;
 		}
 
+		case ASTNode.CAST_EXPRESSION: {
+			this.process((CastExpression)node);
+		} break;
 		case ASTNode.NULL_LITERAL : 
-		case ASTNode.CAST_EXPRESSION:
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
 		case ASTNode.IF_STATEMENT:
 		case ASTNode.BOOLEAN_LITERAL:
@@ -820,4 +826,10 @@ class NullPropagator {
 		}
 		}
 	}
+
+	private void process(CastExpression node) {
+		throw new HarvesterASTPreconditionException("Null-dependent CastExpression node encountered: ", node);
+	}
+
+
 }
