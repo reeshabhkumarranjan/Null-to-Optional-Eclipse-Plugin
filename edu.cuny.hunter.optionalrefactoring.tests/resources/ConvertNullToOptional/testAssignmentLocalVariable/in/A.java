@@ -7,13 +7,13 @@ public class A {
 		 * should seed: {"a","nullControl"}
 		 * should propagate: {{"a","b"},{"nullControl"}}
 		 */
-		A a = new Object();
+		Object a = new Object();
 		a = null;
-		A b = new Object();
+		Object b = new Object();
 		b = a;
-		A nullControl = new Object();
+		Object nullControl = new Object();
 		nullControl = null;
-		A control = new Object();
+		Object control = new Object();
 	}
 	
 }

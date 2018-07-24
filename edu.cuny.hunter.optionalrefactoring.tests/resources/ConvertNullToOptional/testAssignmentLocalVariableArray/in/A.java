@@ -2,19 +2,19 @@ package p;
 
 public class A {
 	
-	void fieldAssignmentTest() {
+	void m() {
 		
-		A[] a = new A[];
-		A[] b = new A[];
-		A[] nullControl = new A[];
-		A[] control = new A[]; // this should not be seeded or propagated
+		Object[] a = new Object[1];
+		Object[] b = new Object[1];
+		Object[] nullControl = new Object[1];
+		Object[] control = new Object[1]; // this should not be seeded or propagated
 		/**
 		 * should seed: {"a","nullControl"}
 		 * should propagate {{"a","b"},{"nullControl"}}
 		 */
 		a[0] = null;
-		b = new A[] { a[0] };
-		nullControl = new A[] { null };
+		b = new Object[] { a[0] };
+		nullControl = new Object[] { null };
 	}
 	
 }

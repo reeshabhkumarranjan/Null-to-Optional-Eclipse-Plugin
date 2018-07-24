@@ -145,8 +145,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		boolean compileSuccess = compiler.run(null, null, null, "-classpath",
 				System.getProperty("user.dir") + File.separator + "resources" + File.separator
-						+ "ConvertStreamToParallel" + File.separator + "lib" + File.separator
-						+ "stream-refactoring-annotations.jar",
+						+ "ConvertNullToOptional" + File.separator + "lib" + File.separator
+						+ "ConvertNullToOptionalRefactoringTest.jar",
 				sourceFile.getPath()) == 0;
 
 		sourceFile.delete();

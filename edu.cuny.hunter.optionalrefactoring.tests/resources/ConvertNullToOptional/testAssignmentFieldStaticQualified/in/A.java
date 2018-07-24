@@ -2,10 +2,10 @@ package p;
 
 public class A {
 
-	static A a = new Object();
-	static A b = new Object();
-	static A nullControl = new Object();
-	static A control = new Object();
+	static Object a = new Object();
+	static Object b = new Object();
+	static Object nullControl = new Object();
+	static Object control = new Object();
 
 	void fieldAssignmentTest() {
 

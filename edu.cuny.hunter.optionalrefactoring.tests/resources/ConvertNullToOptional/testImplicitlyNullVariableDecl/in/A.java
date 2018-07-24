@@ -4,12 +4,12 @@ public class A {
 	/** should seed: { "a" }
 	 * 	should propagate: {{"a","b"}}
 	 */
-	A a;
-	A b = a;
-	A control = new Object();
+	Object a;
+	Object b = a;
+	Object control = new Object();
 
 	void test() {
 		
-		A c, d, localVarControl = new Object();
+		Object c, d, localVarControl = new Object();
 	}
 }
