@@ -99,18 +99,6 @@ class NullPropagator {
 		return decl.parameters().indexOf(svd);
 	}
 
-	private static int getParamNumber(List<ASTNode> arguments, Expression name) {
-		ASTNode curr = name;
-		while (curr != null) {
-			final int inx = arguments.indexOf(curr);
-			if (inx != -1)
-				return inx;
-			else
-				curr = curr.getParent();
-		}
-		return -1;
-	}
-
 	private final Set<IJavaElement> constFields;
 
 	private final Set<IJavaElement> found = new LinkedHashSet<>();
@@ -140,7 +128,7 @@ class NullPropagator {
 
 	private void findFormalsForVariable(ClassInstanceCreation ctorCall)
 			throws JavaModelException, CoreException {
-		final int paramNumber = getParamNumber(ctorCall.arguments(), this.name);
+		final int paramNumber = Util.getParamNumber(ctorCall.arguments(), this.name);
 		final IMethodBinding b = ctorCall.resolveConstructorBinding();
 		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ClassInstanceCreation: ", ctorCall);
 	
@@ -192,7 +180,7 @@ class NullPropagator {
 			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
 					ctorCall);
 		else
-			this.findFormalsForVariable(top, getParamNumber(ctorCall.arguments(), this.name));
+			this.findFormalsForVariable(top, Util.getParamNumber(ctorCall.arguments(), this.name));
 	}
 
 	private void findFormalsForVariable(IMethod correspondingMethod,
@@ -217,7 +205,7 @@ class NullPropagator {
 			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
 					mi);
 		else
-			this.findFormalsForVariable(top, getParamNumber(mi.arguments(), this.name));
+			this.findFormalsForVariable(top, Util.getParamNumber(mi.arguments(), this.name));
 	}
 
 	private void findFormalsForVariable(SuperConstructorInvocation ctorCall)
@@ -232,7 +220,7 @@ class NullPropagator {
 			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
 					ctorCall);
 		else
-			this.findFormalsForVariable(top, getParamNumber(ctorCall.arguments(), this.name));
+			this.findFormalsForVariable(top, Util.getParamNumber(ctorCall.arguments(), this.name));
 	}
 
 	private void findFormalsForVariable(SuperMethodInvocation smi)
@@ -248,7 +236,7 @@ class NullPropagator {
 			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
 					smi);
 		else
-			this.findFormalsForVariable(top, getParamNumber(smi.arguments(),
+			this.findFormalsForVariable(top, Util.getParamNumber(smi.arguments(),
 					this.name));
 	}
 

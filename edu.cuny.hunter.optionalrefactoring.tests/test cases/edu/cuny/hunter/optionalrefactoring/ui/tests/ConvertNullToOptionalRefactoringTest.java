@@ -269,9 +269,11 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 	
 	public void testCastExpression() throws Exception {
-		this.preconditionsHelper(setOf("d"),
-				setOf("parseInt","b","m"),
-				setOf(setOf("d")));
+		this.preconditionsHelper(setOf("a","l","q"),
+				setOf("p","b","m"),
+				setOf(setOf("a"),
+						setOf("l"),
+						setOf("o","d","q")));
 	}
 	
 	public void testCastExpressionTransitiveVariable() throws Exception {
