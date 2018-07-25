@@ -90,8 +90,12 @@ class NullSeeder {
 					if (b.getJavaElement() instanceof IField)
 						if (vdf.getInitializer() == null)
 							/*this element gets added to the Map candidates with 
-							 * boolean true indicating an implict null*/
-							candidates.put(b.getJavaElement(),Boolean.TRUE);
+							 * boolean true indicating an implicit null
+							 * also, if the type of the declaration is primitive,
+							 * we ignore it
+							 * */
+							if (!b.getVariableDeclaration().getType().isPrimitive()) 
+								candidates.put(b.getJavaElement(),Boolean.TRUE);
 				} else throw new HarvesterASTException(
 						"While trying to process an uninitialized VariableDeclarationFragment: ", 
 						vdf);
