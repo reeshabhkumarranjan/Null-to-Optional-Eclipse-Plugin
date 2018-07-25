@@ -296,10 +296,15 @@ public interface Util {
 		return (MethodDeclaration) ASTNodes.getParent(node, ASTNode.METHOD_DECLARATION);
 	}
 	
+	/**
+	 * @param node the Node that doesn't have a handle, which we need to get the closest type dependent Model element for
+	 * @return the Element for the closest type dependent model handle
+	 */
 	public static IJavaElement getEnclosingTypeDependentExpression(ASTNode node) {
 		ASTNode parent = node.getParent();
 		if (parent != null) {
 			parent = stripParenthesizedExpressions(parent);
+			
 			switch (parent.getNodeType()) {
 			case ASTNode.RETURN_STATEMENT : {
 				ReturnStatement r = (ReturnStatement)parent;
@@ -317,7 +322,7 @@ public interface Util {
 				break;
 			}
 			case ASTNode.ASSIGNMENT : {
-				Name n = (Name)resolveAssignmentExpression((Assignment)parent);
+				Name n = (Name)resolveChainAssignmentExpression((Assignment)parent);
 				IBinding b = n.resolveBinding();
 				if (b != null) return b.getJavaElement();
 				break;
@@ -357,10 +362,10 @@ public interface Util {
 		} throw new HarvesterASTException("While trying to parse the type dependent entity of a node: ", node);
 	}
 	
-	public static ASTNode resolveAssignmentExpression(Assignment node) {
+	public static Name resolveChainAssignmentExpression(Assignment node) {
 		Expression n = node.getLeftHandSide();
-		if (n instanceof Name) return n;
-		return resolveAssignmentExpression((Assignment)n);
+		if (n instanceof Name) return (Name)n;
+		else return (Name)((Assignment)n).getRightHandSide();
 	}
 	
 	public static Set<Set<IJavaElement>> getElementForest(Set<ComputationNode> computationForest) {

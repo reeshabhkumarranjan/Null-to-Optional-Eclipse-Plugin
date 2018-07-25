@@ -220,7 +220,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				expectedSets.containsAll(actualSets));
 	}
 	
-	public void testCastExpression() throws Exception {
+	public void preconditionsHelper(Set<String> expectedSeedStrings, Set<String> expectedFailStrings, 
+			Set<Set<String>> expectedPropagatedStrings) throws Exception {
 		System.out.println(this.getName());
 		// compute the actual results.
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
@@ -231,26 +232,58 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		CompilationUnit c = (CompilationUnit)parser.createAST(null);
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
 				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
-		Map<IJavaElement,Boolean> seeds = harvester.getSeeds();
-		Set<IJavaElement> failures = harvester.getPreconditionFailures();
-		Util.candidatePrinter(seeds.keySet());
-		Util.candidatePrinter(failures);
+		
+		Set<TypeDependentElementSet> propagatedSets = harvester.harvestRefactorableContexts();
+		Map<IJavaElement,Boolean> seededElements = harvester.getSeeds();
+		Set<IJavaElement> failedElements = harvester.getPreconditionFailures();
+		
+		Util.candidatePrinter(seededElements.keySet());
+		Util.candidatePrinter(failedElements);
+		System.out.print("{");
+		propagatedSets.forEach(set -> {
+			Util.candidatePrinter(set);
+			System.out.print(", ");
+		});
+		System.out.println("}");
 		System.out.println();
 		
-		Set<String> actualElements = seeds.keySet().stream()
+		Set<String> seedStrings = seededElements.keySet().stream()
 				.map(element -> element.getElementName())
 				.collect(Collectors.toSet());
-		Set<String> failingElements = failures.stream()
+		Set<String> failingStrings = failedElements.stream()
 				.map(element -> element.getElementName())
 				.collect(Collectors.toSet());
-		Set<String> expectedPassing = setOf("d");
-		Set<String> expectedFailing = setOf("parseInt", "b", "m");
+		Set<Set<String>> propagatedStrings = propagatedSets.stream()
+				.map(set -> set.stream().map(element -> element.getElementName().toString()).collect(Collectors.toSet()))
+				.collect(Collectors.toSet());
 		
-		assertTrue("Passing seeds are: d.", actualElements.containsAll(expectedPassing) 
-				&& expectedPassing.containsAll(actualElements));
-		assertTrue("Failing seeds are: parseInt, b, m", 
-				failingElements.containsAll(expectedFailing) 
-				&& expectedFailing.containsAll(failingElements));
+		assertTrue("Passing seeds are the same: "+expectedSeedStrings.toString()+".", 
+				seedStrings.containsAll(expectedSeedStrings) 
+				&& expectedSeedStrings.containsAll(seedStrings));
+		assertTrue("Failing seeds are the same: "+expectedFailStrings.toString()+".", 
+				failingStrings.containsAll(expectedFailStrings) 
+				&& expectedFailStrings.containsAll(failingStrings));
+		assertTrue("Propagated sets are: "+expectedPropagatedStrings.toString()+".",
+				propagatedStrings.containsAll(expectedPropagatedStrings)
+				&& expectedPropagatedStrings.containsAll(propagatedStrings));
+	}
+	
+	public void testCastExpression() throws Exception {
+		this.preconditionsHelper(setOf("d"),
+				setOf("parseInt","b","m"),
+				setOf(setOf("d")));
+	}
+	
+	public void testCastExpressionTransitiveVariable() throws Exception {
+		this.preconditionsHelper(setOf("a","b"),
+				setOf("c","a","d"),
+				setOf(setOf("b","e")));
+	}
+	
+	public void testCastExpressionTransitiveMethod() throws Exception {
+		this.preconditionsHelper(setOf("b","c","d","e"),
+				setOf("a","b","c","x", "y", "d","g"),
+				setOf(setOf("t","h","z","e")));
 	}
 	
 	public void testImplicitlyNullVariableDecl() throws Exception {
