@@ -24,6 +24,7 @@ import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.AST;
@@ -43,6 +44,7 @@ import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
@@ -328,40 +330,131 @@ public interface Util {
 				break;
 			}
 			case ASTNode.METHOD_INVOCATION : {
-				MethodInvocation m = (MethodInvocation) parent;
-				IBinding b = m.resolveMethodBinding();
-				if (b != null) return b.getJavaElement();
+				MethodInvocation mi = (MethodInvocation) parent;
+				List<ASTNode> args = mi.arguments();
+				int pos = getParamNumber(args, (Expression)node);
+				IBinding b = mi.resolveMethodBinding();
+				if (b != null) {
+					IMethod im = (IMethod)b.getJavaElement();
+					try {
+						ILocalVariable[] params = im.getParameters();
+						return params[pos];
+					} catch (JavaModelException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				break;
 			}
 			case ASTNode.SUPER_METHOD_INVOCATION : {
-				SuperMethodInvocation m = (SuperMethodInvocation) parent;
-				IBinding b = m.resolveMethodBinding();
-				if (b != null) return b.getJavaElement();
+				SuperMethodInvocation sm = (SuperMethodInvocation) parent;
+				List<ASTNode> args = sm.arguments();
+				int pos = getParamNumber(args, (Expression)node);
+				IBinding b = sm.resolveMethodBinding();
+				if (b != null) {
+					IMethod im = (IMethod)b.getJavaElement();
+					try {
+						ILocalVariable[] params = im.getParameters();
+						return params[pos];
+					} catch (JavaModelException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				break;
 			}
 			case ASTNode.CONSTRUCTOR_INVOCATION : {
-				ConstructorInvocation m = (ConstructorInvocation) parent;
-				IBinding b = m.resolveConstructorBinding();
-				if (b != null) return b.getJavaElement();
+				ConstructorInvocation ci = (ConstructorInvocation) parent;
+				List<ASTNode> args = ci.arguments();
+				int pos = getParamNumber(args, (Expression)node);
+				IBinding b = ci.resolveConstructorBinding();
+				if (b != null) {
+					IMethod im = (IMethod)b.getJavaElement();
+					try {
+						ILocalVariable[] params = im.getParameters();
+						return params[pos];
+					} catch (JavaModelException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				break;
 			}
 			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : {
-				SuperConstructorInvocation m = (SuperConstructorInvocation) parent;
-				IBinding b = m.resolveConstructorBinding();
-				if (b != null) return b.getJavaElement();
+				SuperConstructorInvocation sc = (SuperConstructorInvocation) parent;
+				List<ASTNode> args = sc.arguments();
+				int pos = getParamNumber(args, (Expression)node);
+				IBinding b = sc.resolveConstructorBinding();
+				if (b != null) {
+					IMethod im = (IMethod)b.getJavaElement();
+					try {
+						ILocalVariable[] params = im.getParameters();
+						return params[pos];
+					} catch (JavaModelException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				break;
 			}
 			case ASTNode.CLASS_INSTANCE_CREATION : {
-				ClassInstanceCreation m = (ClassInstanceCreation) parent;
-				IBinding b = m.resolveConstructorBinding();
-				if (b != null) return b.getJavaElement();
+				ClassInstanceCreation cic = (ClassInstanceCreation) parent;
+				List<ASTNode> args = cic.arguments();
+				int pos = getParamNumber(args, (Expression)node);
+				IBinding b = cic.resolveConstructorBinding();
+				if (b != null) {
+					IMethod im = (IMethod)b.getJavaElement();
+					try {
+						ILocalVariable[] params = im.getParameters();
+						return params[pos];
+					} catch (JavaModelException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				break;
 			}
 			default : return getEnclosingTypeDependentExpression(parent);
 			}
 		} throw new HarvesterASTException("While trying to parse the type dependent entity of a node: ", node);
 	}
-	
+
+	public static int getParamNumber(List<ASTNode> arguments, Expression name) {
+		ASTNode curr = name;
+		while (curr != null) {
+			final int inx = arguments.indexOf(curr);
+			if (inx != -1)
+				return inx;
+			else
+				curr = curr.getParent();
+		}
+		return -1;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static List<Integer> getParamPositions(ASTNode invocation) {
+		List<Expression> args;
+		switch (invocation.getNodeType()) {
+		case ASTNode.METHOD_INVOCATION : args = ((MethodInvocation)invocation).arguments();
+		break;
+		case ASTNode.CONSTRUCTOR_INVOCATION : args = ((ConstructorInvocation)invocation).arguments();
+		break;
+		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : args = ((SuperConstructorInvocation)invocation).arguments();
+		break;
+		case ASTNode.CLASS_INSTANCE_CREATION : args = ((ClassInstanceCreation)invocation).arguments();
+		break;
+		default : throw new HarvesterASTException("Tried processing parameters for something other than an invocation.", invocation);
+		}
+		
+		List<Integer> argPositions = new ArrayList<>();
+		Integer pos = -1;
+		for (Expression arg : args) {
+			pos += 1;
+			if (arg instanceof NullLiteral) argPositions.add(new Integer(pos));
+		}
+		return argPositions;
+	}
+
 	public static Name resolveChainAssignmentExpression(Assignment node) {
 		Expression n = node.getLeftHandSide();
 		if (n instanceof Name) return (Name)n;

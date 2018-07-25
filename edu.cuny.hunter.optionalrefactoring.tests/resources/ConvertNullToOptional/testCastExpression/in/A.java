@@ -2,21 +2,31 @@ package p;
 
 public class A {
 	
-	/*should seed d, should reject parseInt, b, m, should propagate only d*/
+	/*should seed a,l,q, should reject b,m,p*/
 	
 	class B { }
 	
-	Object a = (Object)new Object();
+	Object a = null;
 	
 	Object b = (Object)null;
 	
-	Object m(Object x) {
+	Object c = n((Object)null);
+	
+	Object d = o(null);
+	
+	Object l() {
+		return null;
+	}
+	
+	Object m() {
 		return (Object)null;
 	}
 	
-	Integer c = Integer.parseInt((String)null);
+	Object n(Object p) { 
+		return p;
+	}
 	
-	Object d = null;
-	
-	Object e = new Object();	
+	Object o(Object q) {	
+		return q;
+	}
 }
