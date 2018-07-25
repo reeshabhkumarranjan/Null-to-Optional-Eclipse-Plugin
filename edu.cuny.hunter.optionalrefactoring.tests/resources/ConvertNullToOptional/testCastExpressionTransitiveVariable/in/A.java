@@ -2,8 +2,8 @@ package p;
 
 public class A {
 	
-	/*should seed b
-	should reject at seeding c 
+	/*should seed a,b
+	should reject {{c},{d,a}} 
 	should propagate {{b,e}}*/
 	
 	Object a = null;

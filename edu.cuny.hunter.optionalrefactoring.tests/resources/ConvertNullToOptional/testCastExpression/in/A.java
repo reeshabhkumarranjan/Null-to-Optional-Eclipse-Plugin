@@ -2,7 +2,7 @@ package p;
 
 public class A {
 	
-	/*should seed d, should reject parseInt, b, m, should ignore a, e*/
+	/*should seed d, should reject parseInt, b, m, should propagate only d*/
 	
 	class B { }
 	

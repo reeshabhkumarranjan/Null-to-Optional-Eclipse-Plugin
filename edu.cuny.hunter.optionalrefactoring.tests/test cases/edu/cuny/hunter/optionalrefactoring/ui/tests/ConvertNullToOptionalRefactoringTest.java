@@ -269,22 +269,22 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 	
 	public void testCastExpression() throws Exception {
-		this.preconditionsHelper(setOf("b"),
-				setOf("a","c"),
-				setOf(setOf("b","m")));
+		this.preconditionsHelper(setOf("d"),
+				setOf("parseInt","b","m"),
+				setOf(setOf("d")));
 	}
 	
 	public void testCastExpressionTransitiveVariable() throws Exception {
-		this.preconditionsHelper(setOf("b"),
-				setOf("c","a"),
+		this.preconditionsHelper(setOf("a","b"),
+				setOf("c","a","d"),
 				setOf(setOf("b","e")));
 	}
 	
-/*	public void testCastExpressionTransitiveMethod() throws Exception {
-		this.preconditionsHelper(setOf(""),
-				setOf(),
-				setOf(setOf()));
-	}*/
+	public void testCastExpressionTransitiveMethod() throws Exception {
+		this.preconditionsHelper(setOf("b","c","d","e"),
+				setOf("a","b","c","x", "y", "d","g"),
+				setOf(setOf("t","h","z","e")));
+	}
 	
 	public void testImplicitlyNullVariableDecl() throws Exception {
 		this.helper(setOf("a"), 
