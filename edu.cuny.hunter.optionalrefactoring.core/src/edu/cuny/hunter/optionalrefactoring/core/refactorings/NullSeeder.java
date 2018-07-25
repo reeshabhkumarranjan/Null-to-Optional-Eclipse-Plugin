@@ -155,8 +155,15 @@ class NullSeeder {
 			Logger.getAnonymousLogger().warning("Unable to process an ASTNode in binary code: "+e+".");
 		} catch (HarvesterASTPreconditionException e) {
 			Logger.getAnonymousLogger().warning("Entity cannot be refactored: "+e+".");
-			IJavaElement failing = Util.getEnclosingTypeDependentExpression(e.getNode());
-			this.notRefactorable.add(failing);
+			IJavaElement failing;
+			try {
+				failing = Util.getEnclosingTypeDependentExpression(e.getNode());
+				this.notRefactorable.add(failing);
+			} catch (JavaModelException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
 		} catch (HarvesterASTException e) {
 			Logger.getAnonymousLogger().warning("Problem with traversing the AST: "+e+".");
 		}

@@ -301,8 +301,9 @@ public interface Util {
 	/**
 	 * @param node the Node that doesn't have a handle, which we need to get the closest type dependent Model element for
 	 * @return the Element for the closest type dependent model handle
+	 * @throws JavaModelException 
 	 */
-	public static IJavaElement getEnclosingTypeDependentExpression(ASTNode node) {
+	public static IJavaElement getEnclosingTypeDependentExpression(ASTNode node) throws JavaModelException {
 		ASTNode parent = node.getParent();
 		if (parent != null) {
 			parent = stripParenthesizedExpressions(parent);
@@ -332,93 +333,56 @@ public interface Util {
 			case ASTNode.METHOD_INVOCATION : {
 				MethodInvocation mi = (MethodInvocation) parent;
 				List<ASTNode> args = mi.arguments();
-				int pos = getParamNumber(args, (Expression)node);
 				IBinding b = mi.resolveMethodBinding();
-				if (b != null) {
-					IMethod im = (IMethod)b.getJavaElement();
-					try {
-						ILocalVariable[] params = im.getParameters();
-						return params[pos];
-					} catch (JavaModelException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+				if (b != null) return getdeHelper(b, args, (Expression)node);
 				break;
 			}
 			case ASTNode.SUPER_METHOD_INVOCATION : {
 				SuperMethodInvocation sm = (SuperMethodInvocation) parent;
 				List<ASTNode> args = sm.arguments();
-				int pos = getParamNumber(args, (Expression)node);
 				IBinding b = sm.resolveMethodBinding();
-				if (b != null) {
-					IMethod im = (IMethod)b.getJavaElement();
-					try {
-						ILocalVariable[] params = im.getParameters();
-						return params[pos];
-					} catch (JavaModelException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+				if (b != null) return getdeHelper(b, args, (Expression)node);
 				break;
 			}
 			case ASTNode.CONSTRUCTOR_INVOCATION : {
 				ConstructorInvocation ci = (ConstructorInvocation) parent;
 				List<ASTNode> args = ci.arguments();
-				int pos = getParamNumber(args, (Expression)node);
 				IBinding b = ci.resolveConstructorBinding();
-				if (b != null) {
-					IMethod im = (IMethod)b.getJavaElement();
-					try {
-						ILocalVariable[] params = im.getParameters();
-						return params[pos];
-					} catch (JavaModelException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+				if (b != null) return getdeHelper(b, args, (Expression)node);
 				break;
 			}
 			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : {
 				SuperConstructorInvocation sc = (SuperConstructorInvocation) parent;
 				List<ASTNode> args = sc.arguments();
-				int pos = getParamNumber(args, (Expression)node);
 				IBinding b = sc.resolveConstructorBinding();
-				if (b != null) {
-					IMethod im = (IMethod)b.getJavaElement();
-					try {
-						ILocalVariable[] params = im.getParameters();
-						return params[pos];
-					} catch (JavaModelException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+				if (b != null) return getdeHelper(b, args, (Expression)node);
 				break;
 			}
 			case ASTNode.CLASS_INSTANCE_CREATION : {
 				ClassInstanceCreation cic = (ClassInstanceCreation) parent;
 				List<ASTNode> args = cic.arguments();
-				int pos = getParamNumber(args, (Expression)node);
 				IBinding b = cic.resolveConstructorBinding();
-				if (b != null) {
-					IMethod im = (IMethod)b.getJavaElement();
-					try {
-						ILocalVariable[] params = im.getParameters();
-						return params[pos];
-					} catch (JavaModelException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+				if (b != null) return getdeHelper(b, args, (Expression)node);
 				break;
 			}
 			default : return getEnclosingTypeDependentExpression(parent);
 			}
 		} throw new HarvesterASTException("While trying to parse the type dependent entity of a node: ", node);
 	}
-
+	
+	static IJavaElement getdeHelper(IBinding b, List<ASTNode> args, Expression node) throws JavaModelException {
+		int pos = getParamNumber(args, (Expression)node);
+		IMethod im = (IMethod)b.getJavaElement();
+		ILocalVariable[] params = im.getParameters();
+		return params[pos];
+	}
+	
+	static Name resolveChainAssignmentExpression(Assignment node) {
+		Expression n = node.getLeftHandSide();
+		if (n instanceof Name) return (Name)n;
+		else return (Name)((Assignment)n).getRightHandSide();
+	}
+	
 	public static int getParamNumber(List<ASTNode> arguments, Expression name) {
 		ASTNode curr = name;
 		while (curr != null) {
@@ -429,36 +393,6 @@ public interface Util {
 				curr = curr.getParent();
 		}
 		return -1;
-	}
-
-	@SuppressWarnings("unchecked")
-	public static List<Integer> getParamPositions(ASTNode invocation) {
-		List<Expression> args;
-		switch (invocation.getNodeType()) {
-		case ASTNode.METHOD_INVOCATION : args = ((MethodInvocation)invocation).arguments();
-		break;
-		case ASTNode.CONSTRUCTOR_INVOCATION : args = ((ConstructorInvocation)invocation).arguments();
-		break;
-		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : args = ((SuperConstructorInvocation)invocation).arguments();
-		break;
-		case ASTNode.CLASS_INSTANCE_CREATION : args = ((ClassInstanceCreation)invocation).arguments();
-		break;
-		default : throw new HarvesterASTException("Tried processing parameters for something other than an invocation.", invocation);
-		}
-		
-		List<Integer> argPositions = new ArrayList<>();
-		Integer pos = -1;
-		for (Expression arg : args) {
-			pos += 1;
-			if (arg instanceof NullLiteral) argPositions.add(new Integer(pos));
-		}
-		return argPositions;
-	}
-
-	public static Name resolveChainAssignmentExpression(Assignment node) {
-		Expression n = node.getLeftHandSide();
-		if (n instanceof Name) return (Name)n;
-		else return (Name)((Assignment)n).getRightHandSide();
 	}
 	
 	public static Set<Set<IJavaElement>> getElementForest(Set<ComputationNode> computationForest) {
