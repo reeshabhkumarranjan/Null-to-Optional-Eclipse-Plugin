@@ -220,6 +220,23 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				expectedSets.containsAll(actualSets));
 	}
 	
+	public void testCastExpression() throws Exception {
+		this.helper(setOf("a","l","q"),
+				setOf(setOf("a"),
+						setOf("l"),
+						setOf("o","d","q")));
+	}
+	
+	public void testCastExpressionTransitiveVariable() throws Exception {
+		this.helper(setOf("a","b"),
+				setOf(setOf("b","e")));
+	}
+	
+	public void testCastExpressionTransitiveMethod() throws Exception {
+		this.helper(setOf("b","c","d","e"),
+				setOf(setOf("t","h","z","e")));
+	}
+	
 	public void testImplicitlyNullVariableDecl() throws Exception {
 		this.helper(setOf("a"), 
 				setOf(setOf("a","b"),

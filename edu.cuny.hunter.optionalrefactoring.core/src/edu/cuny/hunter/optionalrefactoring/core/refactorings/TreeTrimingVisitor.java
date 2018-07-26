@@ -4,9 +4,6 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.IJavaElement;
 
-import edu.cuny.hunter.optionalrefactoring.core.utils.ComputationNode;
-import edu.cuny.hunter.optionalrefactoring.core.utils.UnionComputationNode;
-import edu.cuny.hunter.optionalrefactoring.core.utils.ValuedComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Visitor;
 
 class TreeTrimingVisitor implements Visitor {

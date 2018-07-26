@@ -26,8 +26,8 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.osgi.framework.FrameworkUtil;
 
 import edu.cuny.citytech.refactoring.common.eval.handlers.EvaluateRefactoringHandler;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringContextSettings;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringContextSettings;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementSet;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
