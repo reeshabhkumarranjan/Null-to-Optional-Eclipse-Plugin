@@ -24,7 +24,6 @@ import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.AST;
@@ -38,13 +37,10 @@ import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
@@ -65,7 +61,6 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -289,7 +284,7 @@ public interface Util {
 		final IMember mem = getIMember(elem);
 		final ICompilationUnit icu = mem.getCompilationUnit();
 		if (icu == null)
-			throw new HarvesterJavaModelPreconditionException(Messages.ASTNodeProcessor_SourceNotPresent,
+			throw new HarvesterJavaModelException(Messages.ASTNodeProcessor_SourceNotPresent,
 					mem);
 		final ASTNode root = Util.getCompilationUnit(icu, monitor);
 		return root;

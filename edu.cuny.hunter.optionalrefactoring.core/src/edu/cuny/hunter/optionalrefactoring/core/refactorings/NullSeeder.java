@@ -1,6 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -8,8 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
@@ -43,14 +40,7 @@ import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
-import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.SearchEngine;
-import org.eclipse.jdt.core.search.SearchMatch;
-import org.eclipse.jdt.core.search.SearchParticipant;
-import org.eclipse.jdt.core.search.SearchPattern;
-import org.eclipse.jdt.core.search.SearchRequestor;
-
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -155,8 +145,6 @@ class NullSeeder {
 			break;
 			default : throw new HarvesterASTException("While trying to process the parent of an encountered NullLiteral: ", node);
 			}
-		} catch (HarvesterJavaModelPreconditionException e) {
-			Logger.getAnonymousLogger().warning("Unable to process an ASTNode in binary code: "+e+".");
 		} catch (HarvesterASTPreconditionException e) {
 			Logger.getAnonymousLogger().warning("Entity cannot be refactored: "+e+".");
 			IJavaElement failing;

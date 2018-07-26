@@ -30,7 +30,6 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -164,18 +163,7 @@ public class RefactorableHarvester {
 						// here, we have search match. 
 
 						IJavaElement matchingElement = (IJavaElement) match.getElement();
-		
-						// check if we are in a Jar or generated code, and stop searching deeper						
-						if (matchingElement.isReadOnly()) {
-							RefactorableHarvester.this.workList.add(matchingElement);
-							throw new HarvesterJavaModelPreconditionException("Match found a dependent element in a non-writable location.", matchingElement);
-						}
-						
-						if (matchingElement.getResource().isDerived()) {
-							RefactorableHarvester.this.workList.add(matchingElement);
-							throw new HarvesterJavaModelPreconditionException("Match found a dependent element in generated code.", matchingElement);
-						}
-						
+
 						// convert the matchingElement to an ASTNode.
 						ASTNode node = Util.getExactASTNode(match,
 								RefactorableHarvester.this.monitor);
