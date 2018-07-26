@@ -1,6 +1,8 @@
-package edu.cuny.hunter.optionalrefactoring.core.utils;
+package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import org.eclipse.jdt.core.IJavaElement;
+
+import edu.cuny.hunter.optionalrefactoring.core.utils.Visitor;
 
 public class ValuedComputationNode extends ComputationNode {
 	private final IJavaElement val;

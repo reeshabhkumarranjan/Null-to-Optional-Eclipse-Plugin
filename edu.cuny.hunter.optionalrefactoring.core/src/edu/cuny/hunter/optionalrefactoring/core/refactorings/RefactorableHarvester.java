@@ -33,9 +33,7 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
-import edu.cuny.hunter.optionalrefactoring.core.utils.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
-import edu.cuny.hunter.optionalrefactoring.core.utils.WorkList;
 
 /**
  * 

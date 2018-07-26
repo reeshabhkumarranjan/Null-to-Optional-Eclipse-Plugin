@@ -1,4 +1,6 @@
-package edu.cuny.hunter.optionalrefactoring.core.utils;
+package edu.cuny.hunter.optionalrefactoring.core.refactorings;
+
+import edu.cuny.hunter.optionalrefactoring.core.utils.Visitor;
 
 public class UnionComputationNode extends ComputationNode {
 	public void accept(Visitor visitor) {

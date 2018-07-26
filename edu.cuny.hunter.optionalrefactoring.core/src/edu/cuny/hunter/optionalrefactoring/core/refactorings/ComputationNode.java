@@ -1,4 +1,4 @@
-package edu.cuny.hunter.optionalrefactoring.core.utils;
+package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jdt.core.IJavaElement;
+
+import edu.cuny.hunter.optionalrefactoring.core.utils.Visitable;
 
 public abstract class ComputationNode implements Visitable {
 
