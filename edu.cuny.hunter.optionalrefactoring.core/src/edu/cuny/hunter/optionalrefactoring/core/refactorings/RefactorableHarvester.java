@@ -30,6 +30,7 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -192,7 +193,7 @@ public class RefactorableHarvester {
 						requestor, 
 						this.monitor);
 
-			} catch (final HarvesterASTPreconditionException e) {
+			} catch (final HarvesterASTException e) {
 				this.bridgeable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.notRefactorable.addAll(this.workList

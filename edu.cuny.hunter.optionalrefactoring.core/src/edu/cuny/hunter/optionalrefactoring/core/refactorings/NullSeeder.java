@@ -41,8 +41,10 @@ import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.search.SearchEngine;
+
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -74,11 +76,13 @@ class NullSeeder {
 				return super.visit(nl);
 			}
 			@Override
-			public boolean visit(VariableDeclarationFragment vdf) {
-				IVariableBinding b = vdf.resolveBinding();
+			public boolean visit(VariableDeclarationFragment node) {
+				IVariableBinding b = node.resolveBinding();
 				if (b != null) {
+					IJavaElement element = b.getJavaElement();
+					if (element != null) {
 					if (b.getJavaElement() instanceof IField)
-						if (vdf.getInitializer() == null)
+						if (node.getInitializer() == null)
 							/*this element gets added to the Map candidates with 
 							 * boolean true indicating an implicit null
 							 * also, if the type of the declaration is primitive,
@@ -86,10 +90,15 @@ class NullSeeder {
 							 * */
 							if (!b.getVariableDeclaration().getType().isPrimitive()) 
 								candidates.put(b.getJavaElement(),Boolean.TRUE);
-				} else throw new HarvesterASTException(
-						"While trying to process an uninitialized VariableDeclarationFragment: ", 
-						vdf);
-				return super.visit(vdf);
+					} else throw new HarvesterASTException(
+							"While trying to process a "+node.getClass().getSimpleName()+": ",
+							PreconditionFailure.MISSING_JAVA_ELEMENT,
+							node);
+					} else throw new HarvesterASTException(
+						"While trying to process a "+node.getClass().getSimpleName()+": ",
+						PreconditionFailure.MISSING_BINDING,
+						node);
+				return super.visit(node);
 			}
 		};
 		refactoringRootNode.accept(visitor);
@@ -106,11 +115,14 @@ class NullSeeder {
 			curr = curr.getParent();
 		}
 		if (curr != null) return curr;
-		throw new HarvesterASTException("While finding the declaring block for: ", node);
+		throw new HarvesterASTException("While finding the declaring block for: ",
+				PreconditionFailure.AST_ERROR,
+				node);
 	}
 
 	/**
 	 * @param node Any of the possible AST nodes where a null literal could appear as an immediate child
+	 * @throws JavaModelException 
 	 */
 	private void process(ASTNode node) {
 		try {
@@ -143,21 +155,20 @@ class NullSeeder {
 			break;
 			case ASTNode.INFIX_EXPRESSION : /*This may appear in some edge cases, we do nothing*/
 			break;
-			default : throw new HarvesterASTException("While trying to process the parent of an encountered NullLiteral: ", node);
+			default : throw new HarvesterASTException("While trying to process the parent of an encountered NullLiteral: ",
+					PreconditionFailure.AST_ERROR,
+					node);
 			}
-		} catch (HarvesterASTPreconditionException e) {
+		} catch (HarvesterASTException e) {
 			Logger.getAnonymousLogger().warning("Entity cannot be refactored: "+e+".");
 			IJavaElement failing;
 			try {
 				failing = Util.getEnclosingTypeDependentExpression(e.getNode());
 				this.notRefactorable.add(failing);
 			} catch (JavaModelException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				Logger.getAnonymousLogger()
+				.severe("Java Model Exception occurred while trying to determine local type dependence on "+node.toString());
 			}
-			
-		} catch (HarvesterASTException e) {
-			Logger.getAnonymousLogger().warning("Problem with traversing the AST: "+e+".");
 		}
 	}
 
@@ -173,25 +184,33 @@ class NullSeeder {
 		break;
 		case ASTNode.SUPER_FIELD_ACCESS : process((SuperFieldAccess)node);
 		break;
-		default : throw new HarvesterASTException("While trying to process left side of assignment: ", node);
+		default : throw new HarvesterASTException("While trying to process left side of assignment: ", 
+				PreconditionFailure.AST_ERROR,
+				node);
 		}
 	}
 	
 	private void process(CastExpression node) {
 		// Cast expressions cannot be refactored as Optionals
-		throw new HarvesterASTPreconditionException("Null-dependent CastExpression node encountered: ", node);
+		throw new HarvesterASTException("Null-dependent CastExpression node encountered: ", 
+				PreconditionFailure.CAST_EXPRESION,
+				node);
 	}
 	
-	private void process(ConditionalExpression node2) {
-		ASTNode parent = node2.getParent();
+	private void process(ConditionalExpression node) {
+		ASTNode parent = node.getParent();
 		if (parent != null) process(parent);
-		else throw new HarvesterASTException("While trying to process a Conditional Expression node: ", node2);
+		else throw new HarvesterASTException("While trying to process a Conditional Expression node: ", 
+				PreconditionFailure.AST_ERROR,
+				node);
 	}
 
-	private void process(ParenthesizedExpression node2) {
-		ASTNode parent = node2.getParent();
+	private void process(ParenthesizedExpression node) {
+		ASTNode parent = node.getParent();
 		if (parent != null) process(parent);
-		else throw new HarvesterASTException("While trying to process a Parenthesized Expression node: ", node2);
+		else throw new HarvesterASTException("While trying to process a Parenthesized Expression node: ", 
+				PreconditionFailure.AST_ERROR,
+				node);
 	}
 
 	private void process(ReturnStatement node) throws HarvesterASTException {
@@ -206,7 +225,9 @@ class NullSeeder {
 				}
 			}
 		}
-		throw new HarvesterASTException("While trying to process a null return statement in a Method Declaration: ", node);
+		throw new HarvesterASTException("While trying to process a null return statement: ", 
+				PreconditionFailure.AST_ERROR,
+				node);
 	}
 
 	private void process(Name node) throws HarvesterASTException {
@@ -218,7 +239,9 @@ class NullSeeder {
 				return;
 			}
 		}
-		throw new HarvesterASTException("While trying to process a Name node: ", node);
+		throw new HarvesterASTException("While trying to process a Name node: ", 
+				PreconditionFailure.MISSING_BINDING,
+				node);
 	}
 
 	private void process(SuperFieldAccess node) throws HarvesterASTException {
@@ -233,7 +256,9 @@ class NullSeeder {
 				}
 			}
 		}
-		default : throw new HarvesterASTException("While trying to process a Super-field Access Node: ", node);
+		default : throw new HarvesterASTException("While trying to process a Super-field Access Node: ",
+				PreconditionFailure.AST_ERROR,
+				node);
 		}
 	}
 
@@ -249,7 +274,9 @@ class NullSeeder {
 				}
 			}
 		}
-		default : throw new HarvesterASTException("While trying to process a Field Access node: ", node);
+		default : throw new HarvesterASTException("While trying to process a Field Access node: ", 
+				PreconditionFailure.AST_ERROR,
+				node);
 		}
 	}
 
@@ -265,7 +292,9 @@ class NullSeeder {
 		}
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT : process(arrayCreationOrVariableDeclarationFragment);
 		break;
-		default : throw new HarvesterASTException("While trying to process an Array Initializer node: ", node);
+		default : throw new HarvesterASTException("While trying to process an Array Initializer node: ", 
+				PreconditionFailure.AST_ERROR,
+				node);
 		}
 	}
 
@@ -275,13 +304,15 @@ class NullSeeder {
 			Expression e = ((ArrayAccess)node).getArray();
 			process(e);
 		} break;
-		default : throw new HarvesterASTException("While trying to process an Array Access node: ", node);
+		default : throw new HarvesterASTException("While trying to process an Array Access node: ", 
+				PreconditionFailure.AST_ERROR,
+				node);
 		}
 	}
 
-	private void process(ClassInstanceCreation cic) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(cic.arguments(), (Expression)this.current);
-		IMethodBinding binding = cic.resolveConstructorBinding();
+	private void process(ClassInstanceCreation node) throws HarvesterASTException {
+		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.current);
+		IMethodBinding binding = node.resolveConstructorBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			try {
@@ -292,12 +323,14 @@ class NullSeeder {
 				e.printStackTrace();
 			}
 
-		} else throw new HarvesterASTException("While trying to process a Class Instance Creation node: ", cic);
+		} else throw new HarvesterASTException("While trying to process a Class Instance Creation node: ", 
+				PreconditionFailure.MISSING_BINDING,
+				node);
 	}
 	
-	private void process(MethodInvocation mi) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(mi.arguments(), (Expression)this.current);
-		IMethodBinding binding = mi.resolveMethodBinding();
+	private void process(MethodInvocation node) throws HarvesterASTException {
+		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.current);
+		IMethodBinding binding = node.resolveMethodBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			try {
@@ -307,12 +340,14 @@ class NullSeeder {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		} else throw new HarvesterASTException("While trying to process a Method Invocation node: ", mi);
+		} else throw new HarvesterASTException("While trying to process a Method Invocation node: ", 
+				PreconditionFailure.MISSING_BINDING,
+				node);
 	}
 	
-	private void process(SuperMethodInvocation smi) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(smi.arguments(), (Expression)this.current);
-		IMethodBinding binding = smi.resolveMethodBinding();
+	private void process(SuperMethodInvocation node) throws HarvesterASTException {
+		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.current);
+		IMethodBinding binding = node.resolveMethodBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			try {
@@ -322,12 +357,14 @@ class NullSeeder {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		} else throw new HarvesterASTException("While trying to process a Super Method Invocation node: ", smi);
+		} else throw new HarvesterASTException("While trying to process a Super Method Invocation node: ", 
+				PreconditionFailure.MISSING_BINDING,
+				node);
 	}
 	
-	private void process(ConstructorInvocation ci) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(ci.arguments(), (Expression)this.current);
-		IMethodBinding binding = ci.resolveConstructorBinding();
+	private void process(ConstructorInvocation node) throws HarvesterASTException {
+		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.current);
+		IMethodBinding binding = node.resolveConstructorBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			try {
@@ -337,12 +374,14 @@ class NullSeeder {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		} else throw new HarvesterASTException("While trying to process a Constructor Invocation node: ", ci);
+		} else throw new HarvesterASTException("While trying to process a Constructor Invocation node: ", 
+				PreconditionFailure.MISSING_BINDING,
+				node);
 	}
 	
-	private void process(SuperConstructorInvocation sci) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(sci.arguments(), (Expression)this.current);
-		IMethodBinding binding = sci.resolveConstructorBinding();
+	private void process(SuperConstructorInvocation node) throws HarvesterASTException {
+		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.current);
+		IMethodBinding binding = node.resolveConstructorBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
 			try {
@@ -352,21 +391,25 @@ class NullSeeder {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		} else throw new HarvesterASTException("While trying to process a Super Constructor Invocation node: ", sci);
+		} else throw new HarvesterASTException("While trying to process a Super Constructor Invocation node: ", 
+				PreconditionFailure.MISSING_BINDING,
+				node);
 	}
 
 	@SuppressWarnings("unchecked")
-	private void process(VariableDeclarationFragment vdf) throws HarvesterASTException {
-		ASTNode node = vdf.getParent();
+	private void process(VariableDeclarationFragment node) throws HarvesterASTException {
+		ASTNode parent = node.getParent();
 		List<VariableDeclarationFragment> fragments;
-		switch (node.getNodeType()) {
-		case ASTNode.FIELD_DECLARATION : fragments = ((FieldDeclaration)node).fragments();
+		switch (parent.getNodeType()) {
+		case ASTNode.FIELD_DECLARATION : fragments = ((FieldDeclaration)parent).fragments();
 		break;
-		case ASTNode.VARIABLE_DECLARATION_EXPRESSION :	fragments = ((VariableDeclarationExpression)node).fragments();
+		case ASTNode.VARIABLE_DECLARATION_EXPRESSION :	fragments = ((VariableDeclarationExpression)parent).fragments();
 		break;
-		case ASTNode.VARIABLE_DECLARATION_STATEMENT : fragments = ((VariableDeclarationStatement)node).fragments();
+		case ASTNode.VARIABLE_DECLARATION_STATEMENT : fragments = ((VariableDeclarationStatement)parent).fragments();
 		break;
-		default : throw new HarvesterASTException("While trying to process the parent of a Variable Declaration Fragment: ", node);
+		default : throw new HarvesterASTException("While trying to process the parent of a Variable Declaration Fragment: ", 
+				PreconditionFailure.AST_ERROR,
+				parent);
 		}
 		Map<IJavaElement,Boolean> elements = new LinkedHashMap<>();
 		for (Object o : fragments) {
@@ -375,7 +418,10 @@ class NullSeeder {
 				IJavaElement element = ib.getJavaElement();
 				if (element != null) elements.put(element,Boolean.FALSE);
 			}
-			else throw new HarvesterASTException("While trying to process the fragments in a Variable Declaration Expression: ", vdf);
+			else throw new HarvesterASTException(
+					"While trying to process the fragments in a Variable Declaration Expression: ", 
+					PreconditionFailure.MISSING_BINDING,
+					(ASTNode) o);
 		}
 		this.candidates.putAll(elements);
 	}
@@ -390,6 +436,8 @@ class NullSeeder {
 				return;
 			}
 		}
-		throw new HarvesterASTException("While trying to process a Single Variable Declaration: ", node);
+		throw new HarvesterASTException("While trying to process a Single Variable Declaration: ", 
+				PreconditionFailure.MISSING_BINDING,
+				node);
 	}
 }

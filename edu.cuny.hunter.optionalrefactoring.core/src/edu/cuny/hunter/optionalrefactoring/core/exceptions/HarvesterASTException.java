@@ -4,6 +4,8 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
+
 public class HarvesterASTException extends HarvesterException {
 
 	/**
@@ -13,8 +15,8 @@ public class HarvesterASTException extends HarvesterException {
 
 	private final ASTNode problem;
 
-	public HarvesterASTException(String message, ASTNode problem) {
-		super(message);
+	public HarvesterASTException(String message, PreconditionFailure failure, ASTNode problem) {
+		super(message,failure);
 		this.problem = problem;
 	}
 	

@@ -53,8 +53,9 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -126,16 +127,17 @@ class NullPropagator {
 			this.process(this.name);
 	}
 
-	private void findFormalsForVariable(ClassInstanceCreation ctorCall)
+	private void findFormalsForVariable(ClassInstanceCreation node)
 			throws JavaModelException, CoreException {
-		final int paramNumber = Util.getParamNumber(ctorCall.arguments(), this.name);
-		final IMethodBinding b = ctorCall.resolveConstructorBinding();
-		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ClassInstanceCreation: ", ctorCall);
+		final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
+		final IMethodBinding b = node.resolveConstructorBinding();
+		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ClassInstanceCreation: ", 
+				PreconditionFailure.MISSING_BINDING, node);
 	
 		IMethod meth = (IMethod) b.getJavaElement();
-		if (meth == null && ctorCall.getAnonymousClassDeclaration() != null) {
+		if (meth == null && node.getAnonymousClassDeclaration() != null) {
 			// most likely an anonymous class.
-			final AnonymousClassDeclaration acd = ctorCall
+			final AnonymousClassDeclaration acd = node
 					.getAnonymousClassDeclaration();
 			final ITypeBinding binding = acd.resolveBinding();
 			final ITypeBinding superBinding = binding.getSuperclass();
@@ -146,7 +148,7 @@ class NullPropagator {
 					final ITypeBinding[] itb = imb.getParameterTypes();
 					if (itb.length > paramNumber) {
 						final ITypeBinding ithParamType = itb[paramNumber];
-						if (ithParamType.isEqualTo(((Expression) ctorCall
+						if (ithParamType.isEqualTo(((Expression) node
 								.arguments().get(paramNumber))
 								.resolveTypeBinding())) {
 							meth = (IMethod) imb.getJavaElement();
@@ -157,30 +159,40 @@ class NullPropagator {
 			}
 		}
 		if (meth == null) throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
-				ctorCall);
+				PreconditionFailure.MISSING_JAVA_ELEMENT,
+				node);
 
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
-			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
-					ctorCall);
+			throw new HarvesterJavaModelException(Messages.ASTNodeProcessor_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT,
+					meth);
 		else
 			this.findFormalsForVariable(top, paramNumber);
 	}
 
-	private void findFormalsForVariable(ConstructorInvocation ctorCall)
+	private void findFormalsForVariable(ConstructorInvocation node)
 			throws JavaModelException, CoreException {
-		final IMethodBinding b = ctorCall.resolveConstructorBinding();
-		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ConstructorInvocation: ", ctorCall);
+		final IMethodBinding b = node.resolveConstructorBinding();
+		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ConstructorInvocation: ", 
+				PreconditionFailure.MISSING_BINDING,
+				node);
 	
 		final IMethod meth = (IMethod) b.getJavaElement();
+		
+		if (meth == null) 
+			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT,
+					node);
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
-			throw new HarvesterASTException(Messages.ASTNodeProcessor_SourceNotPresent,
-					ctorCall);
+			throw new HarvesterJavaModelException(Messages.ASTNodeProcessor_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT,
+					meth);
 		else
-			this.findFormalsForVariable(top, Util.getParamNumber(ctorCall.arguments(), this.name));
+			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
 	private void findFormalsForVariable(IMethod correspondingMethod,

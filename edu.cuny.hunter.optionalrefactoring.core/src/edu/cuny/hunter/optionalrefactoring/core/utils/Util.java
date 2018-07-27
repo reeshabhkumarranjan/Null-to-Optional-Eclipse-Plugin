@@ -61,6 +61,7 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -250,7 +251,9 @@ public interface Util {
 		}
 		// We are finding import declarations for some reason, they should be ignored
 		case IJavaElement.IMPORT_DECLARATION : 
-			throw new HarvesterJavaModelException("Encountered a Method Import Statement", elem);
+			throw new HarvesterJavaModelException("Encountered a Method Import Statement", 
+					PreconditionFailure.ERRONEOUS_IMPORT_STATEMENT,
+					elem);
 		}
 
 		return getIMember(elem.getParent());
@@ -285,6 +288,7 @@ public interface Util {
 		final ICompilationUnit icu = mem.getCompilationUnit();
 		if (icu == null)
 			throw new HarvesterJavaModelException(Messages.ASTNodeProcessor_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT,
 					mem);
 		final ASTNode root = Util.getCompilationUnit(icu, monitor);
 		return root;
@@ -363,7 +367,9 @@ public interface Util {
 			}
 			default : return getEnclosingTypeDependentExpression(parent);
 			}
-		} throw new HarvesterASTException("While trying to parse the type dependent entity of a node: ", node);
+		} throw new HarvesterASTException("While trying to parse the type dependent entity of a node: ", 
+				PreconditionFailure.AST_ERROR,
+				node);
 	}
 	
 	static IJavaElement getdeHelper(IBinding b, List<ASTNode> args, Expression node) throws JavaModelException {

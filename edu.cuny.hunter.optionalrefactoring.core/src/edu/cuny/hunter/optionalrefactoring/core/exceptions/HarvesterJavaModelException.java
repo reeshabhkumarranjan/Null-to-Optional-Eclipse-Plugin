@@ -2,6 +2,8 @@ package edu.cuny.hunter.optionalrefactoring.core.exceptions;
 
 import org.eclipse.jdt.core.IJavaElement;
 
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
+
 public class HarvesterJavaModelException extends HarvesterException {
 
 	/**
@@ -11,8 +13,8 @@ public class HarvesterJavaModelException extends HarvesterException {
 	
 	private final IJavaElement element;
 	
-	public HarvesterJavaModelException(String message, IJavaElement element) {
-		super(message);
+	public HarvesterJavaModelException(String message, PreconditionFailure failure, IJavaElement element) {
+		super(message,failure);
 		this.element = element;
 	}
 
