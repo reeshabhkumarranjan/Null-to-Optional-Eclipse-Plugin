@@ -46,6 +46,7 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
@@ -301,93 +302,6 @@ public interface Util {
 	
 	public static MethodDeclaration getMethodDeclaration(ASTNode node) {
 		return (MethodDeclaration) ASTNodes.getParent(node, ASTNode.METHOD_DECLARATION);
-	}
-	
-	/**
-	 * @param node the Node that doesn't have a handle, which we need to get the closest type dependent Model element for
-	 * @return the Element for the closest type dependent model handle
-	 * @throws JavaModelException 
-	 */
-	public static IJavaElement getEnclosingTypeDependentExpression(ASTNode node) throws JavaModelException {
-		ASTNode parent = node.getParent();
-		if (parent != null) {
-			parent = stripParenthesizedExpressions(parent);
-			
-			switch (parent.getNodeType()) {
-			case ASTNode.RETURN_STATEMENT : {
-				ReturnStatement r = (ReturnStatement)parent;
-				MethodDeclaration m = (MethodDeclaration) ASTNodes.getParent(r, ASTNode.METHOD_DECLARATION);
-				if (m != null) {
-					IBinding b = m.resolveBinding();
-					if (m != null) return b.getJavaElement();
-				}
-				break;
-			}
-			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : {
-				VariableDeclarationFragment f = (VariableDeclarationFragment) parent;
-				IBinding b = f.resolveBinding();
-				if (b != null) return b.getJavaElement();
-				break;
-			}
-			case ASTNode.ASSIGNMENT : {
-				Name n = (Name)resolveChainAssignmentExpression((Assignment)parent);
-				IBinding b = n.resolveBinding();
-				if (b != null) return b.getJavaElement();
-				break;
-			}
-			case ASTNode.METHOD_INVOCATION : {
-				MethodInvocation mi = (MethodInvocation) parent;
-				List<ASTNode> args = mi.arguments();
-				IBinding b = mi.resolveMethodBinding();
-				if (b != null) return getdeHelper(b, args, (Expression)node);
-				break;
-			}
-			case ASTNode.SUPER_METHOD_INVOCATION : {
-				SuperMethodInvocation sm = (SuperMethodInvocation) parent;
-				List<ASTNode> args = sm.arguments();
-				IBinding b = sm.resolveMethodBinding();
-				if (b != null) return getdeHelper(b, args, (Expression)node);
-				break;
-			}
-			case ASTNode.CONSTRUCTOR_INVOCATION : {
-				ConstructorInvocation ci = (ConstructorInvocation) parent;
-				List<ASTNode> args = ci.arguments();
-				IBinding b = ci.resolveConstructorBinding();
-				if (b != null) return getdeHelper(b, args, (Expression)node);
-				break;
-			}
-			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : {
-				SuperConstructorInvocation sc = (SuperConstructorInvocation) parent;
-				List<ASTNode> args = sc.arguments();
-				IBinding b = sc.resolveConstructorBinding();
-				if (b != null) return getdeHelper(b, args, (Expression)node);
-				break;
-			}
-			case ASTNode.CLASS_INSTANCE_CREATION : {
-				ClassInstanceCreation cic = (ClassInstanceCreation) parent;
-				List<ASTNode> args = cic.arguments();
-				IBinding b = cic.resolveConstructorBinding();
-				if (b != null) return getdeHelper(b, args, (Expression)node);
-				break;
-			}
-			default : return getEnclosingTypeDependentExpression(parent);
-			}
-		} throw new HarvesterASTException("While trying to parse the type dependent entity of a node: ", 
-				PreconditionFailure.AST_ERROR,
-				node);
-	}
-	
-	static IJavaElement getdeHelper(IBinding b, List<ASTNode> args, Expression node) throws JavaModelException {
-		int pos = getParamNumber(args, (Expression)node);
-		IMethod im = (IMethod)b.getJavaElement();
-		ILocalVariable[] params = im.getParameters();
-		return params[pos];
-	}
-	
-	static Name resolveChainAssignmentExpression(Assignment node) {
-		Expression n = node.getLeftHandSide();
-		if (n instanceof Name) return (Name)n;
-		else return (Name)((Assignment)n).getRightHandSide();
 	}
 	
 	public static int getParamNumber(List<ASTNode> arguments, Expression name) {

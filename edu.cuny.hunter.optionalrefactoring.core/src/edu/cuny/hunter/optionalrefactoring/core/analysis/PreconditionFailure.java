@@ -108,26 +108,24 @@ public enum PreconditionFailure {
 	 * @return A pair of <IJavaElement,RefactoringStatus>
 	 */
 	public static SimpleEntry<IJavaElement,RefactoringStatus> handleFailure(HarvesterASTException e) {
+		String msg = e.getMessage()+"\n"+e.toString();
 		switch (e.getFailure()) {
-		case AST_ERROR: {
-			Logger.getAnonymousLogger().warning(e.getMessage()+"\n"+e.toString());
-			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,null);
+		case AST_ERROR: {	// something is terribly wrong
+			Logger.getAnonymousLogger().warning(msg);
+			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
+					RefactoringStatus.createFatalErrorStatus(msg));
 		}
-		case CAST_EXPRESSION: {
-			try {
-				IJavaElement enclosingTDE = Util.getEnclosingTypeDependentExpression(e.getNode());
-				return new SimpleEntry<IJavaElement,RefactoringStatus>(enclosingTDE,
-						RefactoringStatus.createErrorStatus(e.getMessage()));
-			} catch (JavaModelException e1) {
-				Logger.getAnonymousLogger().severe(e1.getMessage()+"\n"+e.getMessage()+"\n"+e.toString());
-				return new SimpleEntry<IJavaElement,RefactoringStatus>(null,null);
-			}
+		case CAST_EXPRESSION: {	// not refactorable
+				return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
+						RefactoringStatus.createFatalErrorStatus(msg));
 		}
-		case ERRONEOUS_IMPORT_STATEMENT:
-			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,null);
-		case MISSING_BINDING: {
-			Logger.getAnonymousLogger().warning(e.toString());
-			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,null);
+		case ERRONEOUS_IMPORT_STATEMENT:	// something is terribly wrong
+			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
+					RefactoringStatus.createFatalErrorStatus(msg));
+		case MISSING_BINDING: {	// something is terribly wrong
+			Logger.getAnonymousLogger().warning(msg);
+			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
+					RefactoringStatus.createFatalErrorStatus(msg));
 		}
 		case MISSING_JAVA_ELEMENT: {
 			ASTNode node = e.getNode();
@@ -139,17 +137,19 @@ public enum PreconditionFailure {
 				final IJavaElement element = binding.getJavaElement();
 				return new SimpleEntry<IJavaElement,RefactoringStatus>(element,new RefactoringStatus());
 			}
-			default : {
-				Logger.getAnonymousLogger().severe(Messages.PreconditionFailureFailure+"\n"
-						+e.getMessage()+"\n"+e.toString());
-				return new SimpleEntry<IJavaElement,RefactoringStatus>(null,null);
+			default : {	// something is terribly wrong
+				String msg2 = Messages.PreconditionFailureFailure+"\n"+msg;
+				Logger.getAnonymousLogger().severe(msg2);
+				return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
+						RefactoringStatus.createFatalErrorStatus(msg2));
 			}
 			}
 		}
-		default: {
-			Logger.getAnonymousLogger().severe(Messages.PreconditionFailureFailure+"\n"
-												+e.getMessage()+"\n"+e.toString());
-			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,null);
+		default: {	// something is terribly wrong
+			String msg2 = Messages.PreconditionFailureFailure+"\n"+msg;
+			Logger.getAnonymousLogger().severe(msg2);
+			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
+					RefactoringStatus.createFatalErrorStatus(msg2));
 		}
 		}
 	}
@@ -159,24 +159,26 @@ public enum PreconditionFailure {
 	 * @return A pair of <IJavaElement,RefactoringStatus>
 	 */
 	public static SimpleEntry<IJavaElement,RefactoringStatus> handleFailure(HarvesterJavaModelException e) {
+		String msg = e.getMessage()+"\n"+e.toString();
 		switch (e.getFailure()) {
-		case BINARY_ELEMENT:
+		case BINARY_ELEMENT:	// potentially bridegable
 			Logger.getAnonymousLogger().info(e.toString());
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(e.getElement(),
-					RefactoringStatus.createErrorStatus(e.getMessage()));
-		case GENERATED_ELEMENT:
+					RefactoringStatus.createErrorStatus(msg));
+		case GENERATED_ELEMENT:	// not refactorable
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(e.getElement(),
-					RefactoringStatus.createErrorStatus(e.getMessage()));
-		case MISSING_JAVA_ELEMENT:
+					RefactoringStatus.createFatalErrorStatus(msg));
+		case MISSING_JAVA_ELEMENT:	// not refactorable
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(e.getElement(),
-					RefactoringStatus.createErrorStatus(e.getMessage()));
-		case READ_ONLY_ELEMENT:
+					RefactoringStatus.createFatalErrorStatus(msg));
+		case READ_ONLY_ELEMENT:	// potentially bridegable
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(e.getElement(),
-					RefactoringStatus.createErrorStatus(e.getMessage()));
-		default:
-			Logger.getAnonymousLogger().severe(Messages.PreconditionFailureFailure+"\n"
-												+e.getMessage()+"\n"+e.toString());
-			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,null);
+					RefactoringStatus.createErrorStatus(msg));
+		default:	// something is terribly wrong
+			String msg2 = Messages.PreconditionFailureFailure+"\n"+msg;
+			Logger.getAnonymousLogger().severe(msg2);
+			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
+					RefactoringStatus.createFatalErrorStatus(msg2));
 		}
 	}
 }
