@@ -29,9 +29,11 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+
+import com.google.common.collect.Sets;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -55,7 +57,7 @@ public class RefactorableHarvester {
 	private final IJavaSearchScope scopeRoot;
 	private final IProgressMonitor monitor;
 	private final SearchEngine searchEngine = new SearchEngine();
-	private final Map<IJavaElement,Boolean> nullSeeds = new LinkedHashMap<>();
+	private final Set<TypeDependentElementSet> nullSeeds = new LinkedHashSet<>();
 	private final WorkList workList = new WorkList();
 	private final WorkList bridgeable = new WorkList();
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
@@ -119,32 +121,18 @@ public class RefactorableHarvester {
 		return ret;
 	}
 
-	public Map<IJavaElement, Boolean> getSeeds() {
-		if (this.nullSeeds.isEmpty()) {
-			NullSeeder n = new NullSeeder(refactoringRootNode);
-			this.nullSeeds.putAll(n.seedNulls());
-			this.notRefactorable.addAll(n.getPreconditionFailures());
-		}
-		return this.nullSeeds;
-	}
-	
-	public Set<IJavaElement> getPreconditionFailures() {
-		if (this.notRefactorable.isEmpty()) {
-			NullSeeder n = new NullSeeder(refactoringRootNode);
-			this.notRefactorable.addAll(n.getPreconditionFailures());
-		}
-		return this.notRefactorable;
-	}
-
 	public Set<TypeDependentElementSet> harvestRefactorableContexts() throws CoreException {
 
 		this.reset();
 		// this worklist starts with the immediate type-dependent entities on null expressions.
 		NullSeeder seeder = new NullSeeder(refactoringRootNode);
-		this.nullSeeds.putAll(seeder.seedNulls());
-		this.notRefactorable.addAll(seeder.getPreconditionFailures());
-
-		this.workList.addAll(this.nullSeeds.keySet());
+		// if no nulls pass the preconditions, return the failing set
+		if (!seeder.seedNulls()) return seeder.getFailing();
+		// otherwise get the passing null type dependent entities
+		this.nullSeeds.addAll(seeder.getPassing());
+		// and put just the IJavaElements into the workList
+		this.workList.addAll(this.nullSeeds.stream()
+				.map(set -> set.seed()).collect(Collectors.toSet()));
 
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
@@ -162,9 +150,6 @@ public class RefactorableHarvester {
 					if (match.getAccuracy() == SearchMatch.A_ACCURATE
 							&& !match.isInsideDocComment()) {
 						// here, we have search match. 
-
-						IJavaElement matchingElement = (IJavaElement) match.getElement();
-
 						// convert the matchingElement to an ASTNode.
 						ASTNode node = Util.getExactASTNode(match,
 								RefactorableHarvester.this.monitor);

@@ -187,18 +187,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
 				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
 
-		// Here we are getting just the seeds without transitive dependencies
-		Set<IJavaElement> seeds = harvester.getSeeds().keySet();
-		Util.candidatePrinter(seeds);
-		System.out.println();
-		Set<String> actualElements = seeds.stream()
-				.map(element -> element.getElementName())
-				.collect(Collectors.toSet());
-
-		assertNotNull(actualElements);		
-		assertTrue("Expected elements are "+expectedElements.toString()+" and are the same in both sets.", 
-				expectedElements.containsAll(actualElements));
-
 		// Here we are getting all the sets of type dependent entities
 		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts().stream().collect(Collectors.toSet());
 

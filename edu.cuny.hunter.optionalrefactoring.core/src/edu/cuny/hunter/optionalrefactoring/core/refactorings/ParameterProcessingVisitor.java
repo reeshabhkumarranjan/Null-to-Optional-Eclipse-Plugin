@@ -14,9 +14,11 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 class ParameterProcessingVisitor extends ASTVisitor {
 	private final Set<IJavaElement> elements = new LinkedHashSet<>();
@@ -69,11 +71,20 @@ class ParameterProcessingVisitor extends ASTVisitor {
 			final SingleVariableDeclaration svd = (SingleVariableDeclaration) node
 					.parameters().get(this.paramNumber);
 
-			final IJavaElement elem = svd.resolveBinding().getJavaElement();
-			if (elem.isReadOnly() || svd.getName().resolveBoxing())
-				throw new HarvesterASTPreconditionException(
-						Messages.ASTNodeProcessor_SourceNotPresent, svd);
-			this.elements.add(elem);
+			final IJavaElement element = Util.resolveElement(svd);
+			if (element.isReadOnly()) throw new HarvesterJavaModelException(
+					Messages.Harvester_SourceNotPresent,
+					PreconditionFailure.READ_ONLY_ELEMENT,
+					element);
+			if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
+					Messages.Harvester_SourceNotPresent,
+					PreconditionFailure.BINARY_ELEMENT,
+					element);
+			if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
+					Messages.Harvester_SourceNotPresent,
+					PreconditionFailure.GENERATED_ELEMENT,
+					element);
+			this.elements.add(element);
 		}
 
 		return true;

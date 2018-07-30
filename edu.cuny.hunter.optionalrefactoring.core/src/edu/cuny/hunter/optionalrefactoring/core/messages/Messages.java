@@ -22,17 +22,18 @@ public class Messages extends NLS {
 	public static String CompilingSource;
 	public static String CreatingChange;
 	public static String CUContainsCompileErrors;
+	public static String NullLiteralFailed;
 	public static String NoNullsHavePassedThePreconditions;
 	public static String NoNullsToConvert;
 	public static String Util_MemberNotFound;
 	public static String Worklist_IllegalWorklistElement;
-	public static String ASTNodeProcessor_SourceNotPresent;
-	public static String ASTNodeProcessor_IllegalArrayUpcast;
-	public static String ASTNodeProcessor_IllegalExpression;
-	public static String ASTNodeProcessor_IllegalNodeContext;
-	public static String ASTNodeProcessor_NonEnumerizableTypeEncountered;
-	public static String ASTNodeProcessor_IllegalInfixExpression;
-	public static String ASTNodeProcessor_IllegalAssignmentExpression;
+	public static String Harvester_ASTNodeError;
+	public static String Harvester_SourceNotPresent;
+	public static String Harvester_MissingJavaElement;
+	public static String Harvester_MissingBinding;
+	public static String Harvester_CastExpression;
+	public static String PreconditionFailureFailure;
+	public static String Harvester_JavaModelError;
 	
 	static {
 		// initialize resource bundle

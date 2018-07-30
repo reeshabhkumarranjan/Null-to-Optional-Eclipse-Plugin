@@ -16,7 +16,7 @@ public abstract class HarvesterException extends RuntimeException {
 		this.failure = failure;
 	}
 	
-	PreconditionFailure getFailure() {
+	public PreconditionFailure getFailure() {
 		return this.failure;
 	}
 }
