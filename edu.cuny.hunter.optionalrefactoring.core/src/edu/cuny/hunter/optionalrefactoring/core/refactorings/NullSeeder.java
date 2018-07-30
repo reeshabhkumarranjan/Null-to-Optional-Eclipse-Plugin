@@ -72,7 +72,7 @@ class NullSeeder {
 	}
 	
 	public Set<TypeDependentElementSet> getPassing() {
-		if (this.candidates.isEmpty()) 
+		if (!this.candidates.isEmpty()) 
 			return this.candidates.stream().filter(set -> set.getStatus().isOK())
 				.collect(Collectors.toSet());
 		else return Sets.newHashSet();
@@ -85,7 +85,7 @@ class NullSeeder {
 		else return Sets.newHashSet();
 	}
 	/**
-	 * @return Map of IJavaElement to whether it is implicitly null field
+	 * @return Whether or not any seeds passed the precondition checks
 	 */
 	boolean seedNulls() {
 		ASTVisitor visitor = new ASTVisitor() {
@@ -282,8 +282,6 @@ class NullSeeder {
 	}
 
 	private void process(SuperFieldAccess node) throws HarvesterASTException {
-		switch (node.getNodeType()) {
-		case ASTNode.SUPER_FIELD_ACCESS : {
 			IJavaElement element = Util.resolveElement(node);
 			if (element.isReadOnly()) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
@@ -297,19 +295,10 @@ class NullSeeder {
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.GENERATED_ELEMENT,
 					element);
-			NullSeeder.this.candidates.add(
-					TypeDependentElementSet.createSeed(element,Boolean.TRUE));
 			this.candidates.add(TypeDependentElementSet.createSeed(element,Boolean.FALSE));
-		}
-		default : throw new HarvesterASTException(Messages.Harvester_ASTNodeError+node.getClass().getSimpleName(),
-				PreconditionFailure.AST_ERROR,
-				node);
-		}
 	}
 
 	private void process(FieldAccess node) throws HarvesterASTException {
-		switch (node.getNodeType()) {
-		case ASTNode.FIELD_ACCESS : {
 			IJavaElement element = Util.resolveElement(node);
 			if (element.isReadOnly()) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
@@ -324,11 +313,6 @@ class NullSeeder {
 					PreconditionFailure.GENERATED_ELEMENT,
 					element);
 			this.candidates.add(TypeDependentElementSet.createSeed(element,Boolean.FALSE));
-		}
-		default : throw new HarvesterASTException(Messages.Harvester_ASTNodeError+node.getClass().getSimpleName(), 
-				PreconditionFailure.AST_ERROR,
-				node);
-		}
 	}
 
 	private void process(ArrayInitializer node) {

@@ -429,13 +429,71 @@ public interface Util {
 	}
 
 	static boolean isGeneratedCode(IJavaElement element) throws HarvesterJavaModelException {
-		try {
-			return element.getCorrespondingResource().isDerived();
-		} catch (JavaModelException e) {
-			 throw new HarvesterJavaModelException(
-						Messages.Harvester_MissingJavaElement,
-						PreconditionFailure.MISSING_JAVA_ELEMENT,
-						element);
+		switch (element.getElementType()) {
+		case IJavaElement.LOCAL_VARIABLE : {
+			ILocalVariable ilv = (ILocalVariable)element;
+			try {
+				return ilv.getDeclaringMember().getDeclaringType().getCompilationUnit()
+						.getCorrespondingResource().isDerived();
+			} catch (JavaModelException e) {
+				 throw new HarvesterJavaModelException(
+							Messages.Harvester_MissingJavaElement,
+							PreconditionFailure.MISSING_JAVA_ELEMENT,
+							element);
+			}
+		}
+		case IJavaElement.FIELD : {
+			IField iField = (IField)element;
+			try {
+				return iField.getDeclaringType().getCompilationUnit()
+						.getCorrespondingResource().isDerived();
+			} catch (JavaModelException e) {
+				 throw new HarvesterJavaModelException(
+							Messages.Harvester_MissingJavaElement,
+							PreconditionFailure.MISSING_JAVA_ELEMENT,
+							element);
+			}
+		}
+		case IJavaElement.TYPE : {
+			IType iType = (IType)element;
+			try {
+				return iType.getCompilationUnit().getCorrespondingResource()
+						.isDerived();
+			} catch (JavaModelException e) {
+				 throw new HarvesterJavaModelException(
+							Messages.Harvester_MissingJavaElement,
+							PreconditionFailure.MISSING_JAVA_ELEMENT,
+							element);
+			}
+		}
+		case IJavaElement.METHOD : {
+			IMethod iMethod = (IMethod)element;
+			try {
+				return iMethod.getDeclaringType().getCompilationUnit()
+						.getCorrespondingResource().isDerived();
+			} catch (JavaModelException e) {
+				 throw new HarvesterJavaModelException(
+							Messages.Harvester_MissingJavaElement,
+							PreconditionFailure.MISSING_JAVA_ELEMENT,
+							element);
+			}
+		}
+		case IJavaElement.INITIALIZER : {
+			IInitializer ii = (IInitializer)element;
+			try {
+				return ii.getDeclaringType().getCompilationUnit()
+						.getCorrespondingResource().isDerived();
+			} catch (JavaModelException e) {
+				 throw new HarvesterJavaModelException(
+							Messages.Harvester_MissingJavaElement,
+							PreconditionFailure.MISSING_JAVA_ELEMENT,
+							element);
+			}
+		}
+		default : throw new HarvesterJavaModelException(
+				Messages.Harvester_JavaModelError,
+				PreconditionFailure.JAVA_MODEL_ERROR,
+				element);
 		}
 	}
 	

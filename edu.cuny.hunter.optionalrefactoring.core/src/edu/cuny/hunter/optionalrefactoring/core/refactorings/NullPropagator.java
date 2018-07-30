@@ -397,7 +397,7 @@ class NullPropagator {
 
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT: {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) node;
-			final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
+			final IJavaElement element = Util.resolveElement(vdf);
 			if (!this.constFields.contains(element)) {	// we don't want to keep processing if it does
 			if (element.isReadOnly()) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
@@ -713,8 +713,9 @@ class NullPropagator {
 		}
 
 		case ASTNode.CAST_EXPRESSION: {
-			this.process((CastExpression) node);
-			 break;
+			throw new HarvesterASTException(Messages.Harvester_CastExpression, 
+					PreconditionFailure.CAST_EXPRESSION,
+					node);
 		}
 		case ASTNode.INSTANCEOF_EXPRESSION:
 		case ASTNode.ENUM_CONSTANT_DECLARATION:

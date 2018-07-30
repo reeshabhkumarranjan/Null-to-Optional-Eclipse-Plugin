@@ -32,6 +32,8 @@ import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 
+import com.google.common.collect.Sets;
+
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementSet;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -165,13 +167,12 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			}
 		};
 		c.accept(visitor);
-		Map<IJavaElement,Boolean> seeds = new LinkedHashMap<>();
-		seeds.put(elements.stream().findFirst().get(), Boolean.FALSE);
-
-		TypeDependentElementSet tdes = TypeDependentElementSet.of(elements, seeds);
+		IJavaElement seed = elements.stream().findFirst().get();
+		Set<TypeDependentElementSet> seeded = Util.setOf(TypeDependentElementSet.createSeed(seed, Boolean.FALSE));
+		TypeDependentElementSet tdes = TypeDependentElementSet.of(elements, seeded);
 		assertTrue("TDES is not empty.", !tdes.isEmpty());
 		assertNotNull("TDES has a seed element.", tdes.seed());
-		
+		assertTrue("TDES has "+elements.size()+" elements.", elements.size() == tdes.size());
 	}
 
 	private void helper(Set<String> expectedElements, Set<Set<String>> expectedSets) throws Exception {
