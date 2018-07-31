@@ -1,9 +1,12 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
@@ -14,9 +17,10 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 class ParameterProcessingVisitor extends ASTVisitor {
 	private final Set<IJavaElement> elements = new LinkedHashSet<>();
@@ -24,6 +28,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 
 	private final int loc;
 	private final int paramNumber;
+	private final Map<IJavaElement,ISourceRange> sourceRangesToBridge = new LinkedHashMap<>();
 
 	public ParameterProcessingVisitor(int paramNumber, int loc) {
 		this.paramNumber = paramNumber;
@@ -42,6 +47,10 @@ class ParameterProcessingVisitor extends ASTVisitor {
 	 */
 	public Set<Expression> getExpressions() {
 		return this.expressions;
+	}
+	
+	public Map<IJavaElement,ISourceRange> getSourceRangesToBridge() {
+		return this.sourceRangesToBridge;
 	}
 
 	public boolean visit(ClassInstanceCreation node) {
@@ -69,11 +78,11 @@ class ParameterProcessingVisitor extends ASTVisitor {
 			final SingleVariableDeclaration svd = (SingleVariableDeclaration) node
 					.parameters().get(this.paramNumber);
 
-			final IJavaElement elem = svd.resolveBinding().getJavaElement();
-			if (elem.isReadOnly() || svd.getName().resolveBoxing())
-				throw new HarvesterASTPreconditionException(
-						Messages.ASTNodeProcessor_SourceNotPresent, svd);
-			this.elements.add(elem);
+			final IJavaElement element = Util.resolveElement(svd);
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)) 
+				this.sourceRangesToBridge.put(element,
+						Util.getBridgeableExpressionSourceRange(svd));
+			this.elements.add(element);
 		}
 
 		return true;

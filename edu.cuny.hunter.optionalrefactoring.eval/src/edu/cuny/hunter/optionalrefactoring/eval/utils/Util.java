@@ -24,19 +24,4 @@ public class Util {
 				.toArray(length -> new IJavaProject[length]);
 		return javaProjects;
 	}
-
-	public static String getMethodIdentifier(IMethod method) throws JavaModelException {
-		StringBuilder sb = new StringBuilder();
-		sb.append((method.getElementName()) + "(");
-		ILocalVariable[] parameters = method.getParameters();
-		for (int i = 0; i < parameters.length; i++) {
-			sb.append(edu.cuny.hunter.optionalrefactoring.core.utils.Util
-					.getQualifiedNameFromTypeSignature(parameters[i].getTypeSignature(), method.getDeclaringType()));
-			if (i != (parameters.length - 1)) {
-				sb.append(",");
-			}
-		}
-		sb.append(")");
-		return sb.toString();
-	}
 }
