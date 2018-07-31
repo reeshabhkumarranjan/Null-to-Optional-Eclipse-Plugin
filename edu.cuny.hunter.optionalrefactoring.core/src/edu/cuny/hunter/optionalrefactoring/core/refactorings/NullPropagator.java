@@ -277,7 +277,14 @@ class NullPropagator {
 							NullPropagator.this.monitor);
 					ParameterProcessingVisitor visitor = new ParameterProcessingVisitor(
 							paramNumber, match.getOffset());
-					node.accept(visitor);
+					try {
+						node.accept(visitor);
+					}
+					catch (HarvesterJavaModelException e) {
+						NullPropagator.this.found.addAll(e.getProcessedElements());
+						throw new HarvesterJavaModelException(e.getMessage(),
+								e.getFailure(), e.getElement(), NullPropagator.this.found);
+					}
 					NullPropagator.this.found.addAll(visitor.getElements());
 
 					for (Iterator it = visitor.getExpressions().iterator(); it
