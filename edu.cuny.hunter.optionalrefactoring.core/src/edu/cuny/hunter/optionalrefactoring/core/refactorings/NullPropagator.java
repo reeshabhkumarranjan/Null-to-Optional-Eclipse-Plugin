@@ -10,7 +10,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
-import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -20,7 +19,6 @@ import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
-import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
@@ -220,7 +218,7 @@ class NullPropagator {
 		if (top == null)
 			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.BINARY_ELEMENT,
-					meth);
+					meth, this.found);
 		else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
@@ -379,11 +377,11 @@ class NullPropagator {
 				if (element.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,
@@ -402,11 +400,11 @@ class NullPropagator {
 			if (element.isReadOnly()) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.READ_ONLY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.BINARY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.GENERATED_ELEMENT,
@@ -426,11 +424,11 @@ class NullPropagator {
 					if (element.isReadOnly()) throw new HarvesterJavaModelException(
 							Messages.Harvester_SourceNotPresent,
 							PreconditionFailure.READ_ONLY_ELEMENT,
-							element);
+							element, this.found);
 					if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 							Messages.Harvester_SourceNotPresent,
 							PreconditionFailure.BINARY_ELEMENT,
-							element);
+							element, this.found);
 					if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 							Messages.Harvester_SourceNotPresent,
 							PreconditionFailure.GENERATED_ELEMENT,
@@ -492,11 +490,11 @@ class NullPropagator {
 				if (top.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						meth);
+						meth, this.found);
 				if (Util.isBinaryCode(top)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						meth);
+						meth, this.found);
 				if (Util.isGeneratedCode(top)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,
@@ -541,11 +539,11 @@ class NullPropagator {
 				if (element.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,
@@ -565,11 +563,11 @@ class NullPropagator {
 				if (element.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,
@@ -589,11 +587,11 @@ class NullPropagator {
 				if (element.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,
@@ -613,11 +611,11 @@ class NullPropagator {
 				if (element.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,
@@ -638,11 +636,11 @@ class NullPropagator {
 				if (element.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,
@@ -669,11 +667,11 @@ class NullPropagator {
 			if (element.isReadOnly()) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.READ_ONLY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.BINARY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.GENERATED_ELEMENT,
@@ -694,11 +692,11 @@ class NullPropagator {
 			if (element.isReadOnly()) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.READ_ONLY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.BINARY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.GENERATED_ELEMENT,
@@ -747,11 +745,11 @@ class NullPropagator {
 			if (element.isReadOnly()) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.READ_ONLY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.BINARY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.GENERATED_ELEMENT,
@@ -795,11 +793,11 @@ class NullPropagator {
 				if (element.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,
@@ -824,11 +822,11 @@ class NullPropagator {
 			if (element.isReadOnly()) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.READ_ONLY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.BINARY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.GENERATED_ELEMENT,
@@ -851,11 +849,11 @@ class NullPropagator {
 				if (top.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						meth);
+						meth, this.found);
 				if (Util.isBinaryCode(top)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						meth);
+						meth, this.found);
 				if (Util.isGeneratedCode(top)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,
@@ -877,11 +875,11 @@ class NullPropagator {
 			if (element.isReadOnly()) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.READ_ONLY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.BINARY_ELEMENT,
-					element);
+					element, this.found);
 			if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 					Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.GENERATED_ELEMENT,
@@ -904,11 +902,11 @@ class NullPropagator {
 				if (top.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						meth);
+						meth, this.found);
 				if (Util.isBinaryCode(top)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						meth);
+						meth, this.found);
 				if (Util.isGeneratedCode(top)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,
@@ -926,11 +924,11 @@ class NullPropagator {
 				if (element.isReadOnly()) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.READ_ONLY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isBinaryCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.BINARY_ELEMENT,
-						element);
+						element, this.found);
 				if (Util.isGeneratedCode(element)) throw new HarvesterJavaModelException(
 						Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.GENERATED_ELEMENT,

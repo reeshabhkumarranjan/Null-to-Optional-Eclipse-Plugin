@@ -44,6 +44,7 @@ import com.google.common.collect.Sets;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -95,22 +96,13 @@ class NullSeeder {
 				NullSeeder.this.currentNull = nl;
 				try {	// try to process the node
 					NullSeeder.this.process(nl.getParent());
-				} catch (HarvesterASTException hae) {	// catch any exceptions originating in AST traversal
-					SimpleEntry<IJavaElement,RefactoringStatus> ret = PreconditionFailure.handleFailure(hae);
+				} catch (HarvesterException e) {	// catch any exceptions
+					SimpleEntry<IJavaElement,RefactoringStatus> ret = PreconditionFailure.handleFailure(e);
 					if (ret.getKey() != null) 
 						NullSeeder.this.candidates.add(TypeDependentElementSet.createBadSeed(
 								ret.getKey(), Boolean.FALSE, ret.getValue()));
 					else Logger.getAnonymousLogger().warning(
-							Messages.NullLiteralFailed+hae.getNode().toString());
-				} catch (HarvesterJavaModelException hje) {	
-					// catch any exceptions originating in Java Model traversal
-					SimpleEntry<IJavaElement,RefactoringStatus> ret = PreconditionFailure.handleFailure(hje);
-					if (ret.getKey() != null) 
-						NullSeeder.this.candidates.add(
-								TypeDependentElementSet.createBadSeed(
-										ret.getKey(), Boolean.FALSE, ret.getValue()));
-					else Logger.getAnonymousLogger().warning(
-							Messages.NullLiteralFailed+hje.getElement().toString());
+							Messages.NullLiteralFailed+"\n"+e.getMessage());
 				}
 				return super.visit(nl);
 			}
@@ -149,20 +141,13 @@ class NullSeeder {
 										TypeDependentElementSet.createSeed(element,Boolean.TRUE));
 							}
 					}
-				} catch (HarvesterASTException hae) {
-					SimpleEntry<IJavaElement,RefactoringStatus> ret = PreconditionFailure.handleFailure(hae);
+				} catch (HarvesterException e) {
+					SimpleEntry<IJavaElement,RefactoringStatus> ret = PreconditionFailure.handleFailure(e);
 					if (ret.getKey() != null) NullSeeder.this.candidates.add(
 							TypeDependentElementSet.createBadSeed(
 									ret.getKey(), Boolean.FALSE, ret.getValue()));
 					else Logger.getAnonymousLogger().warning(
-							Messages.NullLiteralFailed+hae.getNode().toString());
-				} catch (HarvesterJavaModelException hje) {
-					SimpleEntry<IJavaElement,RefactoringStatus> ret = PreconditionFailure.handleFailure(hje);
-					if (ret.getKey() != null) NullSeeder.this.candidates.add(
-							TypeDependentElementSet.createBadSeed(
-									ret.getKey(), Boolean.FALSE, ret.getValue()));
-					else Logger.getAnonymousLogger().warning(
-							Messages.NullLiteralFailed+hje.getElement().toString());
+							Messages.NullLiteralFailed+"\n"+e.getMessage());
 				}
 				return super.visit(node);
 			}

@@ -14,6 +14,7 @@ import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -101,6 +102,15 @@ public enum PreconditionFailure {
 
 	public int getCode() {
 		return code;
+	}
+	
+	/**
+	 * Convenience wrapper method
+	 */
+	public static SimpleEntry<IJavaElement,RefactoringStatus> handleFailure(HarvesterException e) {
+		if (e instanceof HarvesterASTException)
+			return handleFailure((HarvesterASTException)e);
+		else return handleFailure((HarvesterJavaModelException)e);
 	}
 	
 	/**

@@ -1,10 +1,9 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
@@ -31,11 +30,8 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import com.google.common.collect.Sets;
-
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -189,9 +185,14 @@ public class RefactorableHarvester {
 						this.monitor);
 
 			} catch (final HarvesterException e) {
+				SimpleEntry<IJavaElement,RefactoringStatus> failure = PreconditionFailure.handleFailure(e);
+				if (failure.getValue().getSeverity() == RefactoringStatus.FATAL) {
 				this.notRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
+				} else if (failure.getValue().getSeverity() == RefactoringStatus.ERROR) {
+					this.workList.addAll(e.getProcessedElements());
+				}
 				continue;
 			} 
 		}
