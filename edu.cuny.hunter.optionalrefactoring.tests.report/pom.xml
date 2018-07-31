@@ -43,6 +43,12 @@
     </dependency>
     <dependency>
       <groupId>edu.cuny.hunter.optionalrefactoring</groupId>
+      <artifactId>edu.cuny.hunter.optionalrefactoring.ui</artifactId>
+      <version>1.0.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>edu.cuny.hunter.optionalrefactoring</groupId>
       <artifactId>edu.cuny.hunter.optionalrefactoring.tests</artifactId>
       <version>1.0.0</version>
       <scope>test</scope>
