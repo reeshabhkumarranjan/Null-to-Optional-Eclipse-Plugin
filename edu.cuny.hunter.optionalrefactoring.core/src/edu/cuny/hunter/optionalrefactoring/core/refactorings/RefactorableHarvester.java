@@ -192,6 +192,8 @@ public class RefactorableHarvester {
 				this.workList.removeAll(this.notRefactorable);
 				} else if (failure.getValue().getSeverity() == RefactoringStatus.ERROR) {
 					this.workList.addAll(e.getProcessedElements());
+					IJavaElement failedElement = failure.getKey();
+					this.workList.add(failedElement);
 				}
 				continue;
 			} 
