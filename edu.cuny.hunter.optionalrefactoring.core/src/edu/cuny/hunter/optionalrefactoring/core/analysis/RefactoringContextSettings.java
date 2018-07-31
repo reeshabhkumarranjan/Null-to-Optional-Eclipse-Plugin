@@ -1,4 +1,4 @@
-package edu.cuny.hunter.optionalrefactoring.core.refactorings;
+package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -10,6 +10,8 @@ import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 
 import com.google.common.collect.Sets;
+
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementSet;
 
 /**
  * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>

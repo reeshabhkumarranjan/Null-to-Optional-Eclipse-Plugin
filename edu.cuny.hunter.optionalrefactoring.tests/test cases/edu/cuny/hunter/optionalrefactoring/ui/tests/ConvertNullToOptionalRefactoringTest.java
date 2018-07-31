@@ -31,6 +31,9 @@ import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
 import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+
+import com.google.common.collect.Sets;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactorableHarvester;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementSet;
@@ -165,13 +168,12 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			}
 		};
 		c.accept(visitor);
-		Map<IJavaElement,Boolean> seeds = new LinkedHashMap<>();
-		seeds.put(elements.stream().findFirst().get(), Boolean.FALSE);
-
-		TypeDependentElementSet tdes = TypeDependentElementSet.of(elements, seeds);
+		IJavaElement seed = elements.stream().findFirst().get();
+		Set<TypeDependentElementSet> seeded = Util.setOf(TypeDependentElementSet.createSeed(seed, Boolean.FALSE));
+		TypeDependentElementSet tdes = TypeDependentElementSet.of(elements, seeded);
 		assertTrue("TDES is not empty.", !tdes.isEmpty());
 		assertNotNull("TDES has a seed element.", tdes.seed());
-		
+		assertTrue("TDES has "+elements.size()+" elements.", elements.size() == tdes.size());
 	}
 
 	private void helper(Set<String> expectedElements, Set<Set<String>> expectedSets) throws Exception {
@@ -187,20 +189,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, c, 
 				SearchEngine.createJavaSearchScope(new ICompilationUnit[] { icu }), new NullProgressMonitor());
 
-		// Here we are getting just the seeds without transitive dependencies
-		Set<IJavaElement> seeds = harvester.getSeeds().keySet();
-		Util.candidatePrinter(seeds);
-		System.out.println();
-		Set<String> actualElements = seeds.stream()
-				.map(element -> element.getElementName())
-				.collect(Collectors.toSet());
-
-		assertNotNull(actualElements);		
-		assertTrue("Expected elements are "+expectedElements.toString()+" and are the same in both sets.", 
-				expectedElements.containsAll(actualElements));
-
 		// Here we are getting all the sets of type dependent entities
-		Set<Set<IJavaElement>> sets = harvester.harvestRefactorableContexts().stream().collect(Collectors.toSet());
+		assertTrue("The harvested refactorable sets are not empty.", harvester.harvestRefactorableContexts());
+		Set<TypeDependentElementSet> sets = harvester.getPassing();
 
 		// print to console
 		System.out.print("{");
@@ -218,6 +209,23 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		assertTrue("Expected sets contain "+expectedSets.toString()+" and are the same.", 
 				expectedSets.containsAll(actualSets));
+	}
+	
+	public void testCastExpression() throws Exception {
+		this.helper(setOf("a","l","q"),
+				setOf(setOf("a"),
+						setOf("l"),
+						setOf("o","d","q")));
+	}
+	
+	public void testCastExpressionTransitiveVariable() throws Exception {
+		this.helper(setOf("a","b"),
+				setOf(setOf("b","e")));
+	}
+	
+	public void testCastExpressionTransitiveMethod() throws Exception {
+		this.helper(setOf("b","c","d","e"),
+				setOf(setOf("t","h","z","e")));
 	}
 	
 	public void testImplicitlyNullVariableDecl() throws Exception {

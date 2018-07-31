@@ -1,8 +1,13 @@
 package edu.cuny.hunter.optionalrefactoring.core.exceptions;
 
+import java.util.Set;
+
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 
 public class HarvesterASTException extends HarvesterException {
 
@@ -13,8 +18,13 @@ public class HarvesterASTException extends HarvesterException {
 
 	private final ASTNode problem;
 
-	public HarvesterASTException(String message, ASTNode problem) {
-		super(message);
+	public HarvesterASTException(String message, PreconditionFailure failure, ASTNode problem) {
+		this(message,failure,problem,null);
+	}
+	
+	public HarvesterASTException(String message, PreconditionFailure failure, ASTNode problem,
+			Set<IJavaElement> processedElements) {
+		super(message,failure,processedElements);
 		this.problem = problem;
 	}
 	
