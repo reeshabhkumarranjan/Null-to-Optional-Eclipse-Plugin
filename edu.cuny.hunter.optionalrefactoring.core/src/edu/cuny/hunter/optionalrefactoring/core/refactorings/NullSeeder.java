@@ -1,5 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -7,11 +8,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
@@ -34,13 +36,24 @@ import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
+import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.SearchEngine;
+import org.eclipse.jdt.core.search.SearchMatch;
+import org.eclipse.jdt.core.search.SearchParticipant;
+import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.jdt.core.search.SearchRequestor;
+import org.eclipse.jdt.internal.ui.text.correction.ASTResolving;
+
+import com.google.common.collect.Sets;
+
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -52,24 +65,21 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 class NullSeeder {
 
 	private final SearchEngine searchEngine = new SearchEngine();
-	private final ASTNode refactoringRootNode;
+	private final ASTNode node;
 	private final Map<IJavaElement, Boolean> candidates = new LinkedHashMap<>();
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>(); 
 
-	private ASTNode current;
-	
 	public NullSeeder(ASTNode node) {
-		this.refactoringRootNode = node;
+		this.node = node;
 	}
 	
 	/**
 	 * @return Map of IJavaElement to whether it is implicitly null field
 	 */
-	Map<IJavaElement, Boolean> seedNulls() {
+	public Map<IJavaElement, Boolean> seedNulls() {
 		ASTVisitor visitor = new ASTVisitor() {
 			@Override
 			public boolean visit(NullLiteral nl) {
-				NullSeeder.this.current = nl;
 				NullSeeder.this.process(nl.getParent());
 				return super.visit(nl);
 			}
@@ -80,24 +90,16 @@ class NullSeeder {
 					if (b.getJavaElement() instanceof IField)
 						if (vdf.getInitializer() == null)
 							/*this element gets added to the Map candidates with 
-							 * boolean true indicating an implicit null
-							 * also, if the type of the declaration is primitive,
-							 * we ignore it
-							 * */
-							if (!b.getVariableDeclaration().getType().isPrimitive()) 
-								candidates.put(b.getJavaElement(),Boolean.TRUE);
+							 * boolean true indicating an implict null*/
+							candidates.put(b.getJavaElement(),Boolean.TRUE);
 				} else throw new HarvesterASTException(
 						"While trying to process an uninitialized VariableDeclarationFragment: ", 
 						vdf);
 				return super.visit(vdf);
 			}
 		};
-		refactoringRootNode.accept(visitor);
+		node.accept(visitor);
 		return candidates;
-	}
-	
-	Set<IJavaElement> getPreconditionFailures() {
-		return this.notRefactorable;
 	}
 
 	private <T extends ASTNode> ASTNode getContaining(Class<T> type, ASTNode node) {
@@ -145,17 +147,12 @@ class NullSeeder {
 			break;
 			default : throw new HarvesterASTException("While trying to process the parent of an encountered NullLiteral: ", node);
 			}
+		} catch (HarvesterJavaModelPreconditionException e) {
+			Logger.getAnonymousLogger().warning("Unable to process an ASTNode in binary code: "+e+".");
 		} catch (HarvesterASTPreconditionException e) {
-			Logger.getAnonymousLogger().warning("Entity cannot be refactored: "+e+".");
-			IJavaElement failing;
-			try {
-				failing = Util.getEnclosingTypeDependentExpression(e.getNode());
-				this.notRefactorable.add(failing);
-			} catch (JavaModelException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			
+			Logger.getAnonymousLogger().warning("Entity cannot be refactored: ");
+			IJavaElement failing = Util.getEnclosingTypeDependentExpression(e.getNode());
+			this.notRefactorable.add(failing);
 		} catch (HarvesterASTException e) {
 			Logger.getAnonymousLogger().warning("Problem with traversing the AST: "+e+".");
 		}
@@ -280,79 +277,124 @@ class NullSeeder {
 	}
 
 	private void process(ClassInstanceCreation cic) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(cic.arguments(), (Expression)this.current);
+		List<Integer> argPositions = getParamPositions(cic);
 		IMethodBinding binding = cic.resolveConstructorBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
-			try {
-				ILocalVariable[] params = method.getParameters();
-				this.candidates.put(params[argPos], Boolean.FALSE);
-			} catch (JavaModelException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
+			if (method != null) 
+				process(argPositions, method);
 		} else throw new HarvesterASTException("While trying to process a Class Instance Creation node: ", cic);
 	}
 	
 	private void process(MethodInvocation mi) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(mi.arguments(), (Expression)this.current);
+		List<Integer> argPositions = getParamPositions(mi);
 		IMethodBinding binding = mi.resolveMethodBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
-			try {
-				ILocalVariable[] params = method.getParameters();
-				this.candidates.put(params[argPos], Boolean.FALSE);
-			} catch (JavaModelException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			if (method != null)
+				process(argPositions, method);
 		} else throw new HarvesterASTException("While trying to process a Method Invocation node: ", mi);
 	}
 	
 	private void process(SuperMethodInvocation smi) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(smi.arguments(), (Expression)this.current);
+		List<Integer> argPositions = getParamPositions(smi);
 		IMethodBinding binding = smi.resolveMethodBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
-			try {
-				ILocalVariable[] params = method.getParameters();
-				this.candidates.put(params[argPos], Boolean.FALSE);
-			} catch (JavaModelException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			if (method != null)
+				process(argPositions, method);
 		} else throw new HarvesterASTException("While trying to process a Super Method Invocation node: ", smi);
 	}
 	
 	private void process(ConstructorInvocation ci) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(ci.arguments(), (Expression)this.current);
+		List<Integer> argPositions = getParamPositions(ci);
 		IMethodBinding binding = ci.resolveConstructorBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
-			try {
-				ILocalVariable[] params = method.getParameters();
-				this.candidates.put(params[argPos], Boolean.FALSE);
-			} catch (JavaModelException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			if (method != null)
+				process(argPositions, method);
 		} else throw new HarvesterASTException("While trying to process a Constructor Invocation node: ", ci);
 	}
 	
 	private void process(SuperConstructorInvocation sci) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(sci.arguments(), (Expression)this.current);
+		List<Integer> argPositions = getParamPositions(sci);
 		IMethodBinding binding = sci.resolveConstructorBinding();
 		if (binding != null) {
 			IMethod method = (IMethod)binding.getJavaElement();
+			if (method != null)
+				process(argPositions, method);
+		} else throw new HarvesterASTException("While trying to process a Super Constructor Invocation node: ", sci);
+	}
+
+	private void process(List<Integer> argPositions, IMethod invocation) {
+		
+		Set<SingleVariableDeclaration> svd = new LinkedHashSet<>();
+			SearchRequestor requestor = new SearchRequestor() {
+				@SuppressWarnings("unchecked")
+				@Override
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					
+					IMethod element = (IMethod) match.getElement();
+					if (element.isReadOnly()) {
+						throw new HarvesterJavaModelPreconditionException("Match found a dependency in a non-writable location.", element);
+					}
+					
+					if (element.getResource().isDerived()) {
+						throw new HarvesterJavaModelPreconditionException("Match found a dependency in generated code.", element);
+					}
+					
+					MethodDeclaration methodDecl = Util.getMethodDeclaration(Util.getExactASTNode(match, new NullProgressMonitor()));
+					List<SingleVariableDeclaration> params = methodDecl.parameters();					
+					for (Integer i : argPositions) {
+						svd.add(params.get(i));
+					}
+				}
+			};
+
 			try {
-				ILocalVariable[] params = method.getParameters();
-				this.candidates.put(params[argPos], Boolean.FALSE);
-			} catch (JavaModelException e) {
+				this.searchEngine.search(
+						SearchPattern.createPattern(invocation, IJavaSearchConstants.DECLARATIONS),
+						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, 
+						SearchEngine.createWorkspaceScope(),
+						requestor, new NullProgressMonitor());
+			} catch (CoreException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		} else throw new HarvesterASTException("While trying to process a Super Constructor Invocation node: ", sci);
+			
+			for (SingleVariableDeclaration node : svd) {
+				IVariableBinding b = node.resolveBinding();
+				if (b != null) {
+					ILocalVariable e = (ILocalVariable) b.getJavaElement();
+					if (e.exists()) {
+						this.candidates.put(e,Boolean.FALSE);
+					}
+				}
+			}
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T extends ASTNode> List<Integer> getParamPositions(T invocation) {
+		List<Expression> args;
+		switch (invocation.getNodeType()) {
+		case ASTNode.METHOD_INVOCATION : args = ((MethodInvocation)invocation).arguments();
+		break;
+		case ASTNode.CONSTRUCTOR_INVOCATION : args = ((ConstructorInvocation)invocation).arguments();
+		break;
+		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : args = ((SuperConstructorInvocation)invocation).arguments();
+		break;
+		case ASTNode.CLASS_INSTANCE_CREATION : args = ((ClassInstanceCreation)invocation).arguments();
+		break;
+		default : throw new HarvesterASTException("Tried processing parameters for something other than an invocation.", invocation);
+		}
+		
+		List<Integer> argPositions = new ArrayList<>();
+		Integer pos = -1;
+		for (Expression arg : args) {
+			pos += 1;
+			if (arg instanceof NullLiteral) argPositions.add(new Integer(pos));
+		}
+		return argPositions;
 	}
 
 	@SuppressWarnings("unchecked")

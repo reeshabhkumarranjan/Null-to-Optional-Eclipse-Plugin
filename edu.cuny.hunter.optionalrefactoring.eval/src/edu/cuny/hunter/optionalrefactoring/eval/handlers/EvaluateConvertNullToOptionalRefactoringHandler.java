@@ -26,8 +26,8 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.osgi.framework.FrameworkUtil;
 
 import edu.cuny.citytech.refactoring.common.eval.handlers.EvaluateRefactoringHandler;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringContextSettings;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringContextSettings;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementSet;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
@@ -42,7 +42,7 @@ import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
 public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRefactoringHandler {
 
 	private static final boolean BUILD_WORKSPACE = false;
-	private static final boolean PERFORM_REFACTORING = false;
+	private static final RefactoringContextSettings DEFAULT_SETTINGS = RefactoringContextSettings.getDefault();
 	
 	/**
 	 * the command has been executed, so extract extract the needed information
@@ -95,8 +95,14 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							.checkAllConditions(new NullProgressMonitor());
 					resultsTimeCollector.stop();
 					
+					// get the environmental variables for refactoring contexts to be considered
+					final RefactoringContextSettings rcs = this.getEnvSettings().orElse(DEFAULT_SETTINGS);
+					
 					Set<TypeDependentElementSet> candidateSets = processor.getRefactorableSets();
-								
+					
+					// candidateSets.removeIf(rcs.nonComplying);
+					// check each of the refactoring context settings, and remove sets that contain settings not wanted
+					
 					// Now we have just the sets that we care about
 					for (TypeDependentElementSet set : candidateSets) {
 						// Let's print some information about what's inside
@@ -122,9 +128,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					elementResultsPrinter.println();
 					
 					// Then let's refactor them
-					if (PERFORM_REFACTORING) {
-						
-					}
 					
 					// Then let's print some more information about the refactoring
 					
@@ -139,5 +142,14 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 		}).schedule();
 
 		return null;
+	}
+
+	private Optional<RefactoringContextSettings> getEnvSettings() {
+		Map<String,String> performChangePropertyValue = System.getenv();
+
+		if (performChangePropertyValue == null)
+			return Optional.empty();
+		else
+			return Optional.of(RefactoringContextSettings.of(performChangePropertyValue));
 	}
 }
