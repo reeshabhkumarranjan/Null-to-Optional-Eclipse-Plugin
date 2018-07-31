@@ -37,16 +37,16 @@ import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
-import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
@@ -59,8 +59,8 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelPreconditionException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -284,7 +284,7 @@ public interface Util {
 		final IMember mem = getIMember(elem);
 		final ICompilationUnit icu = mem.getCompilationUnit();
 		if (icu == null)
-			throw new HarvesterJavaModelException(Messages.ASTNodeProcessor_SourceNotPresent,
+			throw new HarvesterJavaModelPreconditionException(Messages.ASTNodeProcessor_SourceNotPresent,
 					mem);
 		final ASTNode root = Util.getCompilationUnit(icu, monitor);
 		return root;
@@ -294,101 +294,56 @@ public interface Util {
 		return (MethodDeclaration) ASTNodes.getParent(node, ASTNode.METHOD_DECLARATION);
 	}
 	
-	/**
-	 * @param node the Node that doesn't have a handle, which we need to get the closest type dependent Model element for
-	 * @return the Element for the closest type dependent model handle
-	 * @throws JavaModelException 
-	 */
-	public static IJavaElement getEnclosingTypeDependentExpression(ASTNode node) throws JavaModelException {
+	public static IJavaElement getEnclosingTypeDependentExpression(ASTNode node) {
 		ASTNode parent = node.getParent();
 		if (parent != null) {
 			parent = stripParenthesizedExpressions(parent);
-			
 			switch (parent.getNodeType()) {
-			case ASTNode.RETURN_STATEMENT : {
-				ReturnStatement r = (ReturnStatement)parent;
-				MethodDeclaration m = (MethodDeclaration) ASTNodes.getParent(r, ASTNode.METHOD_DECLARATION);
-				if (m != null) {
-					IBinding b = m.resolveBinding();
-					if (m != null) return b.getJavaElement();
-				}
-				break;
-			}
-			case ASTNode.VARIABLE_DECLARATION_FRAGMENT : {
-				VariableDeclarationFragment f = (VariableDeclarationFragment) parent;
-				IBinding b = f.resolveBinding();
-				if (b != null) return b.getJavaElement();
-				break;
-			}
 			case ASTNode.ASSIGNMENT : {
-				Name n = (Name)resolveChainAssignmentExpression((Assignment)parent);
+				Name n = (Name)resolveAssignmentExpression((Assignment)parent);
 				IBinding b = n.resolveBinding();
 				if (b != null) return b.getJavaElement();
 				break;
 			}
 			case ASTNode.METHOD_INVOCATION : {
-				MethodInvocation mi = (MethodInvocation) parent;
-				List<ASTNode> args = mi.arguments();
-				IBinding b = mi.resolveMethodBinding();
-				if (b != null) return getdeHelper(b, args, (Expression)node);
+				MethodInvocation m = (MethodInvocation) parent;
+				IBinding b = m.resolveMethodBinding();
+				if (b != null) return b.getJavaElement();
 				break;
 			}
 			case ASTNode.SUPER_METHOD_INVOCATION : {
-				SuperMethodInvocation sm = (SuperMethodInvocation) parent;
-				List<ASTNode> args = sm.arguments();
-				IBinding b = sm.resolveMethodBinding();
-				if (b != null) return getdeHelper(b, args, (Expression)node);
+				SuperMethodInvocation m = (SuperMethodInvocation) parent;
+				IBinding b = m.resolveMethodBinding();
+				if (b != null) return b.getJavaElement();
 				break;
 			}
 			case ASTNode.CONSTRUCTOR_INVOCATION : {
-				ConstructorInvocation ci = (ConstructorInvocation) parent;
-				List<ASTNode> args = ci.arguments();
-				IBinding b = ci.resolveConstructorBinding();
-				if (b != null) return getdeHelper(b, args, (Expression)node);
+				ConstructorInvocation m = (ConstructorInvocation) parent;
+				IBinding b = m.resolveConstructorBinding();
+				if (b != null) return b.getJavaElement();
 				break;
 			}
 			case ASTNode.SUPER_CONSTRUCTOR_INVOCATION : {
-				SuperConstructorInvocation sc = (SuperConstructorInvocation) parent;
-				List<ASTNode> args = sc.arguments();
-				IBinding b = sc.resolveConstructorBinding();
-				if (b != null) return getdeHelper(b, args, (Expression)node);
+				SuperConstructorInvocation m = (SuperConstructorInvocation) parent;
+				IBinding b = m.resolveConstructorBinding();
+				if (b != null) return b.getJavaElement();
 				break;
 			}
 			case ASTNode.CLASS_INSTANCE_CREATION : {
-				ClassInstanceCreation cic = (ClassInstanceCreation) parent;
-				List<ASTNode> args = cic.arguments();
-				IBinding b = cic.resolveConstructorBinding();
-				if (b != null) return getdeHelper(b, args, (Expression)node);
+				ClassInstanceCreation m = (ClassInstanceCreation) parent;
+				IBinding b = m.resolveConstructorBinding();
+				if (b != null) return b.getJavaElement();
 				break;
 			}
-			default : return getEnclosingTypeDependentExpression(parent);
+			default : return getEnclosingTypeDependentExpression(node);
 			}
 		} throw new HarvesterASTException("While trying to parse the type dependent entity of a node: ", node);
 	}
 	
-	static IJavaElement getdeHelper(IBinding b, List<ASTNode> args, Expression node) throws JavaModelException {
-		int pos = getParamNumber(args, (Expression)node);
-		IMethod im = (IMethod)b.getJavaElement();
-		ILocalVariable[] params = im.getParameters();
-		return params[pos];
-	}
-	
-	static Name resolveChainAssignmentExpression(Assignment node) {
+	public static ASTNode resolveAssignmentExpression(Assignment node) {
 		Expression n = node.getLeftHandSide();
-		if (n instanceof Name) return (Name)n;
-		else return (Name)((Assignment)n).getRightHandSide();
-	}
-	
-	public static int getParamNumber(List<ASTNode> arguments, Expression name) {
-		ASTNode curr = name;
-		while (curr != null) {
-			final int inx = arguments.indexOf(curr);
-			if (inx != -1)
-				return inx;
-			else
-				curr = curr.getParent();
-		}
-		return -1;
+		if (n instanceof Name) return n;
+		return resolveAssignmentExpression((Assignment)n);
 	}
 	
 	public static Set<Set<IJavaElement>> getElementForest(Set<ComputationNode> computationForest) {

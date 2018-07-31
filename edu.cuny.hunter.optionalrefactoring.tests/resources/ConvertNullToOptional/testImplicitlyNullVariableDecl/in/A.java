@@ -5,9 +5,6 @@ public class A {
 	 * 	should propagate: {{"a","b"}}
 	 */
 	Object a;
-	int x;
-	char c;
-	float f;
 	Object b = a;
 	Object control = new Object();
 

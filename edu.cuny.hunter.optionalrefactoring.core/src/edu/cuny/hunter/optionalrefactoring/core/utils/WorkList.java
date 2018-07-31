@@ -1,4 +1,4 @@
-package edu.cuny.hunter.optionalrefactoring.core.refactorings;
+package edu.cuny.hunter.optionalrefactoring.core.utils;
 
 import java.util.HashMap;
 import java.util.Iterator;
