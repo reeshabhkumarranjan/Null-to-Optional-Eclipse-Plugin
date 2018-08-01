@@ -110,7 +110,7 @@ class NullSeeder {
 						NullSeeder.this.candidates.add(TypeDependentElementSet.createBadSeed(
 								ret.getKey(), Boolean.FALSE, ret.getValue()));
 					else Logger.getAnonymousLogger().warning(
-							Messages.NullLiteralFailed+"\n"+e.getMessage());
+							Messages.Harvester_NullLiteralFailed+"\n"+e.getMessage());
 				}
 				return super.visit(nl);
 			}
@@ -143,7 +143,7 @@ class NullSeeder {
 							TypeDependentElementSet.createBadSeed(
 									ret.getKey(), Boolean.FALSE, ret.getValue()));
 					else Logger.getAnonymousLogger().warning(
-							Messages.NullLiteralFailed+"\n"+e.getMessage());
+							Messages.Harvester_NullLiteralFailed+"\n"+e.getMessage());
 				}
 				return super.visit(node);
 			}
@@ -312,7 +312,7 @@ class NullSeeder {
 	@SuppressWarnings("unchecked")
 	private void process(ClassInstanceCreation node) throws HarvesterASTException {
 		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
-		IMethod method = (IMethod) Util.resolveElement(node);
+		IMethod method = (IMethod) Util.resolveElement(node,argPos);
 		try {
 			ILocalVariable[] params = method.getParameters();
 			ILocalVariable targetParam = params[argPos];

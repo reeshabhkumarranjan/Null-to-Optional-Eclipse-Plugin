@@ -30,7 +30,10 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -56,8 +59,9 @@ public class RefactorableHarvester {
 	private final Set<TypeDependentElementSet> nullSeeds = new LinkedHashSet<>();
 	private final WorkList workList = new WorkList();
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
-	private final Set<TypeDependentElementSet> passing = new LinkedHashSet<>();
 	private final Map<IJavaElement, Set<ISourceRange>> elementToBridgeableSourceRangeMap = new LinkedHashMap<>();
+	private final Set<TypeDependentElementSet> passing = new LinkedHashSet<>();
+	private final Set<TypeDependentElementSet> failing = new LinkedHashSet<>();
 	
 	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope, IProgressMonitor m) {
 		this.refactoringRootElement = rootElement;
@@ -99,11 +103,15 @@ public class RefactorableHarvester {
 		return harvester;
 	}
 
-	public Set<TypeDependentElementSet> getPassing() {
+	Set<TypeDependentElementSet> getPassing() {
 		return this.passing;
 	}
 	
-	public Map<IJavaElement,Set<ISourceRange>> getBridgeable() {
+	Set<TypeDependentElementSet> getFailing() {
+		return this.failing;
+	}
+	
+	Map<IJavaElement,Set<ISourceRange>> getBridgeable() {
 		return this.elementToBridgeableSourceRangeMap;
 	}
 	
@@ -125,13 +133,14 @@ public class RefactorableHarvester {
 		return ret;
 	}
 
-	public boolean harvestRefactorableContexts() throws CoreException {
+	public RefactoringStatus harvestRefactorableContexts() throws CoreException {
 
 		this.reset();
 		// this worklist starts with the immediate type-dependent entities on null expressions.
 		NullSeeder seeder = new NullSeeder(refactoringRootNode);
+		this.failing.addAll(seeder.getFailing());
 		// if no nulls pass the preconditions, return the failing set
-		if (!seeder.seedNulls()) return false;
+		if (!seeder.seedNulls()) return RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
 		// otherwise get the passing null type dependent entities
 		this.nullSeeds.addAll(seeder.getPassing());
 		// and put just the IJavaElements into the workList
@@ -195,6 +204,7 @@ public class RefactorableHarvester {
 				this.notRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
+				this.nullSeeds.removeIf(entity -> this.notRefactorable.contains(entity.seed()));
 				continue;
 			} 
 		}
@@ -205,11 +215,22 @@ public class RefactorableHarvester {
 		final Set<Set<IJavaElement>> candidateSets = Util
 				.getElementForest(computationForest);
 		
+		// convert the set of passing type dependent sets into sets of TDES
 		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
 		this.passing.addAll(candidateSets.stream().map(
 				set -> TypeDependentElementSet.of(set, nullSeeds)).collect(Collectors.toSet()));
 		
-		return !candidateSets.isEmpty();
+		// keep in the notRefactorable list only anything that was in the originally seeded elements
+		this.notRefactorable.retainAll(seeder.getPassing().stream().map(
+				set -> set.seed()).collect(Collectors.toSet()));
+		// turn the not refactorable list into a set of singleton TDES for consistency 
+		this.failing.addAll(notRefactorable.stream().map(
+				element -> TypeDependentElementSet.createBadSeed(
+						element, Boolean.FALSE, 
+						RefactoringStatus.createErrorStatus(Messages.Harvester_SetFailure))).collect(Collectors.toSet()));
+
+		return passing.isEmpty() ? RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions)
+				: new RefactoringStatus();
 	}
 
 }

@@ -13,6 +13,6 @@ public class A {
 
 	void test() {
 		
-		Object c, d, localVarControl = new Object();
+		Object g, d, localVarControl = new Object();
 	}
 }

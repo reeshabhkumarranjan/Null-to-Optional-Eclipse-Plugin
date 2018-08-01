@@ -4,6 +4,8 @@
 package edu.cuny.hunter.optionalrefactoring.core.utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,6 +34,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
@@ -40,11 +43,13 @@ import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
@@ -79,10 +84,10 @@ import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 @SuppressWarnings("restriction")
 public interface Util {
 	
-	public static ProcessorBasedRefactoring createRefactoring(IJavaElement[] projects,
+	public static ProcessorBasedRefactoring createRefactoring(IJavaElement[] elements,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
-				projects, monitor);
+				elements, monitor);
 		return new ProcessorBasedRefactoring(processor);
 	}
 
@@ -467,13 +472,37 @@ public interface Util {
 		return element;
 	}
 
-	static IJavaElement resolveElement(ClassInstanceCreation node) throws HarvesterASTException {
-		IBinding binding = resolveBinding(node);
-		IJavaElement element = binding.getJavaElement();
-		if (element == null) throw new HarvesterASTException(
+	static IJavaElement resolveElement(ClassInstanceCreation node, int paramNumber) throws HarvesterASTException {
+		IBinding constructorBinding = resolveBinding(node);
+		IJavaElement element = constructorBinding.getJavaElement();
+		if (element == null) {	// it might be an anonymous class declaration
+			AnonymousClassDeclaration acd = node.getAnonymousClassDeclaration();
+			if (acd != null) {	// it's an anonymous class declaration
+				final ITypeBinding binding = acd.resolveBinding();
+				final ITypeBinding superBinding = binding.getSuperclass();
+				for (IMethodBinding imb : Arrays.asList(
+						superBinding.getDeclaredMethods())) {
+					if (imb.isConstructor()) {
+						final ITypeBinding[] itb = imb.getParameterTypes();
+						if (itb.length > paramNumber) {
+							final ITypeBinding ithParamType = itb[paramNumber];
+							if (ithParamType.isEqualTo(((Expression) node
+									.arguments().get(paramNumber))
+									.resolveTypeBinding())
+									|| ((Expression) node
+											.arguments().get(paramNumber)) instanceof NullLiteral) {
+								element = (IMethod) imb.getJavaElement();
+								break;
+							}
+						}
+					}
+				}
+			} else	// it's not an anonymous class declaration and we have an error 
+				throw new HarvesterASTException(
 				Messages.Harvester_MissingJavaElement+node.getClass().getSimpleName()+": ",
 				PreconditionFailure.MISSING_JAVA_ELEMENT,
 				node);
+		}	// we have the element and we can return it
 		return element;
 	}
 

@@ -22,18 +22,19 @@ public class Messages extends NLS {
 	public static String CompilingSource;
 	public static String CreatingChange;
 	public static String CUContainsCompileErrors;
-	public static String NullLiteralFailed;
 	public static String NoNullsHavePassedThePreconditions;
 	public static String NoNullsToConvert;
 	public static String Util_MemberNotFound;
 	public static String Worklist_IllegalWorklistElement;
+	public static String Harvester_NullLiteralFailed;
 	public static String Harvester_ASTNodeError;
 	public static String Harvester_SourceNotPresent;
 	public static String Harvester_MissingJavaElement;
 	public static String Harvester_MissingBinding;
 	public static String Harvester_CastExpression;
-	public static String PreconditionFailureFailure;
+	public static String Harvester_PreconditionFailureFailure;
 	public static String Harvester_JavaModelError;
+	public static String Harvester_SetFailure;
 	
 	static {
 		// initialize resource bundle

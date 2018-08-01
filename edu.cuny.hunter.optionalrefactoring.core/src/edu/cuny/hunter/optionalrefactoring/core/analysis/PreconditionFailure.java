@@ -116,7 +116,7 @@ public enum PreconditionFailure {
 	public static SimpleEntry<IJavaElement,RefactoringStatus> handleFailure(HarvesterASTException e) {
 		String msg = e.getMessage()+"\n"+e.toString();
 		switch (e.getFailure()) {
-		case AST_ERROR: {	// something is terribly wrong
+		case AST_ERROR: {
 			Logger.getAnonymousLogger().warning(msg);
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
 					RefactoringStatus.createErrorStatus(msg));
@@ -125,34 +125,21 @@ public enum PreconditionFailure {
 				return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
 						RefactoringStatus.createErrorStatus(msg));
 		}
-		case ERRONEOUS_IMPORT_STATEMENT:	// something is terribly wrong
+		case ERRONEOUS_IMPORT_STATEMENT:
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
 					RefactoringStatus.createErrorStatus(msg));
-		case MISSING_BINDING: {	// something is terribly wrong
+		case MISSING_BINDING: {
 			Logger.getAnonymousLogger().warning(msg);
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
 					RefactoringStatus.createErrorStatus(msg));
 		}
 		case MISSING_JAVA_ELEMENT: {
-			ASTNode node = e.getNode();
-			switch (node.getNodeType()) {
-			case ASTNode.CLASS_INSTANCE_CREATION : {
-				final ClassInstanceCreation cic = (ClassInstanceCreation)node;
-				final AnonymousClassDeclaration acd = cic.getAnonymousClassDeclaration();
-				final ITypeBinding binding = acd.resolveBinding();
-				final IJavaElement element = binding.getJavaElement();
-				return new SimpleEntry<IJavaElement,RefactoringStatus>(element,new RefactoringStatus());
-			}
-			default : {	// something is terribly wrong
-				String msg2 = Messages.PreconditionFailureFailure+"\n"+msg;
-				Logger.getAnonymousLogger().severe(msg2);
-				return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
-						RefactoringStatus.createFatalErrorStatus(msg2));
-			}
-			}
+			Logger.getAnonymousLogger().warning(msg);
+			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
+					RefactoringStatus.createErrorStatus(msg));
 		}
-		default: {	// something is terribly wrong
-			String msg2 = Messages.PreconditionFailureFailure+"\n"+msg;
+		default: {	// something is terribly wrong because we have a PreconditionFailure we haven't handled
+			String msg2 = Messages.Harvester_PreconditionFailureFailure+"\n"+msg;
 			Logger.getAnonymousLogger().severe(msg2);
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
 					RefactoringStatus.createFatalErrorStatus(msg2));
@@ -170,8 +157,8 @@ public enum PreconditionFailure {
 		case MISSING_JAVA_ELEMENT:	// not refactorable
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(e.getElement(),
 					RefactoringStatus.createErrorStatus(msg));
-		default:	// something is terribly wrong
-			String msg2 = Messages.PreconditionFailureFailure+"\n"+msg;
+		default:	// something is terribly wrong because we have a PreconditionFailure we haven't handled
+			String msg2 = Messages.Harvester_PreconditionFailureFailure+"\n"+msg;
 			Logger.getAnonymousLogger().severe(msg2);
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
 					RefactoringStatus.createFatalErrorStatus(msg2));

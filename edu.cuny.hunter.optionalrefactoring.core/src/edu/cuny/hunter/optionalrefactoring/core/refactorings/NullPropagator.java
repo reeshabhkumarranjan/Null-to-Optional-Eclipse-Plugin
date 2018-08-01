@@ -38,6 +38,7 @@ import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
@@ -136,15 +137,7 @@ class NullPropagator {
 
 	public void process() throws CoreException {
 		if (this.name != null)
-			try {
 				this.process(this.name);
-			} catch (HarvesterASTException e) {
-				// here we can recover from an AST Failure if it isn't fatal, i.e. an anonymous class instantiation
-				SimpleEntry<IJavaElement,RefactoringStatus> recovered = PreconditionFailure.handleFailure(e);
-				if (!recovered.getValue().hasError()) {
-					this.found.add(recovered.getKey());
-				} else throw e;
-			}
 	}
 
 	private void extractSourceRange(IJavaElement element, ASTNode node) {
@@ -178,7 +171,9 @@ class NullPropagator {
 						final ITypeBinding ithParamType = itb[paramNumber];
 						if (ithParamType.isEqualTo(((Expression) node
 								.arguments().get(paramNumber))
-								.resolveTypeBinding())) {
+								.resolveTypeBinding())
+								|| ((Expression) node
+										.arguments().get(paramNumber)) instanceof NullLiteral) {
 							meth = (IMethod) imb.getJavaElement();
 							break;
 						}
@@ -527,7 +522,8 @@ class NullPropagator {
 			final ClassInstanceCreation ctorCall = (ClassInstanceCreation) node;
 			// if coming up from a argument.
 			if (containedIn(ctorCall.arguments(), this.name)) {
-				IJavaElement element = Util.resolveElement(ctorCall);
+				final int paramNumber = Util.getParamNumber(ctorCall.arguments(), this.name);
+				IJavaElement element = Util.resolveElement(ctorCall,paramNumber);
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 					this.extractSourceRange(element, ctorCall);
 				else
@@ -700,7 +696,8 @@ class NullPropagator {
 			final ClassInstanceCreation ctorCall = (ClassInstanceCreation) node;
 			// if coming up from a argument.
 			if (containedIn(ctorCall.arguments(), this.name)) {
-				IJavaElement element = Util.resolveElement(ctorCall);
+				final int paramNumber = Util.getParamNumber(ctorCall.arguments(), this.name);
+				IJavaElement element = Util.resolveElement(ctorCall,paramNumber);
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 					this.extractSourceRange(element, ctorCall);
 				else

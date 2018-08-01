@@ -117,6 +117,17 @@ public class TypeDependentElementSet implements Set<IJavaElement> {
 	 * Methods below are stubs, not intended for use.
 	 */
 	
+	public void testStubs() {
+		this.toArray();
+		this.toArray(null);
+		this.clear();
+		this.remove(null);
+		this.removeAll(null);
+		this.retainAll(null);
+		this.add(null);
+		this.addAll(null);
+	}
+	
 	@Override
 	public Object[] toArray() {
 		// TODO Auto-generated method stub
