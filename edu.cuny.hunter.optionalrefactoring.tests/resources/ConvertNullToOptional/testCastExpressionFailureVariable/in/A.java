@@ -2,7 +2,7 @@ package p;
 
 public class A {
 	
-	/*should fail {{a},{b}}*/
+	/*RefactoringStatus should fail with failing entities {{a},{b}} and no passing entities*/
 	
 	class B { }
 	

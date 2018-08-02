@@ -1,8 +1,11 @@
 package p;
 
 public class A {
-	/** should seed: { "a" }
-	 * 	should propagate: {{"a","b"}}
+	/** 
+	 * With implicit nulls option by default
+	 * RefactoringStatus is OK. passing entities {{a,b}}
+	 * x,c,f are all ignored since they are primitive
+	 * g,d are ignored since they are local variables
 	 */
 	Object a;
 	int x;
