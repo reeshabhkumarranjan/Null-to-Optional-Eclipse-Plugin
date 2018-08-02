@@ -171,9 +171,7 @@ class NullPropagator {
 						final ITypeBinding ithParamType = itb[paramNumber];
 						if (ithParamType.isEqualTo(((Expression) node
 								.arguments().get(paramNumber))
-								.resolveTypeBinding())
-								|| ((Expression) node
-										.arguments().get(paramNumber)) instanceof NullLiteral) {
+								.resolveTypeBinding())) {
 							meth = (IMethod) imb.getJavaElement();
 							break;
 						}

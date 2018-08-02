@@ -139,7 +139,7 @@ public class RefactorableHarvester {
 		// this worklist starts with the immediate type-dependent entities on null expressions.
 		NullSeeder seeder = new NullSeeder(refactoringRootNode);
 		this.failing.addAll(seeder.getFailing());
-		// if no nulls pass the preconditions, return the failing set
+		// if no nulls pass the preconditions, return an Error status
 		if (!seeder.seedNulls()) return RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
 		// otherwise get the passing null type dependent entities
 		this.nullSeeds.addAll(seeder.getPassing());
@@ -228,7 +228,7 @@ public class RefactorableHarvester {
 				element -> TypeDependentElementSet.createBadSeed(
 						element, Boolean.FALSE, 
 						RefactoringStatus.createErrorStatus(Messages.Harvester_SetFailure))).collect(Collectors.toSet()));
-
+		// if there are no passing sets, return an Error status else return an OK status
 		return passing.isEmpty() ? RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions)
 				: new RefactoringStatus();
 	}

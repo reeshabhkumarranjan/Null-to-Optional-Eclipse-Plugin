@@ -139,6 +139,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			final RefactoringStatus status = new RefactoringStatus();
 
 			for (IJavaElement elem : this.getJavaElements()) {
+				// here we merge the resulting RefactoringStatus from the process method with status
 				switch (elem.getElementType()) {
 				case IJavaElement.JAVA_PROJECT:
 					status.merge(process((IJavaProject) elem, subMonitor));
@@ -181,7 +182,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			monitor.done();
 		}
 	}
-
+	/**
+	 * @param project An IJavaProject.
+	 * @param subMonitor
+	 * @return A failing RefactoringStatus, unless any of the potentiallyGoodStatus instances are OK
+	 * @throws CoreException
+	 */
 	private RefactoringStatus process(IJavaProject project, SubMonitor subMonitor) throws CoreException {
 		IPackageFragmentRoot[] roots = project.getPackageFragmentRoots();
 		RefactoringStatus initialStatus = RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
@@ -191,7 +197,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 		return initialStatus;
 	}
-
+	/**
+	 * @param root A folder or jar.
+	 * @param subMonitor
+	 * @return A failing RefactoringStatus, unless any of the potentiallyGoodStatus instances are OK
+	 * @throws CoreException
+	 */
 	private RefactoringStatus process(IPackageFragmentRoot root, SubMonitor subMonitor)
 			throws CoreException {
 		RefactoringStatus initialStatus = RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
@@ -204,7 +215,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 		return initialStatus;
 	}
-
+	/**
+	 * @param fragment A package.
+	 * @param subMonitor
+	 * @return A failing RefactoringStatus, unless any of the potentiallyGoodStatus instances are OK
+	 * @throws CoreException
+	 */
 	private RefactoringStatus process(IPackageFragment fragment, SubMonitor subMonitor) throws CoreException {
 		ICompilationUnit[] units = fragment.getCompilationUnits();
 		RefactoringStatus initialStatus = RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
@@ -214,7 +230,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 		return initialStatus;
 	}
-
+	/**
+	 * @param icu an ICompilationUnit
+	 * @param subMonitor
+	 * @return the RefactoringStatus from the harvester
+	 * @throws CoreException
+	 */
 	private RefactoringStatus process(ICompilationUnit icu, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, 
@@ -225,7 +246,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		this.extractBridgeableSourceRanges(harvester);
 		return status;
 	}
-
+	/**
+	 * @param type an IType
+	 * @param subMonitor
+	 * @return the RefactoringStatus from the harvester
+	 * @throws CoreException
+	 */
 	private RefactoringStatus process(IType type, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(type, 
@@ -236,7 +262,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		this.extractBridgeableSourceRanges(harvester);
 		return status;
 	}
-
+	/**
+	 * @param initializer
+	 * @param subMonitor
+	 * @return the RefactoringStatus from the harvester
+	 * @throws CoreException
+	 */
 	private RefactoringStatus process(IInitializer initializer, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(initializer, 
@@ -247,7 +278,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		this.extractBridgeableSourceRanges(harvester);
 		return status;
 	}
-
+	/**
+	 * @param method
+	 * @param subMonitor
+	 * @return the RefactoringStatus from the harvester
+	 * @throws CoreException
+	 */
 	private RefactoringStatus process(IMethod method, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(method, 
@@ -258,7 +294,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		this.extractBridgeableSourceRanges(harvester);
 		return status;
 	}
-
+	/**
+	 * @param field
+	 * @param subMonitor
+	 * @return the RefactoringStatus from the harvester
+	 * @throws CoreException
+	 */
 	private RefactoringStatus process(IField field, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(field, 
