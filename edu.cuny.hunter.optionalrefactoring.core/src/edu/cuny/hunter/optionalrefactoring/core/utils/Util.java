@@ -73,6 +73,7 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -88,15 +89,15 @@ public interface Util {
 	public static ProcessorBasedRefactoring createRefactoring(IJavaElement[] elements,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
-				elements, monitor);
+				elements, null, monitor);
 		return new ProcessorBasedRefactoring(processor);
 	}
 
 	public static ConvertNullToOptionalRefactoringProcessor createNullToOptionalRefactoringProcessor(
-			IJavaElement[] elements, Optional<IProgressMonitor> monitor) throws JavaModelException {
+			IJavaElement[] elements, RefactoringSettings refactoringsettings, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(elements[0].getJavaProject());
 		ConvertNullToOptionalRefactoringProcessor processor = new ConvertNullToOptionalRefactoringProcessor(elements,
-				settings, monitor);
+				settings, refactoringsettings, monitor);
 		return processor;
 	}
 

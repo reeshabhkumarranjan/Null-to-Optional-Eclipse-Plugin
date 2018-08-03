@@ -33,6 +33,7 @@ public class Messages extends NLS {
 	public static String Harvester_PreconditionFailureFailure;
 	public static String Harvester_JavaModelError;
 	public static String Harvester_SetFailure;
+	public static String Excluded_by_Settings;
 	
 	static {
 		// initialize resource bundle

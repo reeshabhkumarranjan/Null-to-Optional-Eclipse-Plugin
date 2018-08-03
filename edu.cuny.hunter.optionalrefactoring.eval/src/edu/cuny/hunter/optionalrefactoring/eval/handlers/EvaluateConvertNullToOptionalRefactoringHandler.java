@@ -84,7 +84,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 
 					resultsTimeCollector.start();
 					ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
-							new IJavaProject[] { javaProject }, Optional.of(monitor));
+							new IJavaProject[] { javaProject }, DEFAULT_SETTINGS, Optional.of(monitor));
 					resultsTimeCollector.stop();
 
 					// run the precondition checking.

@@ -26,8 +26,11 @@ import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.CHOICES;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.*;
 import junit.framework.Test;
@@ -142,16 +145,19 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		return compileSuccess;
 	}
 
-	private void helper(Set<Set<String>> expectedPassingSets, Set<String> expectedFailingSet,
-			RefactoringStatus expectedStatus) throws Exception {
+	private void helper(Set<Set<String>> expectedPassingSets, Set<String> expectedFailingSet, 
+			RefactoringSettings settings, RefactoringStatus expectedStatus) throws Exception {
 
 		System.out.println();
 		// compute the actual results.
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 
 		ConvertNullToOptionalRefactoringProcessor refactoring = Util.createNullToOptionalRefactoringProcessor(
-				new IJavaElement[] { icu }, Optional.empty());
+				new IJavaElement[] { icu }, settings, Optional.empty());
 		RefactoringStatus status = refactoring.checkFinalConditions(new NullProgressMonitor(), null);
+		
+		System.out.println(settings.toString());
+		
 		assertTrue("The refactoring status matches the expected refactoring status "+expectedStatus.getSeverity()+".", 
 				status.getSeverity() == expectedStatus.getSeverity());
 
@@ -191,168 +197,232 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				actualFailingSet.containsAll(expectedFailingSet));
 	}
 	
+	public void testSettingsMethodReturnOn() throws Exception {
+		this.helper(setOf(setOf("m")), 
+				setOf(), RefactoringSettings.create(CHOICES.METHOD_RETURNS), 
+				new RefactoringStatus());
+	}
+	
+	public void testSettingsMethodReturnOff() throws Exception {
+		this.helper(setOf(setOf("a")), 
+				setOf(), RefactoringSettings.create(CHOICES.FIELDS), 
+				new RefactoringStatus());
+	}
+	
+	public void testSettingsParametersOn() throws Exception {
+		this.helper(setOf(setOf("x")), 
+				setOf(), RefactoringSettings.create(CHOICES.METHOD_PARAMS), 
+				new RefactoringStatus());
+	}
+	
+	public void testSettingsParametersOff() throws Exception {
+		this.helper(setOf(setOf("o")), 
+				setOf(), RefactoringSettings.create(CHOICES.FIELDS), 
+				new RefactoringStatus());
+	}
+	
+	public void testSettingsLocalVarsOn() throws Exception {
+		this.helper(setOf(setOf("x")), 
+				setOf(), RefactoringSettings.create(CHOICES.LOCAL_VARS), 
+				new RefactoringStatus());
+	}
+	
+	public void testSettingsLocalVarsOff() throws Exception {
+		this.helper(setOf(setOf("m")), 
+				setOf(), RefactoringSettings.create(CHOICES.METHOD_RETURNS), 
+				new RefactoringStatus());
+	}
+	
+	public void testSettingsFieldsOn() throws Exception {
+		this.helper(setOf(setOf("x")), 
+				setOf(), RefactoringSettings.create(CHOICES.FIELDS), 
+				new RefactoringStatus());
+	}
+	
+	public void testSettingsFieldsOff() throws Exception {
+		this.helper(setOf(setOf("m")), 
+				setOf(), RefactoringSettings.create(CHOICES.METHOD_RETURNS), 
+				new RefactoringStatus());
+	}
+	
+	public void testSettingsImplicitOn() throws Exception {
+		this.helper(setOf(setOf("x")), 
+				setOf(), RefactoringSettings.getDefault(), 
+				new RefactoringStatus());
+	}
+	
+	public void testSettingsImplicitOff() throws Exception {
+		this.helper(setOf(setOf("y")), 
+				setOf(), RefactoringSettings.create(CHOICES.FIELDS), 
+				new RefactoringStatus());
+	}
+	
 	public void testAnonymousClassDeclaration() throws Exception {
-		this.helper(setOf(setOf("o")), setOf(), new RefactoringStatus());
+		this.helper(setOf(setOf("o")), 
+				setOf(), 
+				RefactoringSettings.getDefault(),
+				new RefactoringStatus());
 	}
 	
 	public void testCastExpressionFailNoSeed() throws Exception {
-		this.helper(
+		this.helper(setOf(),
 				setOf(),
-				setOf(),
+				RefactoringSettings.getDefault(),
 				RefactoringStatus.createErrorStatus(""));
 	}
 	
 	public void testCastExpressionFailureVariable() throws Exception {
-		this.helper(
-				setOf(),
+		this.helper(setOf(),
 				setOf("a","b"),
+				RefactoringSettings.getDefault(),
 				RefactoringStatus.createErrorStatus(""));
 	}
 	
 	public void testCastExpressionFailureMethod() throws Exception {
-		this.helper(
-				setOf(),
+		this.helper(setOf(),
 				setOf("x","m"),
+				RefactoringSettings.getDefault(),
 				RefactoringStatus.createErrorStatus(""));
 	}
 	
 	public void testImplicitlyNullVariableDecl() throws Exception {
-		this.helper( 
-				setOf(setOf("a","b")),
+		this.helper(setOf(setOf("a","b")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldSimpleName() throws Exception {
-		this.helper( 
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldThis() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldThisQualified() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldSuper() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldSuperQualified() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldStaticSimpleName() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldStaticQualified() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldArray() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldTransitive() throws Exception {
-		this.helper(
-				setOf(setOf("a","b","c"),
+		this.helper(setOf(setOf("a","b","c"),
 						setOf("controlNullDependent"),
 						setOf("d","e")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentLocalVariable() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentLocalVariableArray() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testAssignmentLocalVariableTransitive() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("c","d","e","f","g"),
 						setOf("control")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testDeclarationField() throws Exception {
-		this.helper(
-				setOf(setOf("e"),
+		this.helper(setOf(setOf("e"),
 						setOf("earray"),
 						setOf("einitializedarray"),
 						setOf("f"),
 						setOf("farray"),
 						setOf("finitializedarray")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testDeclarationFieldArray() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testDeclarationFieldTransitive() throws Exception {
-		this.helper(
-				setOf(setOf("a","b"),
+		this.helper(setOf(setOf("a","b"),
 						setOf("c","d","e"),
 						setOf("controlNullDependent")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
 	public void testDeclarationLocalVariable() throws Exception {
 		this.helper(setOf(setOf("a")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
@@ -361,6 +431,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				setOf(setOf("a","b"),
 						setOf("nullControl")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
@@ -371,6 +442,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("d","e"),
 						setOf("control")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
@@ -380,6 +452,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("f","i","m"),
 						setOf("o")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());
 	}
 
@@ -389,6 +462,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("m","i","f"),
 						setOf("k","g","d","b","a")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());	
 	}
 
@@ -397,6 +471,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				setOf(setOf("g","d","b","a"),
 						setOf("i","f")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());	
 	}
 
@@ -406,6 +481,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						setOf("m","i","f"),
 						setOf("o")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());	
 	}
 
@@ -414,6 +490,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				setOf(setOf("nullReturner", "extendedNullReturner", "composedNullReturner"),
 						setOf("controlNullReturner")),
 				setOf(),
+				RefactoringSettings.getDefault(),
 				new RefactoringStatus());	
 	}
 }

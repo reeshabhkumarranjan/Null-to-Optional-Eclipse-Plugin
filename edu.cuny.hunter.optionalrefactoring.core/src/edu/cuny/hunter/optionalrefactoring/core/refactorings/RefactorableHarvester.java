@@ -205,7 +205,7 @@ public class RefactorableHarvester {
 				this.notRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
-				this.nullSeeds.removeIf(entity -> this.notRefactorable.contains(entity));
+				this.nullSeeds.removeIf(entity -> this.notRefactorable.contains(entity.element()));
 				continue;
 			} 
 		}

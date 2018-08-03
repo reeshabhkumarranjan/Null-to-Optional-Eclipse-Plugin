@@ -4,6 +4,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+@SuppressWarnings("restriction")
 public class Entity {
 	
 	private final IJavaElement element;
@@ -45,10 +46,14 @@ public class Entity {
 
 	@Override
 	public boolean equals(Object other) {
-		if (!(other instanceof Entity)) throw new IllegalArgumentException("Not an Entity");
 		return this.element.equals(((Entity)other).element);
 	}
 	
+	@Override
+	public int hashCode() {
+		return this.element.hashCode();
+	}
+
 	public RefactoringStatus transform(CompilationUnitRewrite rewrite) {
 		return new RefactoringStatus();
 	}
