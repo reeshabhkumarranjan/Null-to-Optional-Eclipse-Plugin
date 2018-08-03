@@ -79,7 +79,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 					.parameters().get(this.paramNumber);
 
 			final IJavaElement element = Util.resolveElement(svd);
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)) 
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 				this.sourceRangesToBridge.put(element,
 						Util.getBridgeableExpressionSourceRange(svd));
 			this.elements.add(element);

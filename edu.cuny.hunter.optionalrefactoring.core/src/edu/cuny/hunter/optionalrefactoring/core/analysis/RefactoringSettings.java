@@ -22,7 +22,7 @@ enum SETTINGS {
 public class RefactoringSettings {
 	
 	public static RefactoringSettings getDefault() {
-		return new RefactoringSettings(EnumSet.of(SETTINGS.FIELDS, SETTINGS.PERFORM_TRANSFORMATION, 
+		return new RefactoringSettings(EnumSet.of(SETTINGS.FIELDS, SETTINGS.IMPLICIT_FIELDS, SETTINGS.PERFORM_TRANSFORMATION, 
 				SETTINGS.BRIDGE_EXTERNAL, SETTINGS.LOCAL_VARS, SETTINGS.METHOD_PARAMS, SETTINGS.METHOD_RETURNS));
 	}
 

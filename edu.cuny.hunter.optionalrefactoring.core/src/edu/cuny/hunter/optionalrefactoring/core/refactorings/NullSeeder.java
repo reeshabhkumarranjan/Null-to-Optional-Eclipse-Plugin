@@ -1,14 +1,12 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
@@ -41,11 +39,10 @@ import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import com.google.common.collect.Sets;
-
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
@@ -67,29 +64,21 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 class NullSeeder {
 
 	private final ASTNode refactoringRootNode;
-	private final Set<TypeDependentElementSet> candidates = new LinkedHashSet<>();
+	private final Set<Entity> candidates = new LinkedHashSet<>();
 	private final Map<IJavaElement,ISourceRange> sourceRangesToBridge = new LinkedHashMap<>();
+	private final RefactoringSettings settings;
 
 	private ASTNode currentNull;
 
-	public NullSeeder(ASTNode node) {
+	public NullSeeder(ASTNode node, RefactoringSettings settings) {
 		this.refactoringRootNode = node;
+		this.settings = settings;
 	}
-	
-	public Set<TypeDependentElementSet> getPassing() {
-		if (!this.candidates.isEmpty()) 
-			return this.candidates.stream().filter(set -> set.getStatus().isOK())
-				.collect(Collectors.toSet());
-		else return Sets.newHashSet();
+
+	public Set<Entity> getPassing() {
+		return this.candidates;
 	}
-	
-	public Set<TypeDependentElementSet> getFailing() {
-		if (this.candidates.isEmpty()) 
-			return this.candidates.stream().filter(set -> !set.getStatus().isOK())
-				.collect(Collectors.toSet());
-		else return Sets.newHashSet();
-	}
-	
+
 	public Map<IJavaElement,ISourceRange> getsourceRangesToBridge() {
 		return this.sourceRangesToBridge;
 	}
@@ -105,11 +94,7 @@ class NullSeeder {
 				try {	// try to process the node
 					NullSeeder.this.process(nl.getParent());
 				} catch (HarvesterException e) {	// catch any exceptions
-					SimpleEntry<IJavaElement,RefactoringStatus> ret = PreconditionFailure.handleFailure(e);
-					if (ret.getKey() != null) 
-						NullSeeder.this.candidates.add(TypeDependentElementSet.createBadSeed(
-								ret.getKey(), Boolean.FALSE, ret.getValue()));
-					else Logger.getAnonymousLogger().warning(
+					Logger.getAnonymousLogger().warning(
 							Messages.Harvester_NullLiteralFailed+"\n"+e.getMessage());
 				}
 				return super.visit(nl);
@@ -121,35 +106,34 @@ class NullSeeder {
 			 */
 			@Override
 			public boolean visit(VariableDeclarationFragment node) {
-				NullSeeder.this.currentNull = node;
-				try {
-					IVariableBinding binding = Util.resolveBinding(node);
-					IJavaElement element = Util.resolveElement(node);
-					if (element instanceof IField) {
-						if (node.getInitializer() == null)
-							/*this element gets added to the Map candidates with 
-							 * boolean true indicating an implicit null
-							 * also, if the type of the declaration is primitive,
-							 * we ignore it
-							 * */
-							if (!binding.getVariableDeclaration().getType().isPrimitive()) {
-								NullSeeder.this.candidates.add(
-										TypeDependentElementSet.createSeed(element,Boolean.TRUE));
-							}
+				if (NullSeeder.this.settings.refactorFields()) {
+					NullSeeder.this.currentNull = node;
+					try {
+						IVariableBinding binding = Util.resolveBinding(node);
+						IJavaElement element = Util.resolveElement(node);
+						if (element instanceof IField) {
+							if (NullSeeder.this.settings.seedImplicit())
+								if (node.getInitializer() == null)
+									/*this element gets added to the Map candidates with 
+									 * boolean true indicating an implicit null
+									 * also, if the type of the declaration is primitive,
+									 * we ignore it
+									 * */
+									if (!binding.getVariableDeclaration().getType().isPrimitive()) {
+										NullSeeder.this.candidates.add(
+												new Entity(element,true,true));
+									}
+						}
+					} catch (HarvesterException e) {
+						Logger.getAnonymousLogger().warning(
+								Messages.Harvester_NullLiteralFailed+"\n"+e.getMessage());
 					}
-				} catch (HarvesterException e) {
-					SimpleEntry<IJavaElement,RefactoringStatus> ret = PreconditionFailure.handleFailure(e);
-					if (ret.getKey() != null) NullSeeder.this.candidates.add(
-							TypeDependentElementSet.createBadSeed(
-									ret.getKey(), Boolean.FALSE, ret.getValue()));
-					else Logger.getAnonymousLogger().warning(
-							Messages.Harvester_NullLiteralFailed+"\n"+e.getMessage());
 				}
 				return super.visit(node);
 			}
 		};
 		this.refactoringRootNode.accept(visitor);
-		return this.candidates.stream().anyMatch(set -> set.getStatus().isOK());
+		return !this.candidates.isEmpty();
 	}
 
 	private <T extends ASTNode> ASTNode getContaining(Class<T> type, ASTNode node) {
@@ -163,7 +147,7 @@ class NullSeeder {
 				PreconditionFailure.AST_ERROR,
 				node);
 	}
-	
+
 	/**
 	 * @param node Any of the possible AST nodes where a null literal could appear as an immediate child
 	 * @throws JavaModelException 
@@ -248,34 +232,44 @@ class NullSeeder {
 	}
 
 	private void process(ReturnStatement node) throws HarvesterASTException {
-		ASTNode methodDecl = getContaining(MethodDeclaration.class, node); 
-		if (methodDecl instanceof MethodDeclaration){
-			IJavaElement im = Util.resolveElement((MethodDeclaration)methodDecl);
-			this.candidates.add(TypeDependentElementSet.createSeed(im,Boolean.FALSE));
-		} else throw new HarvesterASTException(Messages.Harvester_ASTNodeError+node.getClass().getSimpleName(), 
-				PreconditionFailure.AST_ERROR,
-				node);
+		if (this.settings.refactorMethods()) {
+			ASTNode methodDecl = getContaining(MethodDeclaration.class, node); 
+			if (methodDecl instanceof MethodDeclaration){
+				IJavaElement im = Util.resolveElement((MethodDeclaration)methodDecl);
+				this.candidates.add(new Entity(im,true,false));
+			} else throw new HarvesterASTException(Messages.Harvester_ASTNodeError+node.getClass().getSimpleName(), 
+					PreconditionFailure.AST_ERROR,
+					node);
+		}
 	}
 
 	private void process(Name node) throws HarvesterASTException {
 		IJavaElement element = Util.resolveElement(node);
-		this.candidates.add(TypeDependentElementSet.createSeed(element,Boolean.FALSE));
+		this.candidates.add(new Entity(element,true,false));
 	}
 
 	private void process(SuperFieldAccess node) throws HarvesterASTException {
+		if (this.settings.refactorFields()) {
 			IJavaElement element = Util.resolveElement(node);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)) 
-				this.sourceRangesToBridge.put(element,
-						Util.getBridgeableExpressionSourceRange(this.currentNull));
-			this.candidates.add(TypeDependentElementSet.createSeed(element,Boolean.FALSE));
+				if (this.settings.bridgeLibraries())
+					this.sourceRangesToBridge.put(element,
+							Util.getBridgeableExpressionSourceRange(this.currentNull));
+				else return;
+			this.candidates.add(new Entity(element,true,false));
+		}
 	}
 
 	private void process(FieldAccess node) throws HarvesterASTException {
+		if (this.settings.refactorFields()) {
 			IJavaElement element = Util.resolveElement(node);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)) 
-				this.sourceRangesToBridge.put(element,
-						Util.getBridgeableExpressionSourceRange(this.currentNull));
-			this.candidates.add(TypeDependentElementSet.createSeed(element,Boolean.FALSE));
+				if (this.settings.bridgeLibraries())
+					this.sourceRangesToBridge.put(element,
+							Util.getBridgeableExpressionSourceRange(this.currentNull));
+				else return;
+			this.candidates.add(new Entity(element,true,false));
+		}
 	}
 
 	private void process(ArrayInitializer node) {
@@ -311,121 +305,158 @@ class NullSeeder {
 
 	@SuppressWarnings("unchecked")
 	private void process(ClassInstanceCreation node) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
-		IMethod method = (IMethod) Util.resolveElement(node,argPos);
-		try {
-			ILocalVariable[] params = method.getParameters();
-			ILocalVariable targetParam = params[argPos];
-			if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
-				this.sourceRangesToBridge.put(targetParam,
-						Util.getBridgeableExpressionSourceRange(this.currentNull));
-			this.candidates.add(TypeDependentElementSet.createSeed(targetParam, Boolean.FALSE));
-		} catch (JavaModelException e) {
-			throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
-					PreconditionFailure.MISSING_JAVA_ELEMENT,
-					method);
+		if (this.settings.refactorParameters()) {
+			int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
+			IMethod method = (IMethod) Util.resolveElement(node,argPos);
+			try {
+				ILocalVariable[] params = method.getParameters();
+				ILocalVariable targetParam = params[argPos];
+				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
+					if (this.settings.bridgeLibraries())
+						this.sourceRangesToBridge.put(targetParam,
+								Util.getBridgeableExpressionSourceRange(this.currentNull));
+					else return;
+				this.candidates.add(new Entity(targetParam,true,false));
+			} catch (JavaModelException e) {
+				throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
+						PreconditionFailure.MISSING_JAVA_ELEMENT,
+						method);
+			}
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	private void process(MethodInvocation node) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
-		IMethod method = (IMethod) Util.resolveElement(node);			
-		try {
-			ILocalVariable[] params = method.getParameters();
-			ILocalVariable targetParam = params[argPos];
-			if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
-				this.sourceRangesToBridge.put(targetParam,
-						Util.getBridgeableExpressionSourceRange(this.currentNull));
-			this.candidates.add(TypeDependentElementSet.createSeed(targetParam, Boolean.FALSE));
-		} catch (JavaModelException e) {
-			throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
-					PreconditionFailure.MISSING_JAVA_ELEMENT,
-					method);
+		if (this.settings.refactorParameters()) {
+			int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
+			IMethod method = (IMethod) Util.resolveElement(node);			
+			try {
+				ILocalVariable[] params = method.getParameters();
+				ILocalVariable targetParam = params[argPos];
+				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
+					if (this.settings.bridgeLibraries())
+						this.sourceRangesToBridge.put(targetParam,
+								Util.getBridgeableExpressionSourceRange(this.currentNull));
+					else return;
+				this.candidates.add(new Entity(targetParam,true,false));
+			} catch (JavaModelException e) {
+				throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
+						PreconditionFailure.MISSING_JAVA_ELEMENT,
+						method);
+			}
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	private void process(SuperMethodInvocation node) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
-		IMethod method = (IMethod)Util.resolveElement(node);				
-		try {
-			ILocalVariable[] params = method.getParameters();
-			ILocalVariable targetParam = params[argPos];
-			if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
-				this.sourceRangesToBridge.put(targetParam,
-						Util.getBridgeableExpressionSourceRange(this.currentNull));
-			this.candidates.add(TypeDependentElementSet.createSeed(targetParam, Boolean.FALSE));
-		} catch (JavaModelException e) {
-			throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
-					PreconditionFailure.MISSING_JAVA_ELEMENT,
-					method);
+		if (this.settings.refactorParameters()) {
+			int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
+			IMethod method = (IMethod)Util.resolveElement(node);				
+			try {
+				ILocalVariable[] params = method.getParameters();
+				ILocalVariable targetParam = params[argPos];
+				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
+					if (this.settings.bridgeLibraries())
+						this.sourceRangesToBridge.put(targetParam,
+								Util.getBridgeableExpressionSourceRange(this.currentNull));
+					else return;
+				this.candidates.add(new Entity(targetParam,true,false));
+			} catch (JavaModelException e) {
+				throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
+						PreconditionFailure.MISSING_JAVA_ELEMENT,
+						method);
+			}
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	private void process(ConstructorInvocation node) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
-		IMethod method = (IMethod)Util.resolveElement(node);				
-		try {
-			ILocalVariable[] params = method.getParameters();
-			ILocalVariable targetParam = params[argPos];
-			if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
-				this.sourceRangesToBridge.put(targetParam,
-						Util.getBridgeableExpressionSourceRange(this.currentNull));
-			this.candidates.add(TypeDependentElementSet.createSeed(targetParam, Boolean.FALSE));
-		} catch (JavaModelException e) {
-			throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
-					PreconditionFailure.MISSING_JAVA_ELEMENT,
-					method);
+		if (this.settings.refactorParameters()) {
+			int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
+			IMethod method = (IMethod)Util.resolveElement(node);				
+			try {
+				ILocalVariable[] params = method.getParameters();
+				ILocalVariable targetParam = params[argPos];
+				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
+					if (this.settings.bridgeLibraries())
+						this.sourceRangesToBridge.put(targetParam,
+								Util.getBridgeableExpressionSourceRange(this.currentNull));
+					else return;
+				this.candidates.add(new Entity(targetParam,true,false));
+			} catch (JavaModelException e) {
+				throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
+						PreconditionFailure.MISSING_JAVA_ELEMENT,
+						method);
+			}
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	private void process(SuperConstructorInvocation node) throws HarvesterASTException {
-		int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
-		IMethod method = (IMethod)Util.resolveElement(node);				
-		try {
-			ILocalVariable[] params = method.getParameters();
-			ILocalVariable targetParam = params[argPos];
-			if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
-				this.sourceRangesToBridge.put(targetParam,
-						Util.getBridgeableExpressionSourceRange(this.currentNull));
-			this.candidates.add(TypeDependentElementSet.createSeed(targetParam, Boolean.FALSE));
-		} catch (JavaModelException e) {
-			throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
-					PreconditionFailure.MISSING_JAVA_ELEMENT,
-					method);
+		if (this.settings.refactorParameters()) {
+			int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
+			IMethod method = (IMethod)Util.resolveElement(node);				
+			try {
+				ILocalVariable[] params = method.getParameters();
+				ILocalVariable targetParam = params[argPos];
+				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
+					if (this.settings.bridgeLibraries())
+						this.sourceRangesToBridge.put(targetParam,
+								Util.getBridgeableExpressionSourceRange(this.currentNull));
+					else return;
+				this.candidates.add(new Entity(targetParam,true,false));
+			} catch (JavaModelException e) {
+				throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
+						PreconditionFailure.MISSING_JAVA_ELEMENT,
+						method);
+			}
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	private void process(VariableDeclarationFragment node) throws HarvesterASTException {
 		ASTNode parent = node.getParent();
-		List<VariableDeclarationFragment> fragments;
+		List<VariableDeclarationFragment> fragments = new LinkedList<>();
 		switch (parent.getNodeType()) {
-		case ASTNode.FIELD_DECLARATION : fragments = ((FieldDeclaration)parent).fragments();
-		break;
-		case ASTNode.VARIABLE_DECLARATION_EXPRESSION :	fragments = ((VariableDeclarationExpression)parent).fragments();
-		break;
-		case ASTNode.VARIABLE_DECLARATION_STATEMENT : fragments = ((VariableDeclarationStatement)parent).fragments();
-		break;
+		case ASTNode.FIELD_DECLARATION : {
+			if (this.settings.refactorFields())
+				fragments = ((FieldDeclaration)parent).fragments();
+			break;
+		}
+		case ASTNode.VARIABLE_DECLARATION_EXPRESSION :	{
+			List<VariableDeclarationFragment> _fragments = ((VariableDeclarationExpression)parent).fragments();
+			if (	( this.settings.refactorLocalVariables() 
+					&& _fragments.stream().anyMatch(fragment -> !fragment.resolveBinding().isField()) )
+					|| 	( this.settings.refactorFields() 
+							&& _fragments.stream().anyMatch(fragment -> fragment.resolveBinding().isField()) ) )
+				fragments = _fragments;
+			break;
+		}
+		case ASTNode.VARIABLE_DECLARATION_STATEMENT : {
+			if (this.settings.refactorLocalVariables())
+				fragments = ((VariableDeclarationStatement)parent).fragments();
+			break;
+		}
 		default : throw new HarvesterASTException(Messages.Harvester_ASTNodeError+node.getClass().getSimpleName(), 
 				PreconditionFailure.AST_ERROR,
 				parent);
 		}
-		Set<TypeDependentElementSet> elements = new LinkedHashSet<>();
+		Set<Entity> elements = new LinkedHashSet<>();
 		for (Object o : fragments) {
 			VariableDeclarationFragment vdf = (VariableDeclarationFragment)o;
 			IJavaElement element = Util.resolveElement(vdf);
-			elements.add(TypeDependentElementSet.createSeed(element,Boolean.FALSE));
+			elements.add(new Entity(element,true,false));
 		}
 		this.candidates.addAll(elements);
 	}
 
 	private void process(SingleVariableDeclaration node) throws HarvesterASTException {
-		// Single variable declaration nodes are used in a limited number of places, including formal parameter lists and catch clauses. They are not used for field declarations and regular variable declaration statements. 
-		IJavaElement element = Util.resolveElement(node);
-		this.candidates.add(TypeDependentElementSet.createSeed(element,Boolean.FALSE));
+		/* Single variable declaration nodes are used in a limited number of places, 
+		 * including formal parameter lists and catch clauses. We don't have to worry about formal parameters here.
+		 * They are not used for field declarations and regular variable declaration statements. */
+		if (this.settings.refactorLocalVariables()) {
+			IJavaElement element = Util.resolveElement(node);
+			this.candidates.add(new Entity(element,true,false));
+		}
 	}
 }

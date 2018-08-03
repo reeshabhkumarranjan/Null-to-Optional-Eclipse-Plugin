@@ -71,6 +71,7 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
@@ -282,10 +283,10 @@ public interface Util {
 	}
 	
 	// temporary development method for console logging extracted results
-	static void candidatePrinter(Set<IJavaElement> refactorableContexts2) {
+	static void candidatePrinter(Set<Entity> refactorableContexts2) {
 		if (refactorableContexts2.isEmpty()) Logger.getAnonymousLogger().info(refactorableContexts2+" is empty!");
 		System.out.print("{");
-		refactorableContexts2.forEach(element -> System.out.print(element.getElementName()+","));
+		refactorableContexts2.forEach(entity -> System.out.print(entity.element().getElementName()+","));
 		System.out.print("}");
 	}
 
