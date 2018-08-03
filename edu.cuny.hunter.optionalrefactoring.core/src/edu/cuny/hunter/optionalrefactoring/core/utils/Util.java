@@ -71,7 +71,9 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -87,15 +89,15 @@ public interface Util {
 	public static ProcessorBasedRefactoring createRefactoring(IJavaElement[] elements,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
-				elements, monitor);
+				elements, null, monitor);
 		return new ProcessorBasedRefactoring(processor);
 	}
 
 	public static ConvertNullToOptionalRefactoringProcessor createNullToOptionalRefactoringProcessor(
-			IJavaElement[] elements, Optional<IProgressMonitor> monitor) throws JavaModelException {
+			IJavaElement[] elements, RefactoringSettings refactoringsettings, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(elements[0].getJavaProject());
 		ConvertNullToOptionalRefactoringProcessor processor = new ConvertNullToOptionalRefactoringProcessor(elements,
-				settings, monitor);
+				settings, refactoringsettings, monitor);
 		return processor;
 	}
 
@@ -282,10 +284,10 @@ public interface Util {
 	}
 	
 	// temporary development method for console logging extracted results
-	static void candidatePrinter(Set<IJavaElement> refactorableContexts2) {
+	static void candidatePrinter(Set<Entity> refactorableContexts2) {
 		if (refactorableContexts2.isEmpty()) Logger.getAnonymousLogger().info(refactorableContexts2+" is empty!");
 		System.out.print("{");
-		refactorableContexts2.forEach(element -> System.out.print(element.getElementName()+","));
+		refactorableContexts2.forEach(entity -> System.out.print(entity.element().getElementName()+","));
 		System.out.print("}");
 	}
 

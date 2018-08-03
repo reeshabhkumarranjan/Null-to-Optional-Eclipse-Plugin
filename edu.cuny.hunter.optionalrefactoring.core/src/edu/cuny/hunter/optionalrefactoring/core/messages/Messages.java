@@ -17,13 +17,11 @@ public class Messages extends NLS {
 	public static String Name;
 	public static String CategoryName;
 	public static String CategoryDescription;
-	public static String NullsNotSpecified;
 	public static String CheckingPreconditions;
 	public static String CompilingSource;
 	public static String CreatingChange;
 	public static String CUContainsCompileErrors;
 	public static String NoNullsHavePassedThePreconditions;
-	public static String NoNullsToConvert;
 	public static String Util_MemberNotFound;
 	public static String Worklist_IllegalWorklistElement;
 	public static String Harvester_NullLiteralFailed;
@@ -35,6 +33,7 @@ public class Messages extends NLS {
 	public static String Harvester_PreconditionFailureFailure;
 	public static String Harvester_JavaModelError;
 	public static String Harvester_SetFailure;
+	public static String Excluded_by_Settings;
 	
 	static {
 		// initialize resource bundle

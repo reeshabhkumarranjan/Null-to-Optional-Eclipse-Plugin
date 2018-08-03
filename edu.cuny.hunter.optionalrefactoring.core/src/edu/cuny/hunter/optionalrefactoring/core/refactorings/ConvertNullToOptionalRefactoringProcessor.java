@@ -10,8 +10,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
@@ -41,6 +39,7 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.GroupCategory;
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
+import org.eclipse.ltk.core.refactoring.NullChange;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
@@ -48,7 +47,9 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringParticipant;
 import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
 
 import edu.cuny.citytech.refactoring.common.core.RefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
@@ -77,32 +78,40 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	/** Does the refactoring use a working copy layer? */
 	private final boolean layer;
 
-	private final Set<TypeDependentElementSet> passingEntities = new LinkedHashSet<>(); // the forest of refactorable type-dependent entities
-
-	private final Set<TypeDependentElementSet> failingEntities = new LinkedHashSet<>();
-
-	private final Map<IJavaElement, Set<ISourceRange>> bridgeableSourceRanges = new LinkedHashMap<>();
-
 	private final IJavaElement[] javaElements;	// the input java model elements
 
 	private final IJavaSearchScope refactoringScope;
+	
+	private final RefactoringSettings settings;
+
+	private final Set<Set<Entity>> passingEntities = new LinkedHashSet<>(); // the forest of refactorable type-dependent entities
+
+	private final Set<Entity> failingEntities = new LinkedHashSet<>();
+
+	private final Map<IJavaElement, Set<ISourceRange>> bridgeableSourceRanges = new LinkedHashMap<>();
 
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
-		this(null, null, false, Optional.empty());
+		this(null, null, false, null, Optional.empty());
 	}
 
 	public ConvertNullToOptionalRefactoringProcessor(final CodeGenerationSettings settings,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		this(null, settings, false, monitor);
+		this(null, settings, false, null, monitor);
 	}
 
-	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, final CodeGenerationSettings settings,
-			boolean layer, Optional<IProgressMonitor> monitor) throws JavaModelException {
+	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, 
+			final CodeGenerationSettings settings,
+			boolean layer, 
+			RefactoringSettings refactoringSettings,
+			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		super(settings);
 		try {
 			this.javaElements = javaElements;
 			this.layer = layer;
 			this.refactoringScope = SearchEngine.createJavaSearchScope(javaElements);
+			if (refactoringSettings == null)
+				this.settings = RefactoringSettings.getDefault();
+			else this.settings = refactoringSettings;
 
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
@@ -110,19 +119,19 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	}
 
 	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, final CodeGenerationSettings settings,
-			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		this(javaElements, settings, false, monitor);
+			RefactoringSettings refactoringSettings, Optional<IProgressMonitor> monitor) throws JavaModelException {
+		this(javaElements, settings, false, refactoringSettings, monitor);
 	}
 
 	public ConvertNullToOptionalRefactoringProcessor(Optional<IProgressMonitor> monitor) throws JavaModelException {
-		this(null, null, false, monitor);
+		this(null, null, false, null, monitor);
 	}
 
-	public Set<TypeDependentElementSet> getPassingEntities() {
+	public Set<Set<Entity>> getPassingEntities() {
 		return this.passingEntities;
 	}
 
-	public Set<TypeDependentElementSet> getFailingEntities() {
+	public Set<Entity> getFailingEntities() {
 		return this.failingEntities;
 	}
 
@@ -239,7 +248,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private RefactoringStatus process(ICompilationUnit icu, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(icu, subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(icu, 
-				compilationUnit, refactoringScope, subMonitor);
+				compilationUnit, this.refactoringScope, this.settings, subMonitor);
 		RefactoringStatus status = harvester.harvestRefactorableContexts();
 		this.passingEntities.addAll(harvester.getPassing());
 		this.failingEntities.addAll(harvester.getFailing());
@@ -255,7 +264,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private RefactoringStatus process(IType type, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(type, 
-				compilationUnit, refactoringScope, subMonitor);
+				compilationUnit, this.refactoringScope, this.settings, subMonitor);
 		RefactoringStatus status = harvester.harvestRefactorableContexts();
 		this.passingEntities.addAll(harvester.getPassing());
 		this.failingEntities.addAll(harvester.getFailing());
@@ -271,7 +280,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private RefactoringStatus process(IInitializer initializer, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(initializer, 
-				compilationUnit, refactoringScope, subMonitor);
+				compilationUnit, this.refactoringScope, this.settings, subMonitor);
 		RefactoringStatus status = harvester.harvestRefactorableContexts();
 		this.passingEntities.addAll(harvester.getPassing());
 		this.failingEntities.addAll(harvester.getFailing());
@@ -287,7 +296,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private RefactoringStatus process(IMethod method, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(method, 
-				compilationUnit, refactoringScope, subMonitor);
+				compilationUnit, this.refactoringScope, this.settings, subMonitor);
 		RefactoringStatus status = harvester.harvestRefactorableContexts();
 		this.passingEntities.addAll(harvester.getPassing());
 		this.failingEntities.addAll(harvester.getFailing());
@@ -303,7 +312,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private RefactoringStatus process(IField field, SubMonitor subMonitor) throws CoreException {
 		CompilationUnit compilationUnit = getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
 		RefactorableHarvester harvester = RefactorableHarvester.of(field, 
-				compilationUnit, refactoringScope, subMonitor);
+				compilationUnit, this.refactoringScope, this.settings, subMonitor);
 		RefactoringStatus status = harvester.harvestRefactorableContexts();
 		this.passingEntities.addAll(harvester.getPassing());
 		this.failingEntities.addAll(harvester.getFailing());
@@ -378,9 +387,27 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	@Override
 	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		try {
-			pm.beginTask(Messages.CreatingChange, 1);
 
 			final TextEditBasedChangeManager manager = new TextEditBasedChangeManager();
+
+			if (this.passingEntities.isEmpty()) 
+				return new NullChange(Messages.NoNullsHavePassedThePreconditions);
+
+			Optional<Integer> count = this.passingEntities.stream()
+					.flatMap(Set::stream).map(entity -> new Integer(1)).reduce(Integer::sum);
+
+			pm.beginTask(Messages.CreatingChange, count.orElse(0));
+
+			for (Set<Entity> set : this.passingEntities) {
+				for (Entity entity : set) {
+					CompilationUnitRewrite rewrite = this.getCompilationUnitRewrite(
+							(ICompilationUnit)entity.element().getAncestor(IJavaElement.COMPILATION_UNIT), 
+							this.getCompilationUnit((ICompilationUnit)entity.element()
+									.getAncestor(IJavaElement.COMPILATION_UNIT), pm));
+					entity.transform(rewrite);
+					pm.worked(1);
+				}
+			}
 
 			// save the source changes.
 			ICompilationUnit[] units = this.getCompilationUnitToCompilationUnitRewriteMap().keySet().stream()
@@ -430,10 +457,6 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitToCompilationUnitRewriteMap() {
 		return this.compilationUnitToCompilationUnitRewriteMap;
-	}
-
-	public Set<TypeDependentElementSet> getRefactorableSets() {
-		return this.passingEntities;
 	}
 
 	/**

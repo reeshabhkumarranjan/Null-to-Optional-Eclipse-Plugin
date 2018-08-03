@@ -1,6 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -38,7 +37,6 @@ import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
@@ -57,11 +55,9 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -116,36 +112,39 @@ class NullPropagator {
 	private final Expression name;
 
 	private final IJavaSearchScope scope;
-	
+
+	private final RefactoringSettings settings;
+
 	private final Map<IJavaElement,Set<ISourceRange>> sourceRangesToBridge = new LinkedHashMap<>();
 
 	public NullPropagator(ASTNode node, Set<IJavaElement> constFields,
-			IJavaSearchScope scope, IProgressMonitor monitor) {
+			IJavaSearchScope scope, RefactoringSettings settings, IProgressMonitor monitor) {
 		this.name = (Expression) node;
 		this.constFields = constFields;
 		this.scope = scope;
+		this.settings = settings;
 		this.monitor = monitor;
 	}
 
 	public Set<IJavaElement> getFound() {
 		return this.found;
 	}
-	
+
 	public Map<IJavaElement,Set<ISourceRange>> getSourceRangesToBridge() {
 		return this.sourceRangesToBridge;
 	}
 
 	public void process() throws CoreException {
 		if (this.name != null)
-				this.process(this.name);
+			this.process(this.name);
 	}
 
 	private void extractSourceRange(IJavaElement element, ASTNode node) {
 		if (this.sourceRangesToBridge.containsKey(element))
-				this.sourceRangesToBridge.get(element).add(
-						Util.getBridgeableExpressionSourceRange(node));
-			else this.sourceRangesToBridge.put(element, 
-					Util.setOf(Util.getBridgeableExpressionSourceRange(node)));
+			this.sourceRangesToBridge.get(element).add(
+					Util.getBridgeableExpressionSourceRange(node));
+		else this.sourceRangesToBridge.put(element, 
+				Util.setOf(Util.getBridgeableExpressionSourceRange(node)));
 	}
 
 	private void findFormalsForVariable(ClassInstanceCreation node)
@@ -154,7 +153,7 @@ class NullPropagator {
 		final IMethodBinding b = node.resolveConstructorBinding();
 		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ClassInstanceCreation: ", 
 				PreconditionFailure.MISSING_BINDING, node);
-	
+
 		IMethod meth = (IMethod) b.getJavaElement();
 		if (meth == null && node.getAnonymousClassDeclaration() != null) {
 			// most likely an anonymous class.
@@ -199,9 +198,9 @@ class NullPropagator {
 		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ConstructorInvocation: ", 
 				PreconditionFailure.MISSING_BINDING,
 				node);
-	
+
 		final IMethod meth = (IMethod) b.getJavaElement();
-		
+
 		if (meth == null) 
 			throw new HarvesterASTException(Messages.Harvester_SourceNotPresent,
 					PreconditionFailure.MISSING_JAVA_ELEMENT,
@@ -232,7 +231,7 @@ class NullPropagator {
 		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a MethodInvocation: ", 
 				PreconditionFailure.MISSING_BINDING,
 				node);
-	
+
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
@@ -249,7 +248,7 @@ class NullPropagator {
 				"While trying to resolve the binding for a SuperConstructorInvocation: ", 
 				PreconditionFailure.MISSING_BINDING,
 				node);
-	
+
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
@@ -268,7 +267,7 @@ class NullPropagator {
 				"While trying to resolve the binding for a SuperMethodInvocation: ", 
 				PreconditionFailure.MISSING_BINDING,
 				node);
-	
+
 		final IMethod meth = (IMethod) node.resolveMethodBinding()
 				.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
@@ -296,7 +295,7 @@ class NullPropagator {
 							NullPropagator.this.monitor);
 					ParameterProcessingVisitor visitor = new ParameterProcessingVisitor(
 							paramNumber, match.getOffset());
-						node.accept(visitor);
+					node.accept(visitor);
 					NullPropagator.this.found.addAll(visitor.getElements());
 					visitor.getSourceRangesToBridge().entrySet().forEach(
 							entry -> {
@@ -329,7 +328,7 @@ class NullPropagator {
 				"While trying to resolve the binding for a SingleVariableDeclaration: ", 
 				PreconditionFailure.MISSING_BINDING,
 				node);
-	
+
 		final IMethod meth = (IMethod) b.getDeclaringMethod().getJavaElement();
 
 		final SearchPattern pattern = SearchPattern.createPattern(meth,
@@ -395,45 +394,63 @@ class NullPropagator {
 		}
 
 		case ASTNode.VARIABLE_DECLARATION_STATEMENT: {
+			if (!this.settings.refactorLocalVariables()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final VariableDeclarationStatement vds = (VariableDeclarationStatement) node;
 			for (Object o : vds.fragments()) {
 				final VariableDeclarationFragment vdf = (VariableDeclarationFragment)o;
 				final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
 				if (!this.constFields.contains(element)) {	// we don't want to keep processing if it does
-				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					this.extractSourceRange(element, vdf);
-				this.found.add(element);
-				this.processExpression(vdf.getInitializer());
+					if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+						if (this.settings.bridgeLibraries())
+							this.extractSourceRange(element, vdf);
+						else return;
+					this.found.add(element);
+					this.processExpression(vdf.getInitializer());
 				}
 			}
 			break;
+
 		}
 
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT: {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) node;
+			if (	( !this.settings.refactorLocalVariables() 
+					&& !vdf.resolveBinding().isField() )
+					|| 	( !this.settings.refactorFields() 
+							&& vdf.resolveBinding().isField()) ) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, vdf);
 			final IJavaElement element = Util.resolveElement(vdf);
 			if (!this.constFields.contains(element)) {	// we don't want to keep processing if it does
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					this.extractSourceRange(element, vdf);
-			this.found.add(element);
-			this.processExpression(vdf.getInitializer());
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(element, vdf);
+					else return;
+				this.found.add(element);
+				this.processExpression(vdf.getInitializer());
 			}
 			break;
+
 		}
 
 		case ASTNode.FIELD_DECLARATION: {
+			if (!this.settings.refactorFields())
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final FieldDeclaration fd = (FieldDeclaration) node;
 			for (Object o : fd.fragments()) {
 				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 				final IJavaElement element = Util.resolveElement(vdf);
 				if (!this.constFields.contains(element)) {
 					if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-						this.extractSourceRange(element, vdf);
+						if (this.settings.bridgeLibraries())
+							this.extractSourceRange(element, vdf);
+						else return;
 					this.found.add(element);
 					this.processExpression(vdf.getInitializer());
 				}
 			}
 			break;
+
 		}
 
 		case ASTNode.INFIX_EXPRESSION: {
@@ -463,6 +480,8 @@ class NullPropagator {
 		}
 
 		case ASTNode.RETURN_STATEMENT: {
+			if (!this.settings.refactorMethods()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final ReturnStatement rs = (ReturnStatement) node;
 
 			// process what is being returned.
@@ -484,10 +503,13 @@ class NullPropagator {
 			else {
 				// Check the topmost method.
 				if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-					this.extractSourceRange(top, methDecl);
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(top, methDecl);
+					else return;
 				this.found.add(top);
 			}
 			break;
+
 		}
 
 		case ASTNode.CONDITIONAL_EXPRESSION: {
@@ -497,6 +519,8 @@ class NullPropagator {
 		}
 
 		case ASTNode.METHOD_DECLARATION: {
+			if (!this.settings.refactorMethods())
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final ASTVisitor visitor = new ASTVisitor() {
 				public boolean visit(ReturnStatement node) {
 					try {
@@ -514,73 +538,97 @@ class NullPropagator {
 
 			node.accept(visitor);
 			break;
+
 		}
 
 		case ASTNode.CLASS_INSTANCE_CREATION: {
+			if (!this.settings.refactorParameters()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final ClassInstanceCreation ctorCall = (ClassInstanceCreation) node;
 			// if coming up from a argument.
 			if (containedIn(ctorCall.arguments(), this.name)) {
 				final int paramNumber = Util.getParamNumber(ctorCall.arguments(), this.name);
 				IJavaElement element = Util.resolveElement(ctorCall,paramNumber);
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					this.extractSourceRange(element, ctorCall);
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(element, ctorCall);
+					else return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
 			}
 			break;
+
 		}
 
 		case ASTNode.CONSTRUCTOR_INVOCATION: {
+			if (!this.settings.refactorParameters()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final ConstructorInvocation ctorCall = (ConstructorInvocation) node;
 			// if coming up from a argument.
 			if (containedIn(ctorCall.arguments(), this.name)) {
 				IJavaElement element = Util.resolveElement(ctorCall);
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					this.extractSourceRange(element, ctorCall);
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(element, ctorCall);
+					else return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
 			}
 			break;
+
 		}
 
 		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION: {
+			if (!this.settings.refactorParameters()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final SuperConstructorInvocation ctorCall = (SuperConstructorInvocation) node;
 			// if coming up from a argument.
 			if (containedIn(ctorCall.arguments(), this.name)) {
 				IJavaElement element = Util.resolveElement(ctorCall);
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					this.extractSourceRange(element, ctorCall);
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(element, ctorCall);
+					else return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
 			}
 			break;
+
 		}
 
 		case ASTNode.SUPER_METHOD_INVOCATION: {
+			if (this.settings.refactorParameters()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final SuperMethodInvocation smi = (SuperMethodInvocation) node;
 			// if coming up from a argument.
 			if (containedIn(smi.arguments(), this.name)) {
 				IJavaElement element = Util.resolveElement(smi);
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					this.extractSourceRange(element, smi);
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(element, smi);
+					else return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(smi);
 			}
 			break;
+
 		}
 
 		case ASTNode.METHOD_INVOCATION: {
+			if (!this.settings.refactorParameters()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final MethodInvocation mi = (MethodInvocation) node;
-
 			// if coming up from a argument.
 			if (containedIn(mi.arguments(), this.name)) {
 				IJavaElement element = Util.resolveElement(mi);
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					this.extractSourceRange(element, mi);
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(element, mi);
+					else return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(mi);
@@ -588,6 +636,7 @@ class NullPropagator {
 				this.process(node.getParent());
 
 			break;
+
 		}
 
 		case ASTNode.PARENTHESIZED_EXPRESSION: {
@@ -596,28 +645,38 @@ class NullPropagator {
 		}
 
 		case ASTNode.SINGLE_VARIABLE_DECLARATION: {
+			if (!this.settings.refactorParameters()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			// its a formal parameter.
 			final SingleVariableDeclaration svd = (SingleVariableDeclaration) node;
 			// take care of local usage.
 			IJavaElement element = Util.resolveElement(svd);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				this.extractSourceRange(element, svd);
+				if (this.settings.bridgeLibraries())
+					this.extractSourceRange(element, svd);
+				else return;
 			this.found.add(element);
 
 			// take care of remote usage.
 			// go find variables on the corresponding calls.
 			this.findVariablesForFormal(svd);
 			break;
+
 		}
 
 
 		case ASTNode.ENHANCED_FOR_STATEMENT : {
+			if (!this.settings.refactorLocalVariables()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final SingleVariableDeclaration svd = ((EnhancedForStatement)node).getParameter();
 			IJavaElement element = Util.resolveElement(svd);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				this.extractSourceRange(element, svd);
+				if (this.settings.bridgeLibraries())
+					this.extractSourceRange(element, svd);
+				else return;
 			this.found.add(element);
 			break;
+
 		}
 
 		case ASTNode.EXPRESSION_STATEMENT: {
@@ -658,8 +717,10 @@ class NullPropagator {
 			final Name name = (Name) node;
 			IJavaElement element = Util.resolveElement(name);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				this.extractSourceRange(element, name);
-				this.found.add(element);
+				if (this.settings.bridgeLibraries())
+					this.extractSourceRange(element, name);
+				else return;
+			this.found.add(element);
 			break;
 		}
 
@@ -691,18 +752,23 @@ class NullPropagator {
 		}
 
 		case ASTNode.CLASS_INSTANCE_CREATION: {
+			if (!this.settings.refactorParameters()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final ClassInstanceCreation ctorCall = (ClassInstanceCreation) node;
 			// if coming up from a argument.
 			if (containedIn(ctorCall.arguments(), this.name)) {
 				final int paramNumber = Util.getParamNumber(ctorCall.arguments(), this.name);
 				IJavaElement element = Util.resolveElement(ctorCall,paramNumber);
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					this.extractSourceRange(element, ctorCall);
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(element, ctorCall);
+					else return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
 			}
 			break;
+
 		}
 
 		case ASTNode.CONDITIONAL_EXPRESSION: {
@@ -713,15 +779,22 @@ class NullPropagator {
 		}
 
 		case ASTNode.FIELD_ACCESS: {
+			if (!this.settings.refactorFields()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final FieldAccess fieldAccess = (FieldAccess) node;
 			IJavaElement element = Util.resolveElement(fieldAccess);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				this.extractSourceRange(element, fieldAccess);
+				if (this.settings.bridgeLibraries())
+					this.extractSourceRange(element, fieldAccess);
+				else return;
 			this.found.add(element);
 			break;
+
 		}
 
 		case ASTNode.METHOD_INVOCATION: {
+			if (!this.settings.refactorParameters()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final MethodInvocation m = (MethodInvocation) node;
 			final IMethod meth = (IMethod) Util.resolveElement(m);
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
@@ -733,10 +806,13 @@ class NullPropagator {
 			else {
 				// Check the topmost method.
 				if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-					this.extractSourceRange(top, m);
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(top, m);
+					else return;
 				this.found.add(top);
 			}
 			break;
+
 		}
 
 		case ASTNode.PARENTHESIZED_EXPRESSION: {
@@ -746,15 +822,21 @@ class NullPropagator {
 		}
 
 		case ASTNode.SUPER_FIELD_ACCESS: {
+			if (!this.settings.refactorFields()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final SuperFieldAccess superFieldAccess = (SuperFieldAccess) node;
 			IJavaElement element = Util.resolveElement(superFieldAccess);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				this.extractSourceRange(element, superFieldAccess);
+				if (this.settings.bridgeLibraries())
+					this.extractSourceRange(element, superFieldAccess);
+				else return;
 			this.found.add(element);
 			break;
 		}
 
 		case ASTNode.SUPER_METHOD_INVOCATION: {
+			if (!this.settings.refactorParameters()) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final SuperMethodInvocation sm = (SuperMethodInvocation) node;
 			final IMethod meth = (IMethod) Util.resolveElement(sm);
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
@@ -766,22 +848,34 @@ class NullPropagator {
 			else {
 				// Check the topmost method.
 				if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-					this.extractSourceRange(top, sm);
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(top, sm);
+					else return;
 				this.found.add(top);
 			}
 			break;
+
 		}
 
 		case ASTNode.VARIABLE_DECLARATION_EXPRESSION: {
 			final VariableDeclarationExpression varDec = (VariableDeclarationExpression) node;
+			List<VariableDeclarationFragment> _fragments = varDec.fragments();
+			if (	( !this.settings.refactorLocalVariables() 
+					&& _fragments.stream().anyMatch(fragment -> !fragment.resolveBinding().isField()) )
+					|| 	( !this.settings.refactorFields() 
+							&& _fragments.stream().anyMatch(fragment -> fragment.resolveBinding().isField()) ) ) 
+				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, varDec);
 			for (Object o : varDec.fragments()) {
 				final VariableDeclarationFragment vdf = (VariableDeclarationFragment)o;
 				final IJavaElement element = Util.resolveElement(vdf);
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					this.extractSourceRange(element, varDec);
+					if (this.settings.bridgeLibraries())
+						this.extractSourceRange(element, varDec);
+					else return;
 				this.found.add(element);
 			}
 			break;
+
 		}
 
 		case ASTNode.CAST_EXPRESSION: {

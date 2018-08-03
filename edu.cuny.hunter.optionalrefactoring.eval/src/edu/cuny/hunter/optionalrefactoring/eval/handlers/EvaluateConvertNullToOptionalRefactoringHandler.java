@@ -25,9 +25,9 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.osgi.framework.FrameworkUtil;
 
 import edu.cuny.citytech.refactoring.common.eval.handlers.EvaluateRefactoringHandler;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.TypeDependentElementSet;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
 
@@ -84,7 +84,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 
 					resultsTimeCollector.start();
 					ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
-							new IJavaProject[] { javaProject }, Optional.of(monitor));
+							new IJavaProject[] { javaProject }, DEFAULT_SETTINGS, Optional.of(monitor));
 					resultsTimeCollector.stop();
 
 					// run the precondition checking.
@@ -93,30 +93,30 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							.checkAllConditions(new NullProgressMonitor());
 					resultsTimeCollector.stop();
 					
-					Set<TypeDependentElementSet> candidateSets = processor.getRefactorableSets();
+					Set<Set<Entity>> candidateSets = processor.getPassingEntities();
 					
 					// candidateSets.removeIf(rcs.nonComplying);
 					// check each of the refactoring context settings, and remove sets that contain settings not wanted
 					
 					// Now we have just the sets that we care about
-					for (TypeDependentElementSet set : candidateSets) {
+					for (Set<Entity> set : candidateSets) {
 						// Let's print some information about what's inside
 						setSummaryPrinter.printRecord(set.hashCode(), 
-								set.seed().getElementName(),
-								set.seedImplicit());
-						for (IJavaElement entity : set) {
+								set.stream().filter(Entity::seed).findFirst().get().element().getElementName(),
+								set.stream().filter(Entity::implicit).findFirst().get().element().getElementName());
+						for (Entity entity : set) {
 							elementResultsPrinter.printRecord(
-									entity.getJavaProject().getElementName(),
+									entity.element().getJavaProject().getElementName(),
 									set.hashCode(),
-									entity.getElementName(),
+									entity.element().getElementName(),
 									entity.getClass().getSimpleName(),
-									entity.getElementType() == IJavaElement.LOCAL_VARIABLE ?
-											entity.getAncestor(IJavaElement.METHOD).getElementName()+"\n"+
-												entity.getAncestor(IJavaElement.METHOD)
+									entity.element().getElementType() == IJavaElement.LOCAL_VARIABLE ?
+											entity.element().getAncestor(IJavaElement.METHOD).getElementName()+"\n"+
+												entity.element().getAncestor(IJavaElement.METHOD)
 													.getAncestor(IJavaElement.TYPE).getElementName() 
-										:	entity.getAncestor(IJavaElement.TYPE).getElementName(),
-									entity.isReadOnly(),
-									entity.getResource().isDerived());
+										:	entity.element().getAncestor(IJavaElement.TYPE).getElementName(),
+									entity.element().isReadOnly(),
+									entity.element().getResource().isDerived());
 						}
 					}
 					setSummaryPrinter.println();
