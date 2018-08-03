@@ -161,7 +161,9 @@ public class RefactorableHarvester {
 				public void acceptSearchMatch(SearchMatch match)
 						throws CoreException {
 					if (match.getAccuracy() == SearchMatch.A_ACCURATE
-							&& !match.isInsideDocComment()) {
+							&& !match.isInsideDocComment()
+							// We are finding import declarations for some reason, they should be ignored
+							&& ((IJavaElement) match.getElement()).getElementType() != IJavaElement.IMPORT_DECLARATION) {
 						// here, we have search match. 
 						// convert the matchingElement to an ASTNode.
 						ASTNode node = Util.getExactASTNode(match,

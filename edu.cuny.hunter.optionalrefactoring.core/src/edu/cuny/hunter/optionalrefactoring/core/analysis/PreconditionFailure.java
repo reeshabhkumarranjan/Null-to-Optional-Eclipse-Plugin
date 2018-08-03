@@ -69,13 +69,8 @@ public enum PreconditionFailure {
 	 * We can't refactoring anything that is null-type dependent that has a cast to an Optional. 
 	 * Semantics wouldn't be preserved.
 	 */
-	CAST_EXPRESSION(8), 
-	/**
-	 * ERRONEOUS_IMPORT_STATEMENT:
-	 * For some reason during propagation we are getting search matches in import statements.
-	 */
-	ERRONEOUS_IMPORT_STATEMENT(9)
-	;
+	CAST_EXPRESSION(8);
+	
 	private int code;
 
 	private PreconditionFailure(int code) {
@@ -115,9 +110,6 @@ public enum PreconditionFailure {
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
 					RefactoringStatus.createErrorStatus(msg));
 		}
-		case ERRONEOUS_IMPORT_STATEMENT:
-			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
-					RefactoringStatus.createErrorStatus(msg));
 		case MISSING_BINDING: {
 			Logger.getAnonymousLogger().warning(msg);
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,

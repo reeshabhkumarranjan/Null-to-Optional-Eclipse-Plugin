@@ -204,13 +204,7 @@ public interface Util {
 		case IJavaElement.TYPE: {
 			return (IMember) elem;
 		}
-		// We are finding import declarations for some reason, they should be ignored
-		case IJavaElement.IMPORT_DECLARATION : 
-			throw new HarvesterJavaModelException("Encountered a Method Import Statement", 
-					PreconditionFailure.ERRONEOUS_IMPORT_STATEMENT,
-					elem);
 		}
-
 		return getIMember(elem.getParent());
 	}
 
@@ -284,10 +278,9 @@ public interface Util {
 	}
 	
 	// temporary development method for console logging extracted results
-	static void candidatePrinter(Set<Entity> refactorableContexts2) {
-		if (refactorableContexts2.isEmpty()) Logger.getAnonymousLogger().info(refactorableContexts2+" is empty!");
+	static void candidatePrinter(Set<Entity> entities) {
 		System.out.print("{");
-		refactorableContexts2.forEach(entity -> System.out.print(entity.element().getElementName()+","));
+		entities.forEach(entity -> System.out.print(entity.element().getElementName()+","));
 		System.out.print("}");
 	}
 
