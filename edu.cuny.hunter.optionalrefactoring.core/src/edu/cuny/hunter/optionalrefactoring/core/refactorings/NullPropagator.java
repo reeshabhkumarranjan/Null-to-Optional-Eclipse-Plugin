@@ -286,6 +286,7 @@ class NullPropagator {
 
 		final SearchRequestor requestor = new SearchRequestor() {
 
+			@Override
 			public void acceptSearchMatch(SearchMatch match)
 					throws CoreException {
 				if (match.getAccuracy() == SearchMatch.A_ACCURATE
@@ -405,7 +406,7 @@ class NullPropagator {
 						if (this.settings.bridgeLibraries())
 							this.extractSourceRange(element, vdf);
 						else return;
-					this.found.add(element);
+					else this.found.add(element);
 					this.processExpression(vdf.getInitializer());
 				}
 			}
@@ -426,7 +427,7 @@ class NullPropagator {
 					if (this.settings.bridgeLibraries())
 						this.extractSourceRange(element, vdf);
 					else return;
-				this.found.add(element);
+				else this.found.add(element);
 				this.processExpression(vdf.getInitializer());
 			}
 			break;
@@ -445,7 +446,7 @@ class NullPropagator {
 						if (this.settings.bridgeLibraries())
 							this.extractSourceRange(element, vdf);
 						else return;
-					this.found.add(element);
+					else this.found.add(element);
 					this.processExpression(vdf.getInitializer());
 				}
 			}
@@ -506,7 +507,7 @@ class NullPropagator {
 					if (this.settings.bridgeLibraries())
 						this.extractSourceRange(top, methDecl);
 					else return;
-				this.found.add(top);
+				else this.found.add(top);
 			}
 			break;
 
@@ -522,6 +523,7 @@ class NullPropagator {
 			if (!this.settings.refactorMethods())
 				throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 			final ASTVisitor visitor = new ASTVisitor() {
+				@Override
 				public boolean visit(ReturnStatement node) {
 					try {
 						NullPropagator.this.processExpression(node
@@ -655,8 +657,7 @@ class NullPropagator {
 				if (this.settings.bridgeLibraries())
 					this.extractSourceRange(element, svd);
 				else return;
-			this.found.add(element);
-
+			else this.found.add(element);
 			// take care of remote usage.
 			// go find variables on the corresponding calls.
 			this.findVariablesForFormal(svd);
@@ -674,7 +675,7 @@ class NullPropagator {
 				if (this.settings.bridgeLibraries())
 					this.extractSourceRange(element, svd);
 				else return;
-			this.found.add(element);
+			else this.found.add(element);
 			break;
 
 		}
@@ -720,7 +721,7 @@ class NullPropagator {
 				if (this.settings.bridgeLibraries())
 					this.extractSourceRange(element, name);
 				else return;
-			this.found.add(element);
+			else this.found.add(element);
 			break;
 		}
 
@@ -787,7 +788,7 @@ class NullPropagator {
 				if (this.settings.bridgeLibraries())
 					this.extractSourceRange(element, fieldAccess);
 				else return;
-			this.found.add(element);
+			else this.found.add(element);
 			break;
 
 		}
@@ -809,7 +810,7 @@ class NullPropagator {
 					if (this.settings.bridgeLibraries())
 						this.extractSourceRange(top, m);
 					else return;
-				this.found.add(top);
+				else this.found.add(top);
 			}
 			break;
 
@@ -830,7 +831,7 @@ class NullPropagator {
 				if (this.settings.bridgeLibraries())
 					this.extractSourceRange(element, superFieldAccess);
 				else return;
-			this.found.add(element);
+			else this.found.add(element);
 			break;
 		}
 
@@ -851,7 +852,7 @@ class NullPropagator {
 					if (this.settings.bridgeLibraries())
 						this.extractSourceRange(top, sm);
 					else return;
-				this.found.add(top);
+				else this.found.add(top);
 			}
 			break;
 
@@ -872,7 +873,7 @@ class NullPropagator {
 					if (this.settings.bridgeLibraries())
 						this.extractSourceRange(element, varDec);
 					else return;
-				this.found.add(element);
+				else this.found.add(element);
 			}
 			break;
 

@@ -30,6 +30,7 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
+import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.candidatePrinter;;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -50,9 +51,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
-			List<String> setSummaryHeader = Lists.newArrayList("Type Dependent Set ID",
-															"Seed",
-															"Implicit Null");
+			List<String> setSummaryHeader = Lists.newArrayList("Seed");
 			
 			List<String> elementResultsHeader = Lists.newArrayList("Project Name",
 															"Type Dependent Set ID",
@@ -93,17 +92,20 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							.checkAllConditions(new NullProgressMonitor());
 					resultsTimeCollector.stop();
 					
-					Set<Set<Entity>> candidateSets = processor.getPassingEntities();
+					Set<Set<Entity>> passingSets = processor.getPassingEntities();
+					Set<Entity> failingEntities = processor.getFailingEntities();
 					
-					// candidateSets.removeIf(rcs.nonComplying);
-					// check each of the refactoring context settings, and remove sets that contain settings not wanted
+					System.out.print("{");
+					passingSets.forEach(set -> {
+						candidatePrinter(set);
+						System.out.print(", ");
+					});
+					System.out.println("}");
 					
-					// Now we have just the sets that we care about
-					for (Set<Entity> set : candidateSets) {
+					for (Set<Entity> set : passingSets) {
 						// Let's print some information about what's inside
 						setSummaryPrinter.printRecord(set.hashCode(), 
-								set.stream().filter(Entity::seed).findFirst().get().element().getElementName(),
-								set.stream().filter(Entity::implicit).findFirst().get().element().getElementName());
+								set.stream().filter(Entity::seed).findFirst().get().element().getElementName());
 						for (Entity entity : set) {
 							elementResultsPrinter.printRecord(
 									entity.element().getJavaProject().getElementName(),

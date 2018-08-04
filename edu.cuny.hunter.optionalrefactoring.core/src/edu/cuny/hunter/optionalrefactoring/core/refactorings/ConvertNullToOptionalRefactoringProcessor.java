@@ -199,12 +199,11 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 */
 	private RefactoringStatus process(IJavaProject project, SubMonitor subMonitor) throws CoreException {
 		IPackageFragmentRoot[] roots = project.getPackageFragmentRoots();
-		RefactoringStatus initialStatus = RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
+		RefactoringStatus status = new RefactoringStatus();
 		for (IPackageFragmentRoot root : roots) {
-			RefactoringStatus potentiallyGoodStatus = process(root, subMonitor);
-			if (!potentiallyGoodStatus.hasError()) initialStatus = potentiallyGoodStatus;
+			status.merge(process(root, subMonitor));
 		}
-		return initialStatus;
+		return status;
 	}
 	/**
 	 * @param root A folder or jar.
@@ -214,30 +213,26 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 */
 	private RefactoringStatus process(IPackageFragmentRoot root, SubMonitor subMonitor)
 			throws CoreException {
-		RefactoringStatus initialStatus = RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
+		RefactoringStatus status = new RefactoringStatus();
 		IJavaElement[] children = root.getChildren();
 		for (IJavaElement child : children) {
-			if (child.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-				RefactoringStatus potentiallyGoodStatus = process((IPackageFragment) child, subMonitor);
-				if (!potentiallyGoodStatus.hasError()) initialStatus = potentiallyGoodStatus;
-			}
+			status.merge(process((IPackageFragment) child, subMonitor));
 		}
-		return initialStatus;
+		return status;
 	}
 	/**
 	 * @param fragment A package.
 	 * @param subMonitor
-	 * @return A failing RefactoringStatus, unless any of the potentiallyGoodStatus instances are OK
+	 * @return A RefactoringStatus
 	 * @throws CoreException
 	 */
 	private RefactoringStatus process(IPackageFragment fragment, SubMonitor subMonitor) throws CoreException {
 		ICompilationUnit[] units = fragment.getCompilationUnits();
-		RefactoringStatus initialStatus = RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
+		RefactoringStatus status = new RefactoringStatus();
 		for (ICompilationUnit unit : units) {
-			RefactoringStatus potentiallyGoodStatus = process(unit, subMonitor);
-			if (!potentiallyGoodStatus.hasError()) initialStatus = potentiallyGoodStatus;
+			status.merge(process(unit, subMonitor));
 		}
-		return initialStatus;
+		return status;
 	}
 	/**
 	 * @param icu an ICompilationUnit
@@ -393,10 +388,10 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			if (this.passingEntities.isEmpty()) 
 				return new NullChange(Messages.NoNullsHavePassedThePreconditions);
 
-			Optional<Integer> count = this.passingEntities.stream()
-					.flatMap(Set::stream).map(entity -> new Integer(1)).reduce(Integer::sum);
+			int count = (int) this.passingEntities.stream()
+					.flatMap(Set::stream).count();
 
-			pm.beginTask(Messages.CreatingChange, count.orElse(0));
+			pm.beginTask(Messages.CreatingChange, count);
 
 			for (Set<Entity> set : this.passingEntities) {
 				for (Entity entity : set) {
@@ -455,6 +450,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
+	@Override
 	protected Map<ICompilationUnit, CompilationUnitRewrite> getCompilationUnitToCompilationUnitRewriteMap() {
 		return this.compilationUnitToCompilationUnitRewriteMap;
 	}

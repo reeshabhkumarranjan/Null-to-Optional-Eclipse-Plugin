@@ -240,9 +240,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 	
 	public void testSettingsFieldsOff() throws Exception {
-		this.helper(setOf(setOf("m")), 
+		this.helper(setOf(), 
 				setOf(), RefactoringSettings.create(CHOICES.METHOD_RETURNS), 
-				new RefactoringStatus());
+				RefactoringStatus.createErrorStatus(""));
 	}
 	
 	public void testSettingsImplicitOn() throws Exception {
@@ -252,9 +252,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 	
 	public void testSettingsImplicitOff() throws Exception {
-		this.helper(setOf(setOf("y")), 
+		this.helper(setOf(), 
 				setOf(), RefactoringSettings.create(CHOICES.FIELDS), 
-				new RefactoringStatus());
+				RefactoringStatus.createErrorStatus(""));
 	}
 	
 	public void testAnonymousClassDeclaration() throws Exception {

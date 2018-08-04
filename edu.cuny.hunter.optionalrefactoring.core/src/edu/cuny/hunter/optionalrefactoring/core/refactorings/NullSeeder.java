@@ -40,7 +40,6 @@ import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
@@ -64,7 +63,7 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 class NullSeeder {
 
 	private final ASTNode refactoringRootNode;
-	private final Set<Entity> candidates = new LinkedHashSet<>();
+	private final Set<IJavaElement> candidates = new LinkedHashSet<>();
 	private final Map<IJavaElement,ISourceRange> sourceRangesToBridge = new LinkedHashMap<>();
 	private final RefactoringSettings settings;
 
@@ -75,7 +74,7 @@ class NullSeeder {
 		this.settings = settings;
 	}
 
-	public Set<Entity> getPassing() {
+	public Set<IJavaElement> getPassing() {
 		return this.candidates;
 	}
 
@@ -120,8 +119,7 @@ class NullSeeder {
 									 * we ignore it
 									 * */
 									if (!binding.getVariableDeclaration().getType().isPrimitive()) {
-										NullSeeder.this.candidates.add(
-												new Entity(element,true,true));
+										NullSeeder.this.candidates.add(element);
 									}
 						}
 					} catch (HarvesterException e) {
@@ -236,7 +234,7 @@ class NullSeeder {
 			ASTNode methodDecl = getContaining(MethodDeclaration.class, node); 
 			if (methodDecl instanceof MethodDeclaration){
 				IJavaElement im = Util.resolveElement((MethodDeclaration)methodDecl);
-				this.candidates.add(new Entity(im,true,false));
+				this.candidates.add(im);
 			} else throw new HarvesterASTException(Messages.Harvester_ASTNodeError+node.getClass().getSimpleName(), 
 					PreconditionFailure.AST_ERROR,
 					node);
@@ -245,7 +243,7 @@ class NullSeeder {
 
 	private void process(Name node) throws HarvesterASTException {
 		IJavaElement element = Util.resolveElement(node);
-		this.candidates.add(new Entity(element,true,false));
+		this.candidates.add(element);
 	}
 
 	private void process(SuperFieldAccess node) throws HarvesterASTException {
@@ -256,7 +254,7 @@ class NullSeeder {
 					this.sourceRangesToBridge.put(element,
 							Util.getBridgeableExpressionSourceRange(this.currentNull));
 				else return;
-			this.candidates.add(new Entity(element,true,false));
+			this.candidates.add(element);
 		}
 	}
 
@@ -268,7 +266,7 @@ class NullSeeder {
 					this.sourceRangesToBridge.put(element,
 							Util.getBridgeableExpressionSourceRange(this.currentNull));
 				else return;
-			this.candidates.add(new Entity(element,true,false));
+			this.candidates.add(element);
 		}
 	}
 
@@ -293,7 +291,7 @@ class NullSeeder {
 	private void process(ArrayAccess node) throws HarvesterASTException {
 		switch (node.getNodeType()) {
 		case ASTNode.ARRAY_ACCESS : {
-			Expression e = ((ArrayAccess)node).getArray();
+			Expression e = node.getArray();
 			process(e);
 			break;
 		}
@@ -316,7 +314,7 @@ class NullSeeder {
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else return;
-				this.candidates.add(new Entity(targetParam,true,false));
+				this.candidates.add(targetParam);
 			} catch (JavaModelException e) {
 				throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
 						PreconditionFailure.MISSING_JAVA_ELEMENT,
@@ -338,7 +336,7 @@ class NullSeeder {
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else return;
-				this.candidates.add(new Entity(targetParam,true,false));
+				this.candidates.add(targetParam);
 			} catch (JavaModelException e) {
 				throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
 						PreconditionFailure.MISSING_JAVA_ELEMENT,
@@ -360,7 +358,7 @@ class NullSeeder {
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else return;
-				this.candidates.add(new Entity(targetParam,true,false));
+				this.candidates.add(targetParam);
 			} catch (JavaModelException e) {
 				throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
 						PreconditionFailure.MISSING_JAVA_ELEMENT,
@@ -382,7 +380,7 @@ class NullSeeder {
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else return;
-				this.candidates.add(new Entity(targetParam,true,false));
+				this.candidates.add(targetParam);
 			} catch (JavaModelException e) {
 				throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
 						PreconditionFailure.MISSING_JAVA_ELEMENT,
@@ -404,7 +402,7 @@ class NullSeeder {
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else return;
-				this.candidates.add(new Entity(targetParam,true,false));
+				this.candidates.add(targetParam);
 			} catch (JavaModelException e) {
 				throw new HarvesterJavaModelException(Messages.Harvester_MissingJavaElement+method.getClass().getSimpleName(),
 						PreconditionFailure.MISSING_JAVA_ELEMENT,
@@ -441,11 +439,11 @@ class NullSeeder {
 				PreconditionFailure.AST_ERROR,
 				parent);
 		}
-		Set<Entity> elements = new LinkedHashSet<>();
+		Set<IJavaElement> elements = new LinkedHashSet<>();
 		for (Object o : fragments) {
 			VariableDeclarationFragment vdf = (VariableDeclarationFragment)o;
 			IJavaElement element = Util.resolveElement(vdf);
-			elements.add(new Entity(element,true,false));
+			elements.add(element);
 		}
 		this.candidates.addAll(elements);
 	}
@@ -456,7 +454,7 @@ class NullSeeder {
 		 * They are not used for field declarations and regular variable declaration statements. */
 		if (this.settings.refactorLocalVariables()) {
 			IJavaElement element = Util.resolveElement(node);
-			this.candidates.add(new Entity(element,true,false));
+			this.candidates.add(element);
 		}
 	}
 }

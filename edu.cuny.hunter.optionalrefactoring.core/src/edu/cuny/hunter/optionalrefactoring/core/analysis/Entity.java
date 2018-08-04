@@ -4,32 +4,40 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
+
 @SuppressWarnings("restriction")
 public class Entity {
 	
 	private final IJavaElement element;
 	private final boolean isSeed;
-	private final boolean isImplicit;
-	private RefactoringStatus status;
+	private final RefactoringStatus status;
 	private Action action;
 	
-	public Entity(IJavaElement element, boolean isSeed, boolean isImplicit) {
-		this.element = element;
-		this.isSeed = isSeed;
-		this.isImplicit = isImplicit;
+	public static Entity passingSeed(IJavaElement element) {
+		return new Entity(element,true,new RefactoringStatus());
 	}
 	
-	public Entity(IJavaElement element) {
-		this(element,false,false);
+	public static Entity failingSeed(IJavaElement element) {
+		return new Entity(element,true,RefactoringStatus.createErrorStatus(Messages.Excluded_by_Settings));
+	}
+	
+	public static Entity passing(IJavaElement element) {
+		return new Entity(element,false,new RefactoringStatus());
+	}
+	
+	public Entity(IJavaElement element, boolean isSeed, RefactoringStatus status) {
+		this.element = element;
+		this.isSeed = isSeed;
+		this.status = status;
+	}
+	
+	public Entity(IJavaElement element, RefactoringStatus status) {
+		this(element,false,status);
 	}
 	
 	public IJavaElement element() {
 		return this.element;
-	}
-	
-
-	public boolean implicit() {
-		return this.isImplicit;
 	}
 	
 	public boolean seed() {

@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.*;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -59,7 +60,7 @@ public class RefactorableHarvester {
 	private final RefactoringSettings settings;
 	private final IProgressMonitor monitor;
 	private final SearchEngine searchEngine = new SearchEngine();
-	private final Set<Entity> nullSeeds = new LinkedHashSet<>();
+	private final Set<IJavaElement> nullSeeds = new LinkedHashSet<>();
 	private final WorkList workList = new WorkList();
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
 	private final Map<IJavaElement, Set<ISourceRange>> elementToBridgeableSourceRangeMap = new LinkedHashMap<>();
@@ -144,13 +145,12 @@ public class RefactorableHarvester {
 		// otherwise get the passing null type dependent entities
 		this.nullSeeds.addAll(seeder.getPassing());
 		// and put just the IJavaElements into the workList
-		this.workList.addAll(this.nullSeeds.stream()
-				.map(Entity::element).collect(Collectors.toSet()));
+		this.workList.addAll(nullSeeds);
 
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
 			// grab the next element.
-			final IJavaElement searchElement = (IJavaElement) this.workList.next();
+			final IJavaElement searchElement = this.workList.next();
 			
 			// build a search pattern to find all occurrences of the searchElement.
 			final SearchPattern pattern = SearchPattern.createPattern(searchElement, 
@@ -158,6 +158,7 @@ public class RefactorableHarvester {
 					SearchPattern.R_EXACT_MATCH);
 
 			final SearchRequestor requestor = new SearchRequestor() {
+				@Override
 				public void acceptSearchMatch(SearchMatch match)
 						throws CoreException {
 					if (match.getAccuracy() == SearchMatch.A_ACCURATE
@@ -207,7 +208,7 @@ public class RefactorableHarvester {
 				this.notRefactorable.addAll(this.workList
 						.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
-				this.nullSeeds.removeIf(entity -> this.notRefactorable.contains(entity.element()));
+				this.nullSeeds.removeIf(entity -> this.notRefactorable.contains(entity));
 				continue;
 			} 
 		}
@@ -221,19 +222,18 @@ public class RefactorableHarvester {
 		// convert the set of passing type dependent sets into sets of TDES
 		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
 		this.passing.addAll(candidateSets.stream().map(
-				set -> set.stream().map(Entity::new).collect(Collectors.toSet()))
-				.collect(Collectors.toSet()));
+				set -> set.stream().map(element -> {
+					if (nullSeeds.contains(element)) return Entity.passingSeed(element);
+					else return Entity.passing(element);
+				}).collect(Collectors.toSet())).collect(Collectors.toSet()));
 		
 		// keep in the notRefactorable list only anything that was in the originally seeded elements
-		this.notRefactorable.retainAll(
-				seeder.getPassing().stream().map(Entity::element)
-				.collect(Collectors.toSet()));
+		this.notRefactorable.retainAll(seeder.getPassing());
 		// turn the not refactorable list into a set of singleton TDES for consistency 
-		this.failing.addAll(notRefactorable.stream().map(Entity::new)
-				.collect(Collectors.toSet()));
+		this.failing.addAll(notRefactorable.stream().map(Entity::failingSeed).collect(Collectors.toSet()));
 		// if there are no passing sets, return an Error status else return an OK status
-		return passing.isEmpty() ? RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions)
-				: new RefactoringStatus();
+		return Stream.concat(passing.stream().flatMap(Set::stream),failing.stream())
+				.map(Entity::status).collect(RefactoringStatus::new, RefactoringStatus::merge, RefactoringStatus::merge);
 	}
 
 }

@@ -4,7 +4,7 @@ import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 
 /**
  * @author oren
@@ -33,7 +33,7 @@ public enum Action {
 	 * @param element
 	 * @return the appropriate action
 	 */
-	public static Action determine(IJavaElement element, CompilationUnitRewrite rewrite) {
+	public static Action determine(IJavaElement element, ASTRewrite rewrite) {
 		switch (element.getElementType()) {
 		case IJavaElement.FIELD :
 			return determine((IField)element);

@@ -5,13 +5,11 @@ package edu.cuny.hunter.optionalrefactoring.core.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,7 +26,6 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.SourceRange;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -166,6 +163,7 @@ public interface Util {
 			final SearchMatch match) {
 		final ArrayList<ASTNode> ret = new ArrayList<>(1);
 		final ASTVisitor visitor = new ASTVisitor() {
+			@Override
 			public void preVisit(ASTNode node) {
 				if (node.getStartPosition() == match.getOffset()) {
 					ret.clear();
@@ -174,7 +172,7 @@ public interface Util {
 			}
 		};
 		root.accept(visitor);
-		return (ASTNode) ret.get(0);
+		return ret.get(0);
 	}
 
 	public static ASTNode getExactASTNode(IJavaElement elem,
@@ -486,7 +484,7 @@ public interface Util {
 									.resolveTypeBinding())
 									|| ((Expression) node
 											.arguments().get(paramNumber)) instanceof NullLiteral) {
-								element = (IMethod) imb.getJavaElement();
+								element = imb.getJavaElement();
 								break;
 							}
 						}
