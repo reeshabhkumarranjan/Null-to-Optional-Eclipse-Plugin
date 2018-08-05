@@ -1,7 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
-import java.util.Optional;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -33,7 +31,6 @@ public class Entity {
 	private final RefactoringStatus status;
 	
 	private CompilationUnitRewrite rewrite;
-	private Action action;
 	
 	public static Entity passingSeed(IJavaElement element) {
 		return new Entity(element,true,new RefactoringStatus());
@@ -88,7 +85,6 @@ public class Entity {
 	}
 
 	private void transform(ASTNode node, Action action) {
-		this.action = action;
 		switch (action) {
 		case NIL :
 			break;
@@ -98,32 +94,17 @@ public class Entity {
 			break;
 		case CHANGE_N2O_METH_DECL : transform((MethodDeclaration)node);
 			break;
-		case CHANGE_N2O_NAME : transform((Name)node);
+		case CHANGE_N2O_NAME : convert((Name)node);
 			break;
 		case BRIDGE_N2O_NAME: bridge((Name)node);
+			break;
+		case CHANGE_N2O_INVOC : convert((Expression)node);
+			break;
+		case BRIDGE_N2O_INVOC : bridge((Expression)node);
 			break;
 		default:
 			break;
 		}
-	}
-	
-	private void bridge(Name node) {
-		AST ast = node.getAST();
-		MethodInvocation orElse = ast.newMethodInvocation();
-		orElse.setExpression(node);
-		orElse.setName(ast.newSimpleName("orElse"));
-		orElse.arguments().add(ast.newNullLiteral());
-		ASTRewrite astRewrite = this.rewrite.getASTRewrite();
-		astRewrite.replace(node, orElse, null);
-	}
-
-	private void transform(Name node) {
-		
-	}
-
-	private void transform(Expression node) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	private void transform(MethodDeclaration node) {
@@ -133,15 +114,15 @@ public class Entity {
 		node.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(ReturnStatement ret) {
-				Entity.this.convertN2O(ret.getExpression());
+				Entity.this.convert(ret.getExpression());
 				return super.visit(ret);
 			}
 		});
 	}
 
 	private void transform(SingleVariableDeclaration node) {
-		// TODO Auto-generated method stub
-		
+		Type parameterized = this.getConvertedType(node.getType().toString(), node.getAST());
+		node.setType(parameterized);
 	}
 
 	private void transform(VariableDeclarationFragment node) {
@@ -177,7 +158,7 @@ public class Entity {
 		}
 		} // now we transform the initializer
 		Expression expression = node.getInitializer();
-		this.convertN2O(expression);
+		this.convert(expression);
 	}
 
 	private Type getConvertedType(String rawType, AST ast) {
@@ -186,7 +167,7 @@ public class Entity {
 		return parameterized;
 	}
 	
-	private void convertN2O(Expression expression) {
+	private void convert(Expression expression) {
 		AST ast = expression.getAST();
 		MethodInvocation optionalOf = ast.newMethodInvocation();
 		optionalOf.setExpression(ast.newSimpleName("Optional"));
@@ -194,5 +175,15 @@ public class Entity {
 		optionalOf.arguments().add(expression);
 		ASTRewrite astRewrite = this.rewrite.getASTRewrite();
 		astRewrite.replace(expression, optionalOf, null);
+	}
+	
+	private void bridge(Expression node) {
+		AST ast = node.getAST();
+		MethodInvocation orElse = ast.newMethodInvocation();
+		orElse.setExpression(node);
+		orElse.setName(ast.newSimpleName("orElse"));
+		orElse.arguments().add(ast.newNullLiteral());
+		ASTRewrite astRewrite = this.rewrite.getASTRewrite();
+		astRewrite.replace(node, orElse, null);
 	}
 }

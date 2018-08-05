@@ -2,6 +2,7 @@ package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Assignment;
 
 /**
  * @author oren
@@ -26,13 +27,21 @@ public enum Action {
 	 */
 	CHANGE_N2O_METH_DECL,
 	/**
-	 * Transform to an optional value
+	 * Transform the value of a variable or literal to an optional
 	 */
 	CHANGE_N2O_NAME,
 	/**
-	 * Transform to an optional type calling .orElse(null)
+	 * Transform the value of an optional type variable to it's raw type or null
 	 */
-	BRIDGE_N2O_NAME;
+	BRIDGE_N2O_NAME,
+	/**
+	 * Transform the value of a method invocation to an optional
+	 */
+	CHANGE_N2O_INVOC,
+	/**
+	 * Transform the reuslt of an invocation returning an optional to it's raw type or null
+	 */
+	BRIDGE_N2O_INVOC;
 	
 	/**
 	 * @param element
@@ -45,24 +54,29 @@ public enum Action {
 		case ASTNode.QUALIFIED_NAME :
 		case ASTNode.SIMPLE_NAME :
 		case ASTNode.FIELD_ACCESS :
-			return determine(node);
+			/*if any of these are on the left side of an assignment, we leave it alone, 
+			because it's declaration would already have been properly transformed.*/
+			if (node.getParent().getNodeType() == ASTNode.ASSIGNMENT) {
+				if (node.equals(((Assignment)node.getParent()).getLeftHandSide()))
+						return NIL;
+				else return CHANGE_N2O_NAME;
+			}
 		/*these cases will be the dependency (right side or arg)*/
 		case ASTNode.SUPER_METHOD_INVOCATION :
 		case ASTNode.METHOD_INVOCATION :
-		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION :
-		case ASTNode.CONSTRUCTOR_INVOCATION :
-			return CHANGE_N2O_NAME;
+		case ASTNode.CLASS_INSTANCE_CREATION :
+			return CHANGE_N2O_INVOC;
 		/*we can't deal with these cases yet, need to research the API more*/
 		case ASTNode.SUPER_METHOD_REFERENCE :
 		case ASTNode.EXPRESSION_METHOD_REFERENCE :
 		case ASTNode.TYPE_METHOD_REFERENCE :
 			return NIL;
-		/*these cases can only be a dependent (left side)*/
+		/*these cases require transformation of two child nodes*/
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT :
 			return CHANGE_N2O_VAR_DECL;
 		case ASTNode.SINGLE_VARIABLE_DECLARATION :
 			return CHANGE_N2O_PARAM;
-		/*these cases can only be a dependency */
+		/*these cases require transformation of two child nodes */
 		case ASTNode.METHOD_DECLARATION :
 			return CHANGE_N2O_METH_DECL;
 		default : return NIL;
