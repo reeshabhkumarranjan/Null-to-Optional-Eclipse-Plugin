@@ -690,6 +690,13 @@ class NullPropagator {
 					PreconditionFailure.CAST_EXPRESSION,
 					node);
 		}
+
+		case ASTNode.SUPER_METHOD_REFERENCE :
+		case ASTNode.EXPRESSION_METHOD_REFERENCE :
+		case ASTNode.TYPE_METHOD_REFERENCE :
+			throw new HarvesterASTException(Messages.Excluded_by_Settings,
+					PreconditionFailure.EXCLUDED_SETTING, node);
+
 		case ASTNode.INSTANCEOF_EXPRESSION:
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
 		case ASTNode.IF_STATEMENT:
@@ -878,11 +885,16 @@ class NullPropagator {
 			break;
 
 		}
+		
+		case ASTNode.SUPER_METHOD_REFERENCE :
+		case ASTNode.EXPRESSION_METHOD_REFERENCE :
+		case ASTNode.TYPE_METHOD_REFERENCE :
+			throw new HarvesterASTException(Messages.Excluded_by_Settings,
+					PreconditionFailure.EXCLUDED_SETTING, node);
 
 		case ASTNode.CAST_EXPRESSION: {
 			throw new HarvesterASTException(Messages.Harvester_CastExpression, 
-					PreconditionFailure.CAST_EXPRESSION,
-					node);
+					PreconditionFailure.CAST_EXPRESSION, node);
 		}
 		case ASTNode.NULL_LITERAL : 
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
