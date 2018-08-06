@@ -59,8 +59,7 @@ public enum Action {
 			if (node.getParent().getNodeType() == ASTNode.ASSIGNMENT) {
 				if (node.equals(((Assignment)node.getParent()).getLeftHandSide()))
 						return NIL;
-				else return CHANGE_N2O_NAME;
-			}
+			} else return CHANGE_N2O_NAME;
 		/*these cases will be the dependency (right side or arg)*/
 		case ASTNode.SUPER_METHOD_INVOCATION :
 		case ASTNode.METHOD_INVOCATION :

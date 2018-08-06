@@ -41,8 +41,6 @@ import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.candidatePrint
 @SuppressWarnings("deprecation")
 public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRefactoringHandler {
 
-	private static final RefactoringSettings DEFAULT_SETTINGS = RefactoringSettings.createFromEnv();
-	
 	/**
 	 * the command has been executed, so extract extract the needed information
 	 * from the application context.
@@ -83,7 +81,8 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 
 					resultsTimeCollector.start();
 					ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
-							new IJavaProject[] { javaProject }, DEFAULT_SETTINGS, Optional.of(monitor));
+							new IJavaProject[] { javaProject }, Optional.of(monitor));
+					processor.settings().createFromEnv();
 					resultsTimeCollector.stop();
 
 					// run the precondition checking.
@@ -125,7 +124,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					elementResultsPrinter.println();
 					
 					// Then let's refactor them
-					if (DEFAULT_SETTINGS.doesTransformation()) {
+					if (processor.settings().doesTransformation()) {
 						
 					}
 					

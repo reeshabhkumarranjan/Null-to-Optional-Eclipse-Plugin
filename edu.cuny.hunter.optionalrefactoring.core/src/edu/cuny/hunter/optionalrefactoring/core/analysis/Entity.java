@@ -1,27 +1,33 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
+import org.eclipse.jdt.core.dom.TypeParameter;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.ASTNodeFinder;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 @SuppressWarnings("restriction")
 public class Entity {
@@ -78,8 +84,8 @@ public class Entity {
 
 	public void transform(CompilationUnitRewrite rewrite) throws CoreException {
 		this.rewrite = rewrite;
-		ICompilationUnit icu = (ICompilationUnit) rewrite.getRoot().getJavaElement();
-		ASTNode node = ASTNodeFinder.create(this.element).findIn(icu);
+		CompilationUnit cu = (CompilationUnit) Util.getASTNode(this.element, new NullProgressMonitor());
+		ASTNode node = ASTNodeFinder.create(cu).find(this.element);
 		Action action = Action.determine(node);
 		this.transform(node, action);
 	}
@@ -114,7 +120,7 @@ public class Entity {
 		node.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(ReturnStatement ret) {
-				Entity.this.convert(ret.getExpression());
+				Entity.this.convert(ret);
 				return super.visit(ret);
 			}
 		});
@@ -162,28 +168,43 @@ public class Entity {
 	}
 
 	private Type getConvertedType(String rawType, AST ast) {
-		Type parameterized = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
-		parameterized.getAST().newTypeParameter().setName(parameterized.getAST().newSimpleName(rawType));
+		ParameterizedType parameterized = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
+		Type parameter = ast.newSimpleType(ast.newSimpleName(rawType));
+		parameterized.typeArguments().add(0, parameter);
 		return parameterized;
+	}
+	
+	private void convert(ReturnStatement statement) {
+		AST ast = statement.getAST();
+		Expression expression = statement.getExpression();
+		Expression copy = (Expression) ASTNode.copySubtree(ast, expression);
+		MethodInvocation method = ast.newMethodInvocation();
+		method.setExpression(ast.newSimpleName("Optional"));
+		method.setName(ast.newSimpleName("ofNullable"));
+		method.arguments().add(0,copy);
+		ASTRewrite astRewrite = this.rewrite.getASTRewrite();
+
 	}
 	
 	private void convert(Expression expression) {
 		AST ast = expression.getAST();
+		Expression copy = (Expression) ASTNode.copySubtree(ast, expression);
 		MethodInvocation optionalOf = ast.newMethodInvocation();
 		optionalOf.setExpression(ast.newSimpleName("Optional"));
 		optionalOf.setName(ast.newSimpleName("ofNullable"));
-		optionalOf.arguments().add(expression);
+		optionalOf.arguments().add(0,copy);
 		ASTRewrite astRewrite = this.rewrite.getASTRewrite();
 		astRewrite.replace(expression, optionalOf, null);
 	}
 	
-	private void bridge(Expression node) {
-		AST ast = node.getAST();
+	private void bridge(Expression expression) {
+		AST ast = expression.getAST();
+		Expression copy = (Expression) ASTNode.copySubtree(ast, expression);
 		MethodInvocation orElse = ast.newMethodInvocation();
-		orElse.setExpression(node);
+		orElse.setExpression(expression);
 		orElse.setName(ast.newSimpleName("orElse"));
-		orElse.arguments().add(ast.newNullLiteral());
+		orElse.arguments().add(0,ast.newNullLiteral());		
 		ASTRewrite astRewrite = this.rewrite.getASTRewrite();
-		astRewrite.replace(node, orElse, null);
+		astRewrite.replace(expression, orElse, null);
 	}
 }

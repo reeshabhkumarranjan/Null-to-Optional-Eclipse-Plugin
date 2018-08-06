@@ -1,61 +1,88 @@
 package edu.cuny.hunter.optionalrefactoring.core.utils;
 
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.search.IJavaSearchConstants;
-import org.eclipse.jdt.core.search.SearchEngine;
-import org.eclipse.jdt.core.search.SearchMatch;
-import org.eclipse.jdt.core.search.SearchParticipant;
-import org.eclipse.jdt.core.search.SearchPattern;
-import org.eclipse.jdt.core.search.SearchRequestor;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.QualifiedName;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
 public class ASTNodeFinder {
 
-	public static ASTNodeFinder create(IJavaElement element) {
-		return new ASTNodeFinder(element);
+	public static ASTNodeFinder create(CompilationUnit scope) {
+		return new ASTNodeFinder(scope);
 	}
-	
-	private final IProgressMonitor monitor = new NullProgressMonitor();
-	private final SearchEngine searchEngine = new SearchEngine();
-	private final SearchPattern pattern;
+
+	private final CompilationUnit scope;
 	
 	private ASTNode targetNode;
 	
-	private ASTNodeFinder(IJavaElement element) {
-
-		this.pattern = SearchPattern.createPattern(element, 
-				IJavaSearchConstants.ALL_OCCURRENCES, 
-				SearchPattern.R_EXACT_MATCH);
+	private ASTNodeFinder(CompilationUnit scope) {
+		this.scope = scope;
 	}
 	
-	public ASTNode findIn(IJavaElement... scope) throws CoreException {
+	public ASTNode find(IJavaElement target) {
+		this.scope.accept(new ASTVisitor() {
 			
-		final SearchRequestor requestor = new SearchRequestor() {
 			@Override
-			public void acceptSearchMatch(SearchMatch match)
-					throws CoreException {
-				if (match.getAccuracy() == SearchMatch.A_ACCURATE
-						&& !match.isInsideDocComment()
-						// We are finding import declarations for some reason, they should be ignored
-						&& ((IJavaElement) match.getElement()).getElementType() != IJavaElement.IMPORT_DECLARATION) {
-					// here, we have search match. 
-					// convert the matchingElement to an ASTNode.
-					ASTNodeFinder.this.targetNode = Util.getExactASTNode(match,
-							monitor);
+			public boolean visit(MethodDeclaration node) {
+				if (node.resolveBinding().getJavaElement().equals(target)) {
+					ASTNodeFinder.this.targetNode = node;
+					return false;
 				}
+				return super.visit(node);
 			}
-		};
-		
-		searchEngine.search(pattern,
-				new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, 
-				SearchEngine.createJavaSearchScope(scope),
-				requestor, 
-				monitor);
-		
+			
+			@Override
+			public boolean visit(MethodInvocation node) {
+				if (node.resolveMethodBinding().getJavaElement().equals(target)) {
+					ASTNodeFinder.this.targetNode = node;
+					return false;
+				}
+				return super.visit(node);
+			}
+			
+			@Override
+			public boolean visit(SuperMethodInvocation node) {
+				if (node.resolveMethodBinding().getJavaElement().equals(target)) {
+					ASTNodeFinder.this.targetNode = node;
+					return false;
+				}
+				return super.visit(node);
+			}
+			
+			@Override
+			public boolean visit(VariableDeclarationFragment node) {
+				if (node.resolveBinding().getJavaElement().equals(target)) {
+					ASTNodeFinder.this.targetNode = node;
+					return false;
+				}
+				return super.visit(node);
+			}
+			
+			@Override
+			public boolean visit(SimpleName node) {
+				if (node.resolveBinding().getJavaElement().equals(target)) {
+					ASTNodeFinder.this.targetNode = node;
+					return false;
+				}
+				return super.visit(node);
+			}
+			
+			@Override
+			public boolean visit(QualifiedName node) {
+				if (node.resolveBinding().getJavaElement().equals(target)) {
+					ASTNodeFinder.this.targetNode = node;
+					return false;
+				}
+				return super.visit(node);
+			}
+
+		});
 		return this.targetNode;
 	}
-	
 }
