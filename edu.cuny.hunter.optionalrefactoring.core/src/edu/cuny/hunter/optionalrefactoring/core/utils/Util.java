@@ -5,13 +5,11 @@ package edu.cuny.hunter.optionalrefactoring.core.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,7 +26,6 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.SourceRange;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -71,7 +68,9 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -164,6 +163,7 @@ public interface Util {
 			final SearchMatch match) {
 		final ArrayList<ASTNode> ret = new ArrayList<>(1);
 		final ASTVisitor visitor = new ASTVisitor() {
+			@Override
 			public void preVisit(ASTNode node) {
 				if (node.getStartPosition() == match.getOffset()) {
 					ret.clear();
@@ -172,7 +172,7 @@ public interface Util {
 			}
 		};
 		root.accept(visitor);
-		return (ASTNode) ret.get(0);
+		return ret.get(0);
 	}
 
 	public static ASTNode getExactASTNode(IJavaElement elem,
@@ -202,13 +202,7 @@ public interface Util {
 		case IJavaElement.TYPE: {
 			return (IMember) elem;
 		}
-		// We are finding import declarations for some reason, they should be ignored
-		case IJavaElement.IMPORT_DECLARATION : 
-			throw new HarvesterJavaModelException("Encountered a Method Import Statement", 
-					PreconditionFailure.ERRONEOUS_IMPORT_STATEMENT,
-					elem);
 		}
-
 		return getIMember(elem.getParent());
 	}
 
@@ -282,10 +276,9 @@ public interface Util {
 	}
 	
 	// temporary development method for console logging extracted results
-	static void candidatePrinter(Set<IJavaElement> refactorableContexts2) {
-		if (refactorableContexts2.isEmpty()) Logger.getAnonymousLogger().info(refactorableContexts2+" is empty!");
+	static void candidatePrinter(Set<Entity> entities) {
 		System.out.print("{");
-		refactorableContexts2.forEach(element -> System.out.print(element.getElementName()+","));
+		entities.forEach(entity -> System.out.print(entity.element().getElementName()+","));
 		System.out.print("}");
 	}
 
@@ -491,7 +484,7 @@ public interface Util {
 									.resolveTypeBinding())
 									|| ((Expression) node
 											.arguments().get(paramNumber)) instanceof NullLiteral) {
-								element = (IMethod) imb.getJavaElement();
+								element = imb.getJavaElement();
 								break;
 							}
 						}

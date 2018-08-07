@@ -12,6 +12,7 @@ public class ValuedComputationNode extends ComputationNode {
 		this.val = val;
 	}
 
+	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
 		for (ComputationNode node : this.children) {
@@ -19,6 +20,7 @@ public class ValuedComputationNode extends ComputationNode {
 		}
 	}
 
+	@Override
 	public String getNodeSymbol() {
 		return this.val.getElementName();
 	}
@@ -27,6 +29,7 @@ public class ValuedComputationNode extends ComputationNode {
 		return this.val;
 	}
 
+	@Override
 	public String toString() {
 		final StringBuffer ret = new StringBuffer("(" + this.getNodeSymbol()); //$NON-NLS-1$
 		for (ComputationNode node: this.children)

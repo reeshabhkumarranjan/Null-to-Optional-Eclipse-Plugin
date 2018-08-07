@@ -4,10 +4,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.logging.Logger;
 
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
-import org.eclipse.jdt.core.dom.ClassInstanceCreation;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
@@ -63,33 +59,18 @@ public enum PreconditionFailure {
 	 */
 	MISSING_JAVA_ELEMENT(2),
 	/**
-	 * READ_ONLY_ELEMENT:
-	 * We've hit a jar or other Model Element where we can't make relevant changes.
+	 * EXCLUDED_SETTING:
+	 * This element represents an entity that is excluded by the Refactoring settings.
+	 * No more propagation should take place, and we should trash the worklist.
 	 */
-	READ_ONLY_ELEMENT(3),
-	/**
-	 * BINARY_ELEMENT:
-	 * Element is in a .class file.
-	 */
-	BINARY_ELEMENT(6),
-	/**
-	 * GENERATED_ELEMENT:
-	 * We've hit generated code, something that is synthetically created in the compiler.
-	 * We don't want to bother trying to refactoring this, or any elements dependent on it.
-	 */
-	GENERATED_ELEMENT(7),
+	EXCLUDED_SETTING(3),
 	/**
 	 * CAST_EXPRESSION:
 	 * We can't refactoring anything that is null-type dependent that has a cast to an Optional. 
 	 * Semantics wouldn't be preserved.
 	 */
-	CAST_EXPRESSION(8), 
-	/**
-	 * ERRONEOUS_IMPORT_STATEMENT:
-	 * For some reason during propagation we are getting search matches in import statements.
-	 */
-	ERRONEOUS_IMPORT_STATEMENT(9)
-	;
+	CAST_EXPRESSION(8);
+	
 	private int code;
 
 	private PreconditionFailure(int code) {
@@ -125,9 +106,10 @@ public enum PreconditionFailure {
 				return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
 						RefactoringStatus.createErrorStatus(msg));
 		}
-		case ERRONEOUS_IMPORT_STATEMENT:
+		case EXCLUDED_SETTING: {
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,
 					RefactoringStatus.createErrorStatus(msg));
+		}
 		case MISSING_BINDING: {
 			Logger.getAnonymousLogger().warning(msg);
 			return new SimpleEntry<IJavaElement,RefactoringStatus>(null,

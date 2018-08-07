@@ -22,6 +22,7 @@ public class HarvesterJavaModelException extends HarvesterException {
 		return element;
 	}
 	
+	@Override
 	public String toString() {
 		final StringBuffer ret = new StringBuffer();
 

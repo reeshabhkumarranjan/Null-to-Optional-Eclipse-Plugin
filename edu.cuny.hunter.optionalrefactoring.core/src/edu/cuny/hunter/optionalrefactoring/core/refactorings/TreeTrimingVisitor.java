@@ -16,12 +16,15 @@ class TreeTrimingVisitor implements Visitor {
 		this.computationForest = computationForest;
 	}
 
+	@Override
 	public void visit(ComputationNode node) {
 	}
 
+	@Override
 	public void visit(UnionComputationNode node) {
 	}
 
+	@Override
 	public void visit(ValuedComputationNode node) {
 		final IJavaElement extractedValue = node.getVal();
 		if (this.nonEnumerizableList.contains(extractedValue))

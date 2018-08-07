@@ -3,18 +3,11 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.ILocalVariable;
-import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
-
-import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
 public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJavaElement> {
 
@@ -37,6 +30,7 @@ public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJ
 
 	private final Map<IJavaElement, ValuedComputationNode> elemToNode = new HashMap<>();
 
+	@Override
 	public boolean add(IJavaElement element) {
 //		try {
 //			this.sanityCheck(element);
@@ -114,7 +108,7 @@ public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJ
 	public IJavaElement next() {
 		final Iterator<IJavaElement> it = this.iterator();
 		final IJavaElement ret = it.next();
-		this.currentNode = (ValuedComputationNode) this.elemToNode.get(ret);
+		this.currentNode = this.elemToNode.get(ret);
 		it.remove();
 		return ret;
 	}
