@@ -131,24 +131,20 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		// compute the actual results.
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 
-		// we know it's a ProcessorBasedRefactoring since we overriding getRefactoring() in this class.
-		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
+		ConvertNullToOptionalRefactoringProcessor refactoring = getRefactoringProcessor(icu);
 
-		// we know it's a ConvertNullToOptionalRefactoringProcessor since we overriding getRefactoring() in this class.
-		ConvertNullToOptionalRefactoringProcessor refactoringProcessor = (ConvertNullToOptionalRefactoringProcessor) refactoring.getProcessor();
+		if (turnOff != null) refactoring.settings().set(false, turnOff);
 
-		if (turnOff != null) refactoringProcessor.settings().set(false, turnOff);
+		RefactoringStatus status = refactoring.checkFinalConditions(new NullProgressMonitor(), null);
 
-		RefactoringStatus status = refactoringProcessor.checkFinalConditions(new NullProgressMonitor(), null);
-
-		System.out.println(refactoringProcessor.settings());
+		System.out.println(refactoring.settings());
 
 		assertTrue("The refactoring status matches the expected refactoring status "+expectedStatus.getSeverity()+".", 
 				status.getSeverity() == expectedStatus.getSeverity());
 
 		// Here we are getting all the sets of type dependent entities
-		Set<Entity> passingSets = refactoringProcessor.getPassingEntities();
-		Set<Entity> failingSet = refactoringProcessor.getFailingEntities();
+		Set<Entity> passingSets = refactoring.getPassingEntities();
+		Set<Entity> failingSet = refactoring.getFailingEntities();
 
 		// print to console
 		System.out.println(this.getName()+" - SEVERITY: "+status.getSeverity());
@@ -187,6 +183,15 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		assertTrue("Expected failing set contains "+expectedFailingSet.toString()+" and are the same.", 
 				expectedFailingSet.containsAll(actualFailingSet) && 
 				actualFailingSet.containsAll(expectedFailingSet));
+	}
+
+	private ConvertNullToOptionalRefactoringProcessor getRefactoringProcessor(ICompilationUnit icu) throws JavaModelException {
+		// we know it's a ProcessorBasedRefactoring since we overriding getRefactoring() in this class.
+		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
+
+		// we know it's a ConvertNullToOptionalRefactoringProcessor since we overriding getRefactoring() in this class.
+		ConvertNullToOptionalRefactoringProcessor refactoringProcessor = (ConvertNullToOptionalRefactoringProcessor) refactoring.getProcessor();
+		return refactoringProcessor;
 	}
 
 	public void testSettingsMethodReturnOn() throws Exception {
