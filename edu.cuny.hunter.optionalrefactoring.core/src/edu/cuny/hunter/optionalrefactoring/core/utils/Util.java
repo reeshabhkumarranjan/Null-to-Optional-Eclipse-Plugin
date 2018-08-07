@@ -276,9 +276,9 @@ public interface Util {
 	}
 	
 	// temporary development method for console logging extracted results
-	static void candidatePrinter(Set<Entity> entities) {
+	static void candidatePrinter(Entity elements) {
 		System.out.print("{");
-		entities.forEach(entity -> System.out.print(entity.element().getElementName()+","));
+		elements.forEach(element -> System.out.print(element.getElementName()+","));
 		System.out.print("}");
 	}
 

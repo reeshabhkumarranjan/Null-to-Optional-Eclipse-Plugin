@@ -64,7 +64,7 @@ public class RefactorableHarvester {
 	private final WorkList workList = new WorkList();
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
 	private final Map<IJavaElement, Set<ISourceRange>> elementToBridgeableSourceRangeMap = new LinkedHashMap<>();
-	private final Set<Set<Entity>> passing = new LinkedHashSet<>();
+	private final Set<Entity> passing = new LinkedHashSet<>();
 	private final Set<Entity> failing = new LinkedHashSet<>();
 	
 	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, 
@@ -105,7 +105,7 @@ public class RefactorableHarvester {
 		return new RefactorableHarvester(f, fieldDecl, scope, settings, monitor);
 	}
 
-	Set<Set<Entity>> getPassing() {
+	Set<Entity> getPassing() {
 		return this.passing;
 	}
 	
@@ -221,18 +221,16 @@ public class RefactorableHarvester {
 		
 		// convert the set of passing type dependent sets into sets of TDES
 		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
-		this.passing.addAll(candidateSets.stream().map(
-				set -> set.stream().map(element -> {
-					if (nullSeeds.contains(element)) return Entity.passingSeed(element);
-					else return Entity.passing(element);
-				}).collect(Collectors.toSet())).collect(Collectors.toSet()));
+		this.passing.addAll(candidateSets.stream().map(set -> Entity.create(set, this.elementToBridgeableSourceRangeMap))
+				.collect(Collectors.toSet()));
 		
 		// keep in the notRefactorable list only anything that was in the originally seeded elements
 		this.notRefactorable.retainAll(seeder.getPassing());
 		// turn the not refactorable list into a set of singleton TDES for consistency 
-		this.failing.addAll(notRefactorable.stream().map(Entity::failingSeed).collect(Collectors.toSet()));
+		this.failing.addAll(notRefactorable.stream().map(element -> Entity.create(Util.setOf(element), 
+				this.elementToBridgeableSourceRangeMap)).collect(Collectors.toSet()));
 		// if there are no passing sets, return an Error status else return an OK status
-		return Stream.concat(passing.stream().flatMap(Set::stream),failing.stream())
+		return Stream.concat(passing.stream(),failing.stream())
 				.map(Entity::status).collect(RefactoringStatus::new, RefactoringStatus::merge, RefactoringStatus::merge);
 	}
 

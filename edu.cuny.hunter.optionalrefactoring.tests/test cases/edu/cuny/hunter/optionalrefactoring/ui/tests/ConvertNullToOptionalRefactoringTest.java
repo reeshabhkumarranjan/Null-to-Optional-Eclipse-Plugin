@@ -164,7 +164,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				status.getSeverity() == expectedStatus.getSeverity());
 
 		// Here we are getting all the sets of type dependent entities
-		Set<Set<Entity>> passingSets = refactoring.getPassingEntities();
+		Set<Entity> passingSets = refactoring.getPassingEntities();
 		Set<Entity> failingSet = refactoring.getFailingEntities();
 
 		// print to console
@@ -177,16 +177,23 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		});
 		System.out.println("}");
 		System.out.println("Failing set:");
-		Util.candidatePrinter(failingSet);
+		System.out.print("{");
+		failingSet.forEach(set -> {
+			Util.candidatePrinter(set);
+			System.out.print(", ");
+		});
+		System.out.println("}");
 
 		// convert to sets of strings
-		Set<Set<String>> actualPassingSets = passingSets.stream()
-				.map(set -> set.stream().map(entity -> entity.element().getElementName().toString())
-						.collect(Collectors.toSet()))
-				.collect(Collectors.toSet());
+		Set<Set<String>> actualPassingSets = passingSets.stream().map(
+				entity -> entity.element().stream().map(
+						element -> element.getElementName())
+				.collect(Collectors.toSet())).collect(Collectors.toSet());
 
-		Set<String> actualFailingSet = failingSet.stream().map(
-				entity -> entity.element().getElementName().toString()).collect(Collectors.toSet());
+		Set<Set<String>> actualFailingSet = failingSet.stream().map(
+				entity -> entity.element().stream().map(
+						element -> element.getElementName())
+				.collect(Collectors.toSet())).collect(Collectors.toSet());
 
 		assertNotNull(actualPassingSets);
 		assertNotNull(actualFailingSet);
