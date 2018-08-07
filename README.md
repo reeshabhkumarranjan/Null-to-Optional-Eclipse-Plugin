@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/ponder-lab/Null-to-Optional-Eclipse-Plugin.svg?token=ysqq4ZuxzD688KNytWSA&branch=master)](https://travis-ci.com/ponder-lab/Null-to-Optional-Eclipse-Plugin) [![Coverage Status](https://coveralls.io/repos/github/ponder-lab/Null-to-Optional-Eclipse-Plugin/badge.svg?t=pnai3D)](https://coveralls.io/github/ponder-lab/Null-to-Optional-Eclipse-Plugin)
 
 ## Screenshot
-
+![N2O ui](https://i.imgur.com/b7ueGZf.png)
 ## Introduction
 
 This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents ongoing work in developing an automated refactoring tool that would assist developers in optimizing their Java 8 code.
