@@ -227,7 +227,7 @@ public class RefactorableHarvester {
 		// keep in the notRefactorable list only anything that was in the originally seeded elements
 		this.notRefactorable.retainAll(seeder.getPassing());
 		// turn the not refactorable list into a set of singleton TDES for consistency 
-		this.failing.addAll(notRefactorable.stream().map(element -> Entity.create(Util.setOf(element), 
+		this.failing.addAll(notRefactorable.stream().map(element -> Entity.fail(element, 
 				this.elementToBridgeableSourceRangeMap)).collect(Collectors.toSet()));
 		// if there are no passing sets, return an Error status else return an OK status
 		return Stream.concat(passing.stream(),failing.stream())

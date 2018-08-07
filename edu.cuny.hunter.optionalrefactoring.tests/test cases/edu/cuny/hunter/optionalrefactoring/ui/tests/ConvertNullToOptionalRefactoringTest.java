@@ -145,7 +145,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		return compileSuccess;
 	}
 
-	private void helper(Set<Set<String>> expectedPassingSets, Set<String> expectedFailingSet, 
+	private void helper(Set<Set<String>> expectedPassingSets, Set<Set<String>> expectedFailingSet, 
 			CHOICES turnOff, RefactoringStatus expectedStatus) throws Exception {
 
 		System.out.println();
@@ -282,14 +282,14 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testCastExpressionFailureVariable() throws Exception {
 		this.helper(setOf(),
-				setOf("a","b"),
+				setOf(setOf("a"),setOf("b")),
 				null,
 				RefactoringStatus.createErrorStatus(""));
 	}
 
 	public void testCastExpressionFailureMethod() throws Exception {
 		this.helper(setOf(),
-				setOf("x","m"),
+				setOf(setOf("x"),setOf("m")),
 				null,
 				RefactoringStatus.createErrorStatus(""));
 	}

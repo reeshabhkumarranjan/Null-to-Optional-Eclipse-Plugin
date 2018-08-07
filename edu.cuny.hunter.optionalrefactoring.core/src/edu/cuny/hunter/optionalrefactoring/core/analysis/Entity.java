@@ -28,7 +28,9 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.ASTNodeFinder;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 @SuppressWarnings("restriction")
 public class Entity implements Iterable<IJavaElement>{
@@ -43,6 +45,12 @@ public class Entity implements Iterable<IJavaElement>{
 		Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges = bsr.keySet().stream()
 				.filter(elements::contains).collect(Collectors.toMap(x->x, x->bsr.get(x)));
 		return new Entity(elements, bridgeSourceRanges, new RefactoringStatus());
+	}
+	
+	public static Entity fail(IJavaElement element, Map<IJavaElement,Set<ISourceRange>> bsr) {
+		Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges = bsr.keySet().stream()
+				.filter(element::equals).collect(Collectors.toMap(x->x, x->bsr.get(x)));
+		return new Entity(Util.setOf(element),bridgeSourceRanges,RefactoringStatus.createErrorStatus(Messages.Excluded_by_Settings));
 	}
 	
 	private Entity(Set<IJavaElement> elements, Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges, 
