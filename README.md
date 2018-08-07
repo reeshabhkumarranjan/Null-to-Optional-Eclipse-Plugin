@@ -2,13 +2,15 @@
 
 [![Build Status](https://travis-ci.com/ponder-lab/Null-to-Optional-Eclipse-Plugin.svg?token=ysqq4ZuxzD688KNytWSA&branch=master)](https://travis-ci.com/ponder-lab/Null-to-Optional-Eclipse-Plugin) [![Coverage Status](https://coveralls.io/repos/github/ponder-lab/Null-to-Optional-Eclipse-Plugin/badge.svg?t=pnai3D)](https://coveralls.io/github/ponder-lab/Null-to-Optional-Eclipse-Plugin)
 
-## Screenshot
+## Eclipse Application on the JDT Plug-in API
 ![N2O ui](https://i.imgur.com/b7ueGZf.png)
 ## Introduction
 
 This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents ongoing work in developing an automated refactoring tool that would assist developers in optimizing their Java 8 code.
 
 ## Usage
+The user can easily initiate a refactoring by right-clicking on a project, source folder or .jar, package, compilation unit, type, field or method element inside the Package Explorer view. Mouse over 'Refactor' and then left-click on 'Convert Null To Optional' to run the plugin.
+![Using](https://i.imgur.com/j7Tjczz.png)
 
 ### Installation for Usage
 
