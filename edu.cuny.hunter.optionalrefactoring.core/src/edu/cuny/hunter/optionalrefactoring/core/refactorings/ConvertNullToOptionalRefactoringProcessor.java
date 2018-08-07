@@ -84,7 +84,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	
 	private final RefactoringSettings settings = RefactoringSettings.getDefault();
 
-	private final Set<Set<Entity>> passingEntities = new LinkedHashSet<>(); // the forest of refactorable type-dependent entities
+	private final Set<Entity> passingEntities = new LinkedHashSet<>(); // the forest of refactorable type-dependent entities
 
 	private final Set<Entity> failingEntities = new LinkedHashSet<>();
 
@@ -126,7 +126,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		return this.settings;
 	}
 
-	public Set<Set<Entity>> getPassingEntities() {
+	public Set<Entity> getPassingEntities() {
 		return this.passingEntities;
 	}
 
@@ -388,19 +388,18 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 				return new NullChange(Messages.NoNullsHavePassedThePreconditions);
 
 			int count = (int) this.passingEntities.stream()
-					.flatMap(Set::stream).count();
+					.flatMap(entity -> entity.element().stream()).count();
 
 			pm.beginTask(Messages.CreatingChange, count);
 
-			for (Set<Entity> set : this.passingEntities) {
-				for (Entity entity : set) {
-					CompilationUnitRewrite rewrite = this.getCompilationUnitRewrite(
-							(ICompilationUnit)entity.element().getAncestor(IJavaElement.COMPILATION_UNIT), 
-							this.getCompilationUnit((ICompilationUnit)entity.element()
-									.getAncestor(IJavaElement.COMPILATION_UNIT), pm));
-					entity.transform(rewrite);
+			for (Entity entity : this.passingEntities) {
+				for (IJavaElement element : entity) {
+					ICompilationUnit icu = (ICompilationUnit)element.getAncestor(IJavaElement.COMPILATION_UNIT);
+					entity.addRewrite(element, 
+							this.getCompilationUnitRewrite(icu, this.getCompilationUnit(icu, pm)));
 					pm.worked(1);
 				}
+				entity.transform();
 			}
 
 			// save the source changes.

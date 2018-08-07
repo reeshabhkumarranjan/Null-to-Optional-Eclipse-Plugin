@@ -91,7 +91,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							.checkAllConditions(new NullProgressMonitor());
 					resultsTimeCollector.stop();
 					
-					Set<Set<Entity>> passingSets = processor.getPassingEntities();
+					Set<Entity> passingSets = processor.getPassingEntities();
 					Set<Entity> failingEntities = processor.getFailingEntities();
 					
 					System.out.print("{");
@@ -101,23 +101,22 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					});
 					System.out.println("}");
 					
-					for (Set<Entity> set : passingSets) {
+					for (Entity set : passingSets) {
 						// Let's print some information about what's inside
-						setSummaryPrinter.printRecord(set.hashCode(), 
-								set.stream().filter(Entity::seed).findFirst().get().element().getElementName());
-						for (Entity entity : set) {
+						setSummaryPrinter.printRecord(set.hashCode(), set.status());
+						for (IJavaElement element : set) {
 							elementResultsPrinter.printRecord(
-									entity.element().getJavaProject().getElementName(),
+									element.getJavaProject().getElementName(),
 									set.hashCode(),
-									entity.element().getElementName(),
-									entity.getClass().getSimpleName(),
-									entity.element().getElementType() == IJavaElement.LOCAL_VARIABLE ?
-											entity.element().getAncestor(IJavaElement.METHOD).getElementName()+"\n"+
-												entity.element().getAncestor(IJavaElement.METHOD)
+									element.getElementName(),
+									element.getClass().getSimpleName(),
+									element.getElementType() == IJavaElement.LOCAL_VARIABLE ?
+											element.getAncestor(IJavaElement.METHOD).getElementName()+"\n"+
+												element.getAncestor(IJavaElement.METHOD)
 													.getAncestor(IJavaElement.TYPE).getElementName() 
-										:	entity.element().getAncestor(IJavaElement.TYPE).getElementName(),
-									entity.element().isReadOnly(),
-									entity.element().getResource().isDerived());
+										:	element.getAncestor(IJavaElement.TYPE).getElementName(),
+									element.isReadOnly(),
+									element.getResource().isDerived());
 						}
 					}
 					setSummaryPrinter.println();

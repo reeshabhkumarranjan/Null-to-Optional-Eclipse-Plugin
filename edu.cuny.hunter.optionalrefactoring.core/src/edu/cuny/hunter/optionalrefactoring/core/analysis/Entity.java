@@ -1,7 +1,13 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -24,93 +30,104 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.ASTNodeFinder;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 @SuppressWarnings("restriction")
-public class Entity {
+public class Entity implements Iterable<IJavaElement>{
 		
-	private final IJavaElement element;
-	private final boolean isSeed;
+	private final Set<IJavaElement> elements;
+	private final Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges;
 	private final RefactoringStatus status;
-	private CompilationUnitRewrite rewrite;
 	
-	public static Entity passingSeed(IJavaElement element) {
-		return new Entity(element,true,new RefactoringStatus());
+	private Map<IJavaElement,CompilationUnitRewrite> rewriteMap;
+
+	public static Entity create(Set<IJavaElement> elements, Map<IJavaElement,Set<ISourceRange>> bsr) {
+		Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges = bsr.keySet().stream()
+				.filter(elements::contains).collect(Collectors.toMap(x->x, x->bsr.get(x)));
+		return new Entity(elements, bridgeSourceRanges, new RefactoringStatus());
 	}
 	
-	public static Entity failingSeed(IJavaElement element) {
-		return new Entity(element,true,RefactoringStatus.createErrorStatus(Messages.Excluded_by_Settings));
+	public static Entity fail(IJavaElement element, Map<IJavaElement,Set<ISourceRange>> bsr) {
+		Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges = bsr.keySet().stream()
+				.filter(element::equals).collect(Collectors.toMap(x->x, x->bsr.get(x)));
+		return new Entity(Util.setOf(element),bridgeSourceRanges,RefactoringStatus.createErrorStatus(Messages.Excluded_by_Settings));
 	}
 	
-	public static Entity passing(IJavaElement element) {
-		return new Entity(element,false,new RefactoringStatus());
-	}
-	
-	private Entity(IJavaElement element, boolean isSeed, RefactoringStatus status) {
-		this.element = element;
-		this.isSeed = isSeed;
+	private Entity(Set<IJavaElement> elements, Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges, 
+			RefactoringStatus status) {
+		this.elements = elements;
 		this.status = status;
+		this.bridgeSourceRanges = bridgeSourceRanges;
 	}
 	
-	private Entity(IJavaElement element, RefactoringStatus status) {
-		this(element,false,status);
-	}
-	
-	public IJavaElement element() {
-		return this.element;
-	}
-	
-	public boolean seed() {
-		return this.isSeed;
+	public Set<IJavaElement> element() {
+		return this.elements;
 	}
 	
 	public RefactoringStatus status() {
 		return this.status;
 	}
 
-	@Override
-	public boolean equals(Object other) {
-		return this.element.equals(((Entity)other).element);
+	public void addRewrite(IJavaElement element, CompilationUnitRewrite rewrite) {
+		this.rewriteMap.putIfAbsent(element, rewrite);
 	}
 	
-	@Override
-	public int hashCode() {
-		return this.element.hashCode();
+	public void transform() throws CoreException {
+		for (IJavaElement element : this.elements) {
+			CompilationUnitRewrite rewrite = this.rewriteMap.get(element);
+			CompilationUnit cu = rewrite.getRoot();
+			ASTNode node = ASTNodeFinder.create(cu).find(element);
+			Action action = Action.determine(node);
+			this.transform(node, action, rewrite);
+		}
 	}
 
-	public void transform(CompilationUnitRewrite rewrite) throws CoreException {
-		this.rewrite = rewrite;
-		CompilationUnit cu = rewrite.getRoot();
-		ASTNode node = ASTNodeFinder.create(cu).find(this.element);
-		Action action = Action.determine(node);
-		this.transform(node, action);
-	}
-
-	private void transform(ASTNode node, Action action) {
+	private void transform(ASTNode node, Action action, CompilationUnitRewrite rewrite) {
 		switch (action) {
 		case NIL :
 			break;
-		case CHANGE_N2O_PARAM : transform((SingleVariableDeclaration)node);
+		case CHANGE_N2O_PARAM : transform((SingleVariableDeclaration)node, rewrite);
 			break;
-		case CHANGE_N2O_VAR_DECL : transform((VariableDeclarationFragment)node);
+		case CHANGE_N2O_VAR_DECL : transform((VariableDeclarationFragment)node, rewrite);
 			break;
-		case CHANGE_N2O_METH_DECL : transform((MethodDeclaration)node);
+		case CHANGE_N2O_METH_DECL : transform((MethodDeclaration)node, rewrite);
 			break;
-		case CHANGE_N2O_NAME : wrapInOptional(node.getAST(),(Name)node);
+		case CHANGE_N2O_NAME : transform((Name)node, rewrite);
 			break;
-		case BRIDGE_N2O_NAME: bridgeOptional(node.getAST(),(Name)node);
+		case BRIDGE_N2O_NAME: bridge((Name)node, rewrite);
 			break;
-		case CHANGE_N2O_INVOC : wrapInOptional(node.getAST(),(Expression)node);
+		case CHANGE_N2O_INVOC : transform((Expression)node, rewrite);
 			break;
-		case BRIDGE_N2O_INVOC : bridgeOptional(node.getAST(),(Expression)node);
+		case BRIDGE_N2O_INVOC : bridge((Expression)node, rewrite);
 			break;
 		default:
 			break;
 		}
 	}
 
-	private void transform(MethodDeclaration node) {
+	private void bridge(Expression node, CompilationUnitRewrite rewrite) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void transform(Expression node, CompilationUnitRewrite rewrite) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void bridge(Name node, CompilationUnitRewrite rewrite) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void transform(Name node, CompilationUnitRewrite rewrite) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void transform(MethodDeclaration node, CompilationUnitRewrite rewrite) {
 		AST ast = node.getAST();
-		ASTRewrite astRewrite = this.rewrite.getASTRewrite();
+		ASTRewrite astRewrite = rewrite.getASTRewrite();
 		MethodDeclaration copy = (MethodDeclaration) ASTNode.copySubtree(ast, node);
 		Type returnType = copy.getReturnType2();
 		Type converted = this.getConvertedType(ast, returnType.toString());
@@ -127,17 +144,17 @@ public class Entity {
 		astRewrite.replace(node, copy, null);
 	}
 
-	private void transform(SingleVariableDeclaration node) {
+	private void transform(SingleVariableDeclaration node, CompilationUnitRewrite rewrite) {
 		AST ast = node.getAST();
-		ASTRewrite astRewrite = this.rewrite.getASTRewrite();
+		ASTRewrite astRewrite = rewrite.getASTRewrite();
 		SingleVariableDeclaration copy = (SingleVariableDeclaration)ASTNode.copySubtree(ast, node);
 		Type parameterized = this.getConvertedType(ast, copy.getType().toString());
 		copy.setType(parameterized);
 		astRewrite.replace(node, copy, null);
 	}
 
-	private void transform(VariableDeclarationFragment node) {
-		ASTRewrite astRewrite = this.rewrite.getASTRewrite();
+	private void transform(VariableDeclarationFragment node, CompilationUnitRewrite rewrite) {
+		ASTRewrite astRewrite = rewrite.getASTRewrite();
 		ASTNode parent = node.getParent();
 		AST ast = node.getAST();
 		ASTNode copy = ASTNode.copySubtree(ast, parent);
@@ -201,5 +218,10 @@ public class Entity {
 		orElse.setName(ast.newSimpleName("orElse"));
 		orElse.arguments().add(0,ast.newNullLiteral());		
 		return orElse;
+	}
+
+	@Override
+	public Iterator<IJavaElement> iterator() {
+		return this.elements.iterator();
 	}
 }
