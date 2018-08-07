@@ -105,13 +105,13 @@ class NullSeeder {
 			 */
 			@Override
 			public boolean visit(VariableDeclarationFragment node) {
-				if (NullSeeder.this.settings.refactorFields()) {
+				if (NullSeeder.this.settings.refactorsFields()) {
 					NullSeeder.this.currentNull = node;
 					try {
 						IVariableBinding binding = Util.resolveBinding(node);
 						IJavaElement element = Util.resolveElement(node);
 						if (element instanceof IField) {
-							if (NullSeeder.this.settings.seedImplicit())
+							if (NullSeeder.this.settings.seedsImplicit())
 								if (node.getInitializer() == null)
 									/*this element gets added to the Map candidates with 
 									 * boolean true indicating an implicit null
@@ -230,7 +230,7 @@ class NullSeeder {
 	}
 
 	private void process(ReturnStatement node) throws HarvesterASTException {
-		if (this.settings.refactorMethods()) {
+		if (this.settings.refactorsMethods()) {
 			ASTNode methodDecl = getContaining(MethodDeclaration.class, node); 
 			if (methodDecl instanceof MethodDeclaration){
 				IJavaElement im = Util.resolveElement((MethodDeclaration)methodDecl);
@@ -247,10 +247,10 @@ class NullSeeder {
 	}
 
 	private void process(SuperFieldAccess node) throws HarvesterASTException {
-		if (this.settings.refactorFields()) {
+		if (this.settings.refactorsFields()) {
 			IJavaElement element = Util.resolveElement(node);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)) 
-				if (this.settings.bridgeLibraries())
+				if (this.settings.bridgesLibraries())
 					this.sourceRangesToBridge.put(element,
 							Util.getBridgeableExpressionSourceRange(this.currentNull));
 				else return;
@@ -259,10 +259,10 @@ class NullSeeder {
 	}
 
 	private void process(FieldAccess node) throws HarvesterASTException {
-		if (this.settings.refactorFields()) {
+		if (this.settings.refactorsFields()) {
 			IJavaElement element = Util.resolveElement(node);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)) 
-				if (this.settings.bridgeLibraries())
+				if (this.settings.bridgesLibraries())
 					this.sourceRangesToBridge.put(element,
 							Util.getBridgeableExpressionSourceRange(this.currentNull));
 				else return;
@@ -303,14 +303,14 @@ class NullSeeder {
 
 	@SuppressWarnings("unchecked")
 	private void process(ClassInstanceCreation node) throws HarvesterASTException {
-		if (this.settings.refactorParameters()) {
+		if (this.settings.refactorsParameters()) {
 			int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
 			IMethod method = (IMethod) Util.resolveElement(node,argPos);
 			try {
 				ILocalVariable[] params = method.getParameters();
 				ILocalVariable targetParam = params[argPos];
 				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
-					if (this.settings.bridgeLibraries())
+					if (this.settings.bridgesLibraries())
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else return;
@@ -325,14 +325,14 @@ class NullSeeder {
 
 	@SuppressWarnings("unchecked")
 	private void process(MethodInvocation node) throws HarvesterASTException {
-		if (this.settings.refactorParameters()) {
+		if (this.settings.refactorsParameters()) {
 			int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
 			IMethod method = (IMethod) Util.resolveElement(node);			
 			try {
 				ILocalVariable[] params = method.getParameters();
 				ILocalVariable targetParam = params[argPos];
 				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
-					if (this.settings.bridgeLibraries())
+					if (this.settings.bridgesLibraries())
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else return;
@@ -347,14 +347,14 @@ class NullSeeder {
 
 	@SuppressWarnings("unchecked")
 	private void process(SuperMethodInvocation node) throws HarvesterASTException {
-		if (this.settings.refactorParameters()) {
+		if (this.settings.refactorsParameters()) {
 			int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
 			IMethod method = (IMethod)Util.resolveElement(node);				
 			try {
 				ILocalVariable[] params = method.getParameters();
 				ILocalVariable targetParam = params[argPos];
 				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
-					if (this.settings.bridgeLibraries())
+					if (this.settings.bridgesLibraries())
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else return;
@@ -369,14 +369,14 @@ class NullSeeder {
 
 	@SuppressWarnings("unchecked")
 	private void process(ConstructorInvocation node) throws HarvesterASTException {
-		if (this.settings.refactorParameters()) {
+		if (this.settings.refactorsParameters()) {
 			int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
 			IMethod method = (IMethod)Util.resolveElement(node);				
 			try {
 				ILocalVariable[] params = method.getParameters();
 				ILocalVariable targetParam = params[argPos];
 				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
-					if (this.settings.bridgeLibraries())
+					if (this.settings.bridgesLibraries())
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else return;
@@ -391,14 +391,14 @@ class NullSeeder {
 
 	@SuppressWarnings("unchecked")
 	private void process(SuperConstructorInvocation node) throws HarvesterASTException {
-		if (this.settings.refactorParameters()) {
+		if (this.settings.refactorsParameters()) {
 			int argPos = Util.getParamNumber(node.arguments(), (Expression)this.currentNull);
 			IMethod method = (IMethod)Util.resolveElement(node);				
 			try {
 				ILocalVariable[] params = method.getParameters();
 				ILocalVariable targetParam = params[argPos];
 				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam)) 
-					if (this.settings.bridgeLibraries())
+					if (this.settings.bridgesLibraries())
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else return;
@@ -417,21 +417,21 @@ class NullSeeder {
 		List<VariableDeclarationFragment> fragments = new LinkedList<>();
 		switch (parent.getNodeType()) {
 		case ASTNode.FIELD_DECLARATION : {
-			if (this.settings.refactorFields())
+			if (this.settings.refactorsFields())
 				fragments = ((FieldDeclaration)parent).fragments();
 			break;
 		}
 		case ASTNode.VARIABLE_DECLARATION_EXPRESSION :	{
 			List<VariableDeclarationFragment> _fragments = ((VariableDeclarationExpression)parent).fragments();
-			if (	( this.settings.refactorLocalVariables() 
+			if (	( this.settings.refactorsLocalVariables() 
 					&& _fragments.stream().anyMatch(fragment -> !fragment.resolveBinding().isField()) )
-					|| 	( this.settings.refactorFields() 
+					|| 	( this.settings.refactorsFields() 
 							&& _fragments.stream().anyMatch(fragment -> fragment.resolveBinding().isField()) ) )
 				fragments = _fragments;
 			break;
 		}
 		case ASTNode.VARIABLE_DECLARATION_STATEMENT : {
-			if (this.settings.refactorLocalVariables())
+			if (this.settings.refactorsLocalVariables())
 				fragments = ((VariableDeclarationStatement)parent).fragments();
 			break;
 		}
@@ -452,7 +452,7 @@ class NullSeeder {
 		/* Single variable declaration nodes are used in a limited number of places, 
 		 * including formal parameter lists and catch clauses. We don't have to worry about formal parameters here.
 		 * They are not used for field declarations and regular variable declaration statements. */
-		if (this.settings.refactorLocalVariables()) {
+		if (this.settings.refactorsLocalVariables()) {
 			IJavaElement element = Util.resolveElement(node);
 			this.candidates.add(element);
 		}

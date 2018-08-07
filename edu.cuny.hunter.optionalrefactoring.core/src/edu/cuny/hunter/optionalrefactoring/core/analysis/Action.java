@@ -1,10 +1,8 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
-import org.eclipse.jdt.core.IField;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.ILocalVariable;
-import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Assignment;
 
 /**
  * @author oren
@@ -17,44 +15,70 @@ public enum Action {
 	 */
 	NIL,
 	/**
-	 * Transform to a parameterized optional type.
+	 * Transform to a parameterized optional type and wrap value if any.
 	 */
-	CHANGE_N2O_TYPE,
+	CHANGE_N2O_VAR_DECL,
 	/**
-	 * Transform to an optional value
+	 * Transform to a parameterized optional type
 	 */
-	CHANGE_N2O_VALUE,
+	CHANGE_N2O_PARAM,
 	/**
-	 * Transform to an optional type calling .orElse(null)
+	 * Transform to a parameterized optional return type and wrap return value;
 	 */
-	BRIDGE_N2O_VALUE;
+	CHANGE_N2O_METH_DECL,
+	/**
+	 * Transform the value of a variable or literal to an optional
+	 */
+	CHANGE_N2O_NAME,
+	/**
+	 * Transform the value of an optional type variable to it's raw type or null
+	 */
+	BRIDGE_N2O_NAME,
+	/**
+	 * Transform the value of a method invocation to an optional
+	 */
+	CHANGE_N2O_INVOC,
+	/**
+	 * Transform the reuslt of an invocation returning an optional to it's raw type or null
+	 */
+	BRIDGE_N2O_INVOC;
 	
 	/**
 	 * @param element
 	 * @return the appropriate action
+	 * @throws CoreException 
 	 */
-	public static Action determine(IJavaElement element, ASTRewrite rewrite) {
-		switch (element.getElementType()) {
-		case IJavaElement.FIELD :
-			return determine((IField)element);
-		case IJavaElement.LOCAL_VARIABLE :
-			return determine((ILocalVariable)element);
-		case IJavaElement.METHOD :
-			return determine((IMethod)element);
-		default : 
-			return Action.NIL;
+	public static Action determine(ASTNode node) throws CoreException {
+		switch (node.getNodeType()) {
+		/*these cases can be either dependent (left side or param) or dependency (right side or arg)*/
+		case ASTNode.QUALIFIED_NAME :
+		case ASTNode.SIMPLE_NAME :
+		case ASTNode.FIELD_ACCESS :
+			/*if any of these are on the left side of an assignment, we leave it alone, 
+			because it's declaration would already have been properly transformed.*/
+			if (node.getParent().getNodeType() == ASTNode.ASSIGNMENT) {
+				if (node.equals(((Assignment)node.getParent()).getLeftHandSide()))
+						return NIL;
+			} else return CHANGE_N2O_NAME;
+		/*these cases will be the dependency (right side or arg)*/
+		case ASTNode.SUPER_METHOD_INVOCATION :
+		case ASTNode.METHOD_INVOCATION :
+		case ASTNode.CLASS_INSTANCE_CREATION :
+			return CHANGE_N2O_INVOC;
+		/*we can't deal with these cases yet, need to research the API more*/
+		case ASTNode.SUPER_METHOD_REFERENCE :
+		case ASTNode.EXPRESSION_METHOD_REFERENCE :
+		case ASTNode.TYPE_METHOD_REFERENCE :
+			return NIL;
+		/*these cases require transformation of two child nodes*/
+		case ASTNode.VARIABLE_DECLARATION_FRAGMENT :
+			return CHANGE_N2O_VAR_DECL;
+		case ASTNode.SINGLE_VARIABLE_DECLARATION :
+			return CHANGE_N2O_PARAM;
+		/*these cases require transformation of two child nodes */
+		case ASTNode.METHOD_DECLARATION :
+			return CHANGE_N2O_METH_DECL;
+		default : return NIL;
 		}
-	}
-	
-	private static Action determine(IField field) {
-		return null;
-	}
-	
-	private static Action determine(ILocalVariable variable) {
-		return null;
-	}
-	
-	private static Action determine(IMethod method) {
-		return null;
 	}
 }
