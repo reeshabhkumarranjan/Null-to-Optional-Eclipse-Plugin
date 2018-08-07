@@ -3,7 +3,8 @@
  */
 package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
-import java.io.File;
+import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.setOf;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -14,25 +15,21 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
-import org.eclipse.jdt.ui.tests.refactoring.RefactoringTest;
+import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 
+import edu.cuny.citytech.refactoring.common.tests.RefactoringTest;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.CHOICES;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
-import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
-
-import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.*;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -113,9 +110,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	protected ICompilationUnit createCUfromTestFile(IPackageFragment pack, String cuName) throws Exception {
 		ICompilationUnit unit = super.createCUfromTestFile(pack, cuName);
 
-		if (!unit.isStructureKnown())
-			throw new IllegalArgumentException(cuName + " has structural errors.");
-
 		// full path of where the CU exists.
 		Path directory = Paths.get(unit.getParent().getParent().getParent().getResource().getLocation().toString());
 
@@ -130,21 +124,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		return compiles(source, Files.createTempDirectory(null));
 	}
 
-	private static boolean compiles(String source, Path directory) throws IOException {
-		// Save source in .java file.
-		File sourceFile = new File(directory.toFile(), "bin/p/A.java");
-		sourceFile.getParentFile().mkdirs();
-		Files.write(sourceFile.toPath(), source.getBytes());
-
-		// Compile source file.
-		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-
-		boolean compileSuccess = compiler.run(null, null, null, sourceFile.getPath()) == 0;
-
-		sourceFile.delete();
-		return compileSuccess;
-	}
-
 	private void helper(Set<Set<String>> expectedPassingSets, Set<String> expectedFailingSet, 
 			CHOICES turnOff, RefactoringStatus expectedStatus) throws Exception {
 
@@ -152,20 +131,24 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		// compute the actual results.
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 
-		ConvertNullToOptionalRefactoringProcessor refactoring = Util.createNullToOptionalRefactoringProcessor(
-				new IJavaElement[] { icu }, Optional.empty());
-		if (turnOff != null) refactoring.settings().set(false, turnOff);
+		// we know it's a ProcessorBasedRefactoring since we overriding getRefactoring() in this class.
+		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
 
-		RefactoringStatus status = refactoring.checkFinalConditions(new NullProgressMonitor(), null);
+		// we know it's a ConvertNullToOptionalRefactoringProcessor since we overriding getRefactoring() in this class.
+		ConvertNullToOptionalRefactoringProcessor refactoringProcessor = (ConvertNullToOptionalRefactoringProcessor) refactoring.getProcessor();
 
-		System.out.println(refactoring.settings().toString());
+		if (turnOff != null) refactoringProcessor.settings().set(false, turnOff);
+
+		RefactoringStatus status = refactoringProcessor.checkFinalConditions(new NullProgressMonitor(), null);
+
+		System.out.println(refactoringProcessor.settings().toString());
 
 		assertTrue("The refactoring status matches the expected refactoring status "+expectedStatus.getSeverity()+".", 
 				status.getSeverity() == expectedStatus.getSeverity());
 
 		// Here we are getting all the sets of type dependent entities
-		Set<Set<Entity>> passingSets = refactoring.getPassingEntities();
-		Set<Entity> failingSet = refactoring.getFailingEntities();
+		Set<Set<Entity>> passingSets = refactoringProcessor.getPassingEntities();
+		Set<Entity> failingSet = refactoringProcessor.getFailingEntities();
 
 		// print to console
 		System.out.println(this.getName()+" - SEVERITY: "+status.getSeverity());
@@ -494,5 +477,17 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				setOf(),
 				null,				
 				new RefactoringStatus());	
+	}
+
+	@Override
+	protected Logger getLogger() {
+		return LOGGER;
+	}
+
+	@Override
+	protected Refactoring getRefactoring(IJavaElement... elements) throws JavaModelException {
+		ConvertNullToOptionalRefactoringProcessor processor = 
+				Util.createNullToOptionalRefactoringProcessor(elements, Optional.empty());
+		return new ProcessorBasedRefactoring(processor);
 	}
 }
