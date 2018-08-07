@@ -1,14 +1,18 @@
 package edu.cuny.hunter.optionalrefactoring.core.utils;
 
+import java.util.List;
+
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
 public class ASTNodeFinder {
@@ -17,16 +21,16 @@ public class ASTNodeFinder {
 		return new ASTNodeFinder(scope);
 	}
 
-	private final CompilationUnit scope;
+	private final List<TypeDeclaration> types;
 	
 	private ASTNode targetNode;
 	
 	private ASTNodeFinder(CompilationUnit scope) {
-		this.scope = scope;
+		this.types = scope.types();
 	}
 	
 	public ASTNode find(IJavaElement target) {
-		this.scope.accept(new ASTVisitor() {
+		this.types.forEach(type -> type.accept(new ASTVisitor() {
 			
 			@Override
 			public boolean visit(MethodDeclaration node) {
@@ -75,14 +79,16 @@ public class ASTNodeFinder {
 			
 			@Override
 			public boolean visit(QualifiedName node) {
-				if (node.resolveBinding().getJavaElement().equals(target)) {
-					ASTNodeFinder.this.targetNode = node;
-					return false;
-				}
-				return super.visit(node);
+				if (!node.getName().getIdentifier().equals("length")) {	// we've probably hit an array primitive
+					if (node.resolveBinding().getJavaElement().equals(target)) {
+						ASTNodeFinder.this.targetNode = node;
+						return false;
+					}
+					return super.visit(node);
+				} return false;
 			}
 
-		});
+		}));
 		return this.targetNode;
 	}
 }

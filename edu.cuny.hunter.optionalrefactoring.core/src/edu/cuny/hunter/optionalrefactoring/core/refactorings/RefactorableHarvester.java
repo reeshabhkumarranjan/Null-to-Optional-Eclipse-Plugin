@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.stream.Collectors;
 import java.util.stream.*;
 
@@ -66,7 +67,7 @@ public class RefactorableHarvester {
 	private final Map<IJavaElement, Set<ISourceRange>> elementToBridgeableSourceRangeMap = new LinkedHashMap<>();
 	private final Set<Entity> passing = new LinkedHashSet<>();
 	private final Set<Entity> failing = new LinkedHashSet<>();
-	
+
 	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, 
 			IJavaSearchScope scope, RefactoringSettings settings, IProgressMonitor m) {
 		this.refactoringRootElement = rootElement;
@@ -108,15 +109,15 @@ public class RefactorableHarvester {
 	Set<Entity> getPassing() {
 		return this.passing;
 	}
-	
+
 	Set<Entity> getFailing() {
 		return this.failing;
 	}
-	
+
 	Map<IJavaElement,Set<ISourceRange>> getBridgeable() {
 		return this.elementToBridgeableSourceRangeMap;
 	}
-	
+
 	private void reset() {
 		this.workList.clear();
 		this.nullSeeds.clear();
@@ -151,7 +152,7 @@ public class RefactorableHarvester {
 		while (this.workList.hasNext()) {
 			// grab the next element.
 			final IJavaElement searchElement = this.workList.next();
-			
+
 			// build a search pattern to find all occurrences of the searchElement.
 			final SearchPattern pattern = SearchPattern.createPattern(searchElement, 
 					IJavaSearchConstants.ALL_OCCURRENCES, 
@@ -173,25 +174,25 @@ public class RefactorableHarvester {
 						// now we have the ASTNode corresponding to the match.
 						// process the matching ASTNode.
 						NullPropagator processor = new NullPropagator(node,
-								Collections.singleton(RefactorableHarvester.this.refactoringRootElement),
+								(IJavaElement)match.getElement(),
 								RefactorableHarvester.this.scopeRoot,
 								RefactorableHarvester.this.settings,
 								RefactorableHarvester.this.monitor);
 
 						processor.process();
-						
+
 						// add to the workList all of the type-dependent stuff we found.
 						RefactorableHarvester.this.workList.addAll(processor.getFound());
 						// add to the bridgeableSourceRangeMap all the source ranges that can be bridged
-						processor.getSourceRangesToBridge().entrySet().stream()
-							.forEach(entry -> {
-								if (RefactorableHarvester.this.elementToBridgeableSourceRangeMap
-										.containsKey(entry.getKey()))
-									RefactorableHarvester.this.elementToBridgeableSourceRangeMap
-										.get(entry.getKey()).addAll(entry.getValue());
-								else RefactorableHarvester.this.elementToBridgeableSourceRangeMap
-										.put(entry.getKey(), entry.getValue());
-							});
+						SimpleEntry<IJavaElement,Set<ISourceRange>> entry = processor.getSourceRangesToBridge();
+						if (entry != null) {
+							if (RefactorableHarvester.this.elementToBridgeableSourceRangeMap
+									.containsKey(entry.getKey()))
+								RefactorableHarvester.this.elementToBridgeableSourceRangeMap
+								.get(entry.getKey()).addAll(entry.getValue());
+							else RefactorableHarvester.this.elementToBridgeableSourceRangeMap
+							.put(entry.getKey(), entry.getValue());
+						}
 					}
 				}
 			};
@@ -218,12 +219,12 @@ public class RefactorableHarvester {
 
 		final Set<Set<IJavaElement>> candidateSets = Util
 				.getElementForest(computationForest);
-		
+
 		// convert the set of passing type dependent sets into sets of TDES
 		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
 		this.passing.addAll(candidateSets.stream().map(set -> Entity.create(set, this.elementToBridgeableSourceRangeMap))
 				.collect(Collectors.toSet()));
-		
+
 		// keep in the notRefactorable list only anything that was in the originally seeded elements
 		this.notRefactorable.retainAll(seeder.getPassing());
 		// turn the not refactorable list into a set of singleton TDES for consistency 

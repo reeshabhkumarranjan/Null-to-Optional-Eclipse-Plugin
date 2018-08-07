@@ -86,15 +86,15 @@ public interface Util {
 	public static ProcessorBasedRefactoring createRefactoring(IJavaElement[] elements,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
-				elements, monitor);
+				elements, RefactoringSettings.userDefaults()/*here user defaults are injected*/, monitor);
 		return new ProcessorBasedRefactoring(processor);
 	}
 
 	public static ConvertNullToOptionalRefactoringProcessor createNullToOptionalRefactoringProcessor(
-			IJavaElement[] elements, Optional<IProgressMonitor> monitor) throws JavaModelException {
+			IJavaElement[] elements, RefactoringSettings refactoringSettings, Optional<IProgressMonitor> monitor) throws JavaModelException {
 		CodeGenerationSettings settings = JavaPreferencesSettings.getCodeGenerationSettings(elements[0].getJavaProject());
 		ConvertNullToOptionalRefactoringProcessor processor = new ConvertNullToOptionalRefactoringProcessor(elements,
-				settings, monitor);
+				settings, refactoringSettings, monitor);
 		return processor;
 	}
 

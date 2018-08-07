@@ -20,19 +20,14 @@ public class RefactoringSettings {
 		METHOD_RETURNS,
 		PERFORM_TRANSFORMATION;
 	}
-
-	/**
-	 * @param _choices
-	 * @return RefactoringSettings with chosen settings plus PERFORM_TRANSFORMATION by default
-	 */
-	public static RefactoringSettings create(CHOICES... _choices) {
-		EnumSet<CHOICES> choices = EnumSet.of(CHOICES.PERFORM_TRANSFORMATION, _choices);
-		return new RefactoringSettings(choices);
-	}
 	
-	public static RefactoringSettings getDefault() {
+	public static RefactoringSettings testDefaults() {
 		return new RefactoringSettings(EnumSet.of(CHOICES.FIELDS, CHOICES.IMPLICIT_FIELDS, 
 				CHOICES.BRIDGE_EXTERNAL, CHOICES.LOCAL_VARS, CHOICES.METHOD_PARAMS, CHOICES.METHOD_RETURNS));
+	}
+	
+	public static RefactoringSettings userDefaults() {
+		return new RefactoringSettings(EnumSet.of(CHOICES.FIELDS, CHOICES.LOCAL_VARS, CHOICES.METHOD_PARAMS, CHOICES.METHOD_RETURNS));
 	}
 
 	private final EnumSet<CHOICES> settings;

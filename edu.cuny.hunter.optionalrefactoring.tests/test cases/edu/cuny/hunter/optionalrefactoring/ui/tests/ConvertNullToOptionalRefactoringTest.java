@@ -27,6 +27,7 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 
 import edu.cuny.citytech.refactoring.common.tests.RefactoringTest;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.CHOICES;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -494,7 +495,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	@Override
 	protected Refactoring getRefactoring(IJavaElement... elements) throws JavaModelException {
 		ConvertNullToOptionalRefactoringProcessor processor = 
-				Util.createNullToOptionalRefactoringProcessor(elements, Optional.empty());
+				Util.createNullToOptionalRefactoringProcessor(elements, 
+						RefactoringSettings.testDefaults() /*here the test defaults are injected*/, 
+						Optional.empty());
 		return new ProcessorBasedRefactoring(processor);
 	}
+
 }

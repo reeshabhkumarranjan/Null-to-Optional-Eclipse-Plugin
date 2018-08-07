@@ -1,10 +1,7 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
-
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -25,7 +22,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 
 	private final int loc;
 	private final int paramNumber;
-	private final Map<IJavaElement,ISourceRange> sourceRangesToBridge = new LinkedHashMap<>();
+	private final Set<ISourceRange> sourceRangesToBridge = new LinkedHashSet<>();
 
 	public ParameterProcessingVisitor(int paramNumber, int loc) {
 		this.paramNumber = paramNumber;
@@ -46,7 +43,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 		return this.expressions;
 	}
 	
-	public Map<IJavaElement,ISourceRange> getSourceRangesToBridge() {
+	public Set<ISourceRange> getSourceRangesToBridge() {
 		return this.sourceRangesToBridge;
 	}
 
@@ -80,8 +77,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 
 			final IJavaElement element = Util.resolveElement(svd);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				this.sourceRangesToBridge.put(element,
-						Util.getBridgeableExpressionSourceRange(svd));
+				this.sourceRangesToBridge.add(Util.getBridgeableExpressionSourceRange(svd));
 			this.elements.add(element);
 		}
 

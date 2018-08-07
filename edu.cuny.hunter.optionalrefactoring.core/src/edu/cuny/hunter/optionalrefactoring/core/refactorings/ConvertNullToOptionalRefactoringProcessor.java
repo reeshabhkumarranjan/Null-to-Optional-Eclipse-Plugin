@@ -82,7 +82,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private final IJavaSearchScope refactoringScope;
 	
-	private final RefactoringSettings settings = RefactoringSettings.getDefault();
+	private final RefactoringSettings settings;
 
 	private final Set<Entity> passingEntities = new LinkedHashSet<>(); // the forest of refactorable type-dependent entities
 
@@ -91,35 +91,39 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private final Map<IJavaElement, Set<ISourceRange>> bridgeableSourceRanges = new LinkedHashMap<>();
 
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
-		this(null, null, false, Optional.empty());
+		this(null, null, false, null, Optional.empty());
 	}
 
 	public ConvertNullToOptionalRefactoringProcessor(final CodeGenerationSettings settings,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		this(null, settings, false, monitor);
+		this(null, settings, false, null, monitor);
 	}
 
 	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, 
 			final CodeGenerationSettings settings,
 			boolean layer,
+			RefactoringSettings refactoringSettings,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		super(settings);
 		try {
 			this.javaElements = javaElements;
 			this.layer = layer;
 			this.refactoringScope = SearchEngine.createJavaSearchScope(javaElements);
+			this.settings = refactoringSettings;
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
 		}
 	}
 
-	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, final CodeGenerationSettings settings,
+	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, 
+			final CodeGenerationSettings settings,
+			RefactoringSettings refactoringSettings, 
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
-		this(javaElements, settings, false, monitor);
+		this(javaElements, settings, false, refactoringSettings, monitor);
 	}
 
 	public ConvertNullToOptionalRefactoringProcessor(Optional<IProgressMonitor> monitor) throws JavaModelException {
-		this(null, null, false, monitor);
+		this(null, null, false, null, monitor);
 	}
 	
 	public RefactoringSettings settings() {
@@ -395,8 +399,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			for (Entity entity : this.passingEntities) {
 				for (IJavaElement element : entity) {
 					ICompilationUnit icu = (ICompilationUnit)element.getAncestor(IJavaElement.COMPILATION_UNIT);
-					entity.addRewrite(element, 
-							this.getCompilationUnitRewrite(icu, this.getCompilationUnit(icu, pm)));
+					entity.addRewrite(this.getCompilationUnitRewrite(icu, this.getCompilationUnit(icu, pm)), element);
 					pm.worked(1);
 				}
 				entity.transform();
