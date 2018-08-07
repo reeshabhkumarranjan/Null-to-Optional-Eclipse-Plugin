@@ -141,7 +141,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		RefactoringStatus status = refactoringProcessor.checkFinalConditions(new NullProgressMonitor(), null);
 
-		System.out.println(refactoringProcessor.settings().toString());
+		System.out.println(refactoringProcessor.settings());
 
 		assertTrue("The refactoring status matches the expected refactoring status "+expectedStatus.getSeverity()+".", 
 				status.getSeverity() == expectedStatus.getSeverity());
