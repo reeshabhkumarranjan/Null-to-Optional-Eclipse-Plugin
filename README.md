@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/ponder-lab/Null-to-Optional-Eclipse-Plugin.svg?token=ysqq4ZuxzD688KNytWSA&branch=master)](https://travis-ci.com/ponder-lab/Null-to-Optional-Eclipse-Plugin) [![Coverage Status](https://coveralls.io/repos/github/ponder-lab/Null-to-Optional-Eclipse-Plugin/badge.svg?t=pnai3D)](https://coveralls.io/github/ponder-lab/Null-to-Optional-Eclipse-Plugin)
 
-## Eclipse Application on the JDT Plug-in API
+## Eclipse Application for the JDT Plug-in API
 ![N2O ui](https://i.imgur.com/VVFBFIH.png)
 ## Introduction
 
