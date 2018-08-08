@@ -9,8 +9,8 @@
 This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents ongoing work in developing an automated refactoring tool that would assist developers in optimizing their Java 8 code.
 
 ## Usage
-The user can easily initiate a refactoring by right-clicking on a project, source folder or .jar, package, compilation unit, type, field or method element inside the Package Explorer view. Mouse over 'Refactor' and then left-click on 'Convert Null To Optional' to run the plugin.
 ![Using](https://i.imgur.com/j7Tjczz.png)
+The user can initiate a refactoring by right-clicking on a project, source folder or .jar, package, compilation unit, type, field or method element inside the Package Explorer view. Mouse over 'Refactor' and then left-click on 'Convert Null To Optional' to run the plugin.
 
 ### Installation for Usage
 
