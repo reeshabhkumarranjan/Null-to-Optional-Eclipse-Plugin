@@ -19,7 +19,7 @@ The project includes a maven configuration file using the tycho plug-in, which i
 - the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. 
   - These can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
   - Choose the 'update site': [The Eclipse Project Updates](http://download.eclipse.org/eclipse/updates/4.7) in 'Work With' field.
-  - After installing these plugins, there will be multiple instances of each of two types of errors.
+- After installing these plugins, there will be multiple instances of each of two types of errors visible in the 'Problems' view:
   - 
   - 
 
@@ -34,10 +34,7 @@ Some of what's missing:
 - Handling method references and streams API programming. Right now, any elements that are type-dependent on a value from a Stream API are simply failed: there will be no transformation suggested.
 - Error and UI Wizard messages: These need lots of work, right now it is hard to tell why an element might have failed as the messages are not particularly descriptive to users, and mostly are carried over from the test debugging.
 
-## Contributing
-
 ### Running the Evaluator
-
 The plug-in edu.cuny.hunter.optionalrefactoring.eval is the evaluation plug-in. Note that it is not included in the standard update site as that it user focused. To run the evaluator, clone the repository and build and run the plug-in from within Eclipse. This will load the plug-in edu.cuny.hunter.optionalrefactoring.eval (verify in "installation details.").
 
 There is no UI menu options for the evaluator, however, there is an Eclipse command, which is available from the quick execution dialog in Eclipse. Please follow these steps:
@@ -46,3 +43,5 @@ There is no UI menu options for the evaluator, however, there is an Eclipse comm
 2. Press CMD-3 or CTRL-3 (command dialog).
 3. Search for "evaluate." You'll see an option to run the migration evaluator. Choose it.
 4. Once the evaluator completes, a set of `.csv` files will appear in the working directory.
+
+## Contributing
