@@ -10,8 +10,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -20,12 +18,9 @@ import java.util.stream.Collectors;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
-import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
@@ -125,9 +120,31 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		return unit;
 	}
 
-	@SuppressWarnings("unused")
 	private static boolean compiles(String source) throws IOException {
 		return compiles(source, Files.createTempDirectory(null));
+	}
+
+	@Override
+	protected Logger getLogger() {
+		return LOGGER;
+	}
+
+	private ConvertNullToOptionalRefactoringProcessor getRefactoringProcessor(ICompilationUnit icu) throws JavaModelException {
+		// we know it's a ProcessorBasedRefactoring since we overriding getRefactoring() in this class.
+		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
+
+		// we know it's a ConvertNullToOptionalRefactoringProcessor since we overriding getRefactoring() in this class.
+		ConvertNullToOptionalRefactoringProcessor refactoringProcessor = (ConvertNullToOptionalRefactoringProcessor) refactoring.getProcessor();
+		return refactoringProcessor;
+	}
+
+	@Override
+	protected Refactoring getRefactoring(IJavaElement... elements) throws JavaModelException {
+		ConvertNullToOptionalRefactoringProcessor processor = 
+				Util.createNullToOptionalRefactoringProcessor(elements, 
+						RefactoringSettings.testDefaults() /*here the test defaults are injected*/, 
+						Optional.empty());
+		return new ProcessorBasedRefactoring(processor);
 	}
 
 	private void propagationHelper(Set<Set<String>> expectedPassingSets, Set<Set<String>> expectedFailingSet, 
@@ -212,14 +229,21 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		String expected = getFileContents(outputTestFileName);
 		assertEqualLines(expected, actual);
 	}
-
-	private ConvertNullToOptionalRefactoringProcessor getRefactoringProcessor(ICompilationUnit icu) throws JavaModelException {
-		// we know it's a ProcessorBasedRefactoring since we overriding getRefactoring() in this class.
-		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
-
-		// we know it's a ConvertNullToOptionalRefactoringProcessor since we overriding getRefactoring() in this class.
-		ConvertNullToOptionalRefactoringProcessor refactoringProcessor = (ConvertNullToOptionalRefactoringProcessor) refactoring.getProcessor();
-		return refactoringProcessor;
+	
+	public void testTransformationLocalVarAssignment() throws Exception {
+		this.transformationHelper(null);
+	}
+	
+	public void testTransformationFieldAccessAssignment() throws Exception {
+		this.transformationHelper(null);
+	}
+	
+	public void testTransformationLocalVarDeclLocal() throws Exception {
+		this.transformationHelper(null);
+	}
+	
+	public void testTransformationFieldDeclLocal() throws Exception {
+		this.transformationHelper(null);
 	}
 	
 	public void testTransformationMethDeclLocal() throws Exception {
@@ -522,19 +546,4 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				null,				
 				new RefactoringStatus());	
 	}
-
-	@Override
-	protected Logger getLogger() {
-		return LOGGER;
-	}
-
-	@Override
-	protected Refactoring getRefactoring(IJavaElement... elements) throws JavaModelException {
-		ConvertNullToOptionalRefactoringProcessor processor = 
-				Util.createNullToOptionalRefactoringProcessor(elements, 
-						RefactoringSettings.testDefaults() /*here the test defaults are injected*/, 
-						Optional.empty());
-		return new ProcessorBasedRefactoring(processor);
-	}
-
 }

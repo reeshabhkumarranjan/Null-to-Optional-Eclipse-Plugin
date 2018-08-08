@@ -29,5 +29,13 @@ public enum Action {
 	/**
 	 * Transform the value of a variable or invocation with optional type to it's raw type or null
 	 */
-	BRIDGE_N2O_VALUE;
+	BRIDGE_VALUE_OUT, 
+	/**
+	 * Transform the literal on the right hand side of an assignment into an optional.
+	 */
+	CHANGE_N2O_LITERAL,
+	/**
+	 * Wrap a value in an Optional.ofNullable
+	 */
+	BRIDGE_VALUE_IN;
 }

@@ -2,6 +2,7 @@ package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,11 +13,13 @@ import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
@@ -27,6 +30,7 @@ import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.internal.ui.text.correction.ASTResolving;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -79,15 +83,17 @@ public class Entity implements Iterable<IJavaElement>{
 		for (CompilationUnitRewrite rewrite : this.rewriteMap.keySet()) {
 			CompilationUnit cu = rewrite.getRoot();
 			for (IJavaElement element : this.rewriteMap.get(rewrite)) {
-				ASTNode node = ASTNodeFinder.create(cu).find(element);
-				Action action = this.determine(node, element);
-				this.transform(node, action, rewrite);
+				List<ASTNode> nodes = ASTNodeFinder.create(cu).find(element);
+				for (ASTNode node : nodes) {
+					Action action = this.determine(node, element);
+					this.process(node, action, rewrite);
+				}
 			}
 			ImportRewrite iRewrite = rewrite.getImportRewrite();
 			iRewrite.addImport("java.util.Optional");
 		}
 	}
-	
+
 	/**
 	 * @param element 
 	 * @param element
@@ -96,28 +102,35 @@ public class Entity implements Iterable<IJavaElement>{
 	 */
 	private Action determine(ASTNode node, IJavaElement element) throws CoreException {
 		switch (node.getNodeType()) {
-		/* if these are not in the bridge list, we leave it alone, 
+		/* For values, if these are not in the bridge list, we leave it alone, 
 		 * because its declaration would already have been properly transformed.
 		 * If they are in it, we bridge them.
 		 */
 		case ASTNode.QUALIFIED_NAME :
 		case ASTNode.SIMPLE_NAME :
-		case ASTNode.FIELD_ACCESS :
+		case ASTNode.FIELD_ACCESS : {
+			// are we in an assignment expression ? if so we need to handle the right side
+			Assignment assignment = (Assignment) ASTResolving.findAncestor(node, ASTNode.ASSIGNMENT);
+			if (assignment != null) {
+				if (this.bridgeSourceRanges.containsKey(element)) return Action.BRIDGE_VALUE_OUT;
+				else return Action.CHANGE_N2O_LITERAL;
+			}
+		}
 		case ASTNode.SUPER_METHOD_INVOCATION :
 		case ASTNode.METHOD_INVOCATION :
 		case ASTNode.CLASS_INSTANCE_CREATION :
 			if (this.bridgeSourceRanges.containsKey(element))
-				return Action.BRIDGE_N2O_VALUE;
+				return Action.BRIDGE_VALUE_OUT;
 			else return Action.NIL;
-		/*we can't deal with these cases yet, need to research the API more, 
-		 * but sets including them won't be propagated anyway*/
+			/*we can't deal with these cases yet, need to research the API more, 
+			 * but sets including them won't be propagated anyway*/
 		case ASTNode.SUPER_METHOD_REFERENCE :
 		case ASTNode.EXPRESSION_METHOD_REFERENCE :
 		case ASTNode.TYPE_METHOD_REFERENCE :
 			return Action.NIL;
-		/*if we have a var decl fragment in the bridge list, bridge it, otherwise
-		 * we transform it's type to Optional and it's right side gets wrapped if it's a literal
-		 */
+			/*if we have a var decl fragment in the bridge list, bridge it, otherwise
+			 * we transform it's type to Optional and it's right side gets wrapped if it's a literal
+			 */
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT :
 			if (this.bridgeSourceRanges.containsKey(element))
 				return Action.BRIDGE_N2O_VAR_DECL;
@@ -130,33 +143,55 @@ public class Entity implements Iterable<IJavaElement>{
 		}
 	}
 
-	private void transform(ASTNode node, Action action, CompilationUnitRewrite rewrite) {
+	private void process(ASTNode node, Action action, CompilationUnitRewrite rewrite) {
 		switch (action) {
 		case NIL :
 			break;
 		case CHANGE_N2O_PARAM : transform((SingleVariableDeclaration)node, rewrite);
-			break;
-		case CHANGE_N2O_VAR_DECL : transform((VariableDeclarationFragment)node, rewrite);
-			break;
+		break;
+		case CHANGE_N2O_VAR_DECL : transform((VariableDeclarationFragment)node, action, rewrite);
+		break;
 		case BRIDGE_N2O_VAR_DECL : bridge((VariableDeclarationFragment)node, rewrite);
-			break;
-		case CHANGE_N2O_METH_DECL : transform((MethodDeclaration)node, rewrite);
-			break;
-		case BRIDGE_N2O_VALUE: bridge((Expression)node, rewrite);
-			break;
+		break;
+		case CHANGE_N2O_METH_DECL : transform((MethodDeclaration)node, action, rewrite);
+		break;
+		case BRIDGE_VALUE_OUT: bridge((Expression)node, rewrite);
+		break;
+		case CHANGE_N2O_LITERAL: transform((Expression)node, action, rewrite);
+		break;
+		case BRIDGE_VALUE_IN: bridge((Name)node, action, rewrite);
+		break;
 		default:
 			break;
 		}
 	}
 
+	private void bridge(Name node, Action action, CompilationUnitRewrite rewrite) {
+		AST ast = node.getAST();
+		ASTRewrite astRewrite = rewrite.getASTRewrite();
+		ASTNode copy = this.processRightHandSide(ast, action, node);
+		astRewrite.replace(node, copy, null);
+	}
+
+	private void transform(Expression node, Action action, CompilationUnitRewrite rewrite) {
+		Assignment assignment = (Assignment) ASTResolving.findAncestor(node, ASTNode.ASSIGNMENT);
+		if (assignment != null) node = assignment.getRightHandSide();
+		AST ast = node.getAST();
+		ASTRewrite astRewrite = rewrite.getASTRewrite();
+		ASTNode copy = this.processRightHandSide(ast, action, node);
+		astRewrite.replace(node, copy, null);
+	}
+
 	private void bridge(Expression node, CompilationUnitRewrite rewrite) {
+		Assignment assignment = (Assignment) ASTResolving.findAncestor(node, ASTNode.ASSIGNMENT);
+		if (assignment != null) node = assignment.getRightHandSide();
 		AST ast = node.getAST();
 		ASTRewrite astRewrite = rewrite.getASTRewrite();
 		ASTNode copy = this.orElseOptional(ast, node);
 		astRewrite.replace(node, copy, null);
 	}
 
-	private void transform(MethodDeclaration node, CompilationUnitRewrite rewrite) {
+	private void transform(MethodDeclaration node, Action action, CompilationUnitRewrite rewrite) {
 		AST ast = node.getAST();
 		ASTRewrite astRewrite = rewrite.getASTRewrite();
 		MethodDeclaration copy = (MethodDeclaration) ASTNode.copySubtree(ast, node);
@@ -167,7 +202,7 @@ public class Entity implements Iterable<IJavaElement>{
 			@Override
 			public boolean visit(ReturnStatement ret) {
 				Expression expression = ret.getExpression();
-				Expression wrapped = Entity.this.processRightHandSide(ast,expression);
+				Expression wrapped = Entity.this.processRightHandSide(ast, action, expression);
 				if (!wrapped.equals(expression)) 
 					ret.setExpression(wrapped);
 				return super.visit(ret);
@@ -185,7 +220,7 @@ public class Entity implements Iterable<IJavaElement>{
 		astRewrite.replace(node, copy, null);
 	}
 
-	private void transform(VariableDeclarationFragment node, CompilationUnitRewrite rewrite) {
+	private void transform(VariableDeclarationFragment node, Action action, CompilationUnitRewrite rewrite) {
 		ASTRewrite astRewrite = rewrite.getASTRewrite();
 		ASTNode parent = node.getParent();
 		AST ast = node.getAST();
@@ -217,13 +252,15 @@ public class Entity implements Iterable<IJavaElement>{
 			public boolean visit(VariableDeclarationFragment recovered) {
 				if (recovered.getName().toString().equals(node.getName().toString())) {
 					Expression expression = recovered.getInitializer();
-					Expression wrapped = Entity.this.processRightHandSide(ast,expression);
-					if (wrapped != expression) recovered.setInitializer(wrapped);
-					astRewrite.replace(parent, copy, null);
+					if (expression != null) {	// i.e. we're not on an uninitialized variable decl
+						Expression wrapped = Entity.this.processRightHandSide(ast, action, expression);
+						if (wrapped != expression) recovered.setInitializer(wrapped);
+					}
 				}
 				return super.visit(recovered);
 			}
 		});
+		astRewrite.replace(parent, copy, null);
 	}
 
 	private void bridge(VariableDeclarationFragment node, CompilationUnitRewrite rewrite) {
@@ -234,20 +271,29 @@ public class Entity implements Iterable<IJavaElement>{
 		astRewrite.replace(node, copy, null);
 	}
 
-	private Expression processRightHandSide(AST ast, Expression expression) {
+	private Expression processRightHandSide(AST ast, Action action, Expression expression) {
 		switch (expression.getNodeType()) {
+		case ASTNode.NULL_LITERAL :
+			return this.emptyOptional(ast);
+		case ASTNode.SIMPLE_NAME :
+		case ASTNode.QUALIFIED_NAME : {
+			switch (action) {
+			case BRIDGE_VALUE_IN :
+				return this.ofNullableOptional(ast, expression);
+			case BRIDGE_VALUE_OUT :
+				return this.orElseOptional(ast, expression);
+			case BRIDGE_N2O_VAR_DECL :
+				return this.ofNullableOptional(ast, expression);
+			default : return expression;
+			}
+		}
 		case ASTNode.BOOLEAN_LITERAL :
 		case ASTNode.CHARACTER_LITERAL :
 		case ASTNode.NUMBER_LITERAL :
 		case ASTNode.STRING_LITERAL :
 		case ASTNode.TYPE_LITERAL :
-			return wrapInOptional(ast,expression);
-		case ASTNode.NULL_LITERAL :
-			return emptyOptional(ast);
-		case ASTNode.SIMPLE_NAME :
-		case ASTNode.QUALIFIED_NAME :
 		default :
-			return expression;
+			return ofOptional(ast,expression);
 		}
 	}
 
@@ -265,11 +311,20 @@ public class Entity implements Iterable<IJavaElement>{
 		return parameterized;
 	}
 
-	private Expression wrapInOptional(AST ast, Expression expression) {
+	private Expression ofNullableOptional(AST ast, Expression expression) {
 		Expression transformed = (Expression) ASTNode.copySubtree(ast, expression);
 		MethodInvocation optionalOf = ast.newMethodInvocation();
 		optionalOf.setExpression(ast.newSimpleName("Optional"));
 		optionalOf.setName(ast.newSimpleName("ofNullable"));
+		optionalOf.arguments().add(0,transformed);
+		return optionalOf;
+	}
+
+	private Expression ofOptional(AST ast, Expression expression) {
+		Expression transformed = (Expression) ASTNode.copySubtree(ast, expression);
+		MethodInvocation optionalOf = ast.newMethodInvocation();
+		optionalOf.setExpression(ast.newSimpleName("Optional"));
+		optionalOf.setName(ast.newSimpleName("of"));
 		optionalOf.arguments().add(0,transformed);
 		return optionalOf;
 	}
