@@ -15,6 +15,10 @@ The user can initiate a refactoring by right-clicking on a project, source folde
 ### Installation for Usage
 
 ### Limitations
+This plugin for the Eclipse JDT is still very much a work in progress as it constitutes the application of ongoing research, and as such should not be relied upon.
+Some of what's missing:
+- Handling method references and streams API programming. Right now, any elements that are type-dependent on a value from a Stream API are simply failed: there will be no transformation suggested.
+- Error and UI Wizard messages: These need lots of work, right now it is hard to tell why an element might have failed as the messages are not particularly descriptive to users, and mostly are carried over from the test debugging.
 
 ## Contributing
 
