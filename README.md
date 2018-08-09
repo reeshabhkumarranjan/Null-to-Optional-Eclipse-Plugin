@@ -22,9 +22,9 @@ The project includes a maven configuration file using the tycho plug-in, which i
   - These can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
   - Choose the 'update site': [The Eclipse Project Updates](http://download.eclipse.org/eclipse/updates/4.7) in 'Work With' field.
 - After installing these plugins, there will be two 'Missing API Baseline' errors visible in the 'Problems' view. Simply quick fix these and reduce the errors to warnings, as it isn't particularly critical.
-
 <img src="https://i.imgur.com/XATKKxA.png" width="425"/> <img src="https://i.imgur.com/SOKJkNr.png" width="425"/> 
-
+- In addition there will be at least 16 'Plugin Execution Not Covered By Lifecycle Config...' errors in the 'Problems' view. Quick fixing these will prompt you to 'Discover new m2e connectors', which you should do for all of the errors. Install the suggested plugins in order to fix all the remaining configuration issues. There will be a warning about insecure sources for these, the reason for which is currently not known.
+<img src="https://i.imgur.com/ZbzOcVC.png" width="425"/> <img src="https://i.imgur.com/mcbBznJ.png" width="425"/> 
 #### Optionally, you may also install:
 Some useful plugins for working with AST's and the Java Model that are not part of the Eclipse SDK but can be downloaded from this update site: http://www.eclipse.org/jdt/ui/update-site.
 - org.eclipse.jdt.astview - ASTView
@@ -33,7 +33,7 @@ Some useful plugins for working with AST's and the Java Model that are not part 
 ### Limitations
 This plugin for the Eclipse JDT is still very much a work in progress as it constitutes the application of ongoing research, and as such should not be relied upon.
 Some of what's missing:
-- Handling method references and streams API programming. Right now, any elements that are type-dependent on a value from a Stream API are simply failed: there will be no transformation suggested.
+- Handling method references and streams API programming. Right now, any elements that are a type-dependency on a value from a Stream API are simply failed: there will be no transformation suggested.
 - Error and UI Wizard messages: These need lots of work, right now it is hard to tell why an element might have failed as the messages are not particularly descriptive to users, and mostly are carried over from the test debugging.
 - There are many more cases for which this software will need to be improved, see https://github.com/ponder-lab/Null-to-Optional-Eclipse-Plugin/issues for more.
 
