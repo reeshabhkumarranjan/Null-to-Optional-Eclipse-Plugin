@@ -26,6 +26,10 @@ Some useful plugins for working with AST's and the Java Model that are not part 
 - org.eclipse.jdt.jeview - JavaElement View
 
 ## Usage
+### Running the JUnit Tests
+Create a new 'coverage configuration' for the package `edu.cuny.hunter.optionalrefactoring.tests` and find the test class `edu.cuny.hunter.optionalrefactoring.ui.tests.ConvertNullToOptionalRefactoringTest`, and hit apply, then Coverage. Test cases are located in `/edu.cuny.hunter.optionalrefactoring.tests` in the `resouces` source folder.
+![tests](https://i.imgur.com/WOdhYQh.png)
+
 ### Running the Refactoring
 The user can initiate a refactoring by right-clicking on a project, source folder or .jar, package, compilation unit, type, field or method element inside the Package Explorer view. Mouse over 'Refactor' and then left-click on 'Convert Null To Optional' to run the plugin.
 ![Using](https://i.imgur.com/j7Tjczz.png)
