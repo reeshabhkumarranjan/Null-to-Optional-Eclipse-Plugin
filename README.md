@@ -35,6 +35,7 @@ This plugin for the Eclipse JDT is still very much a work in progress as it cons
 Some of what's missing:
 - Handling method references and streams API programming. Right now, any elements that are type-dependent on a value from a Stream API are simply failed: there will be no transformation suggested.
 - Error and UI Wizard messages: These need lots of work, right now it is hard to tell why an element might have failed as the messages are not particularly descriptive to users, and mostly are carried over from the test debugging.
+- There are many more cases for which this software will need to be improved, see https://github.com/ponder-lab/Null-to-Optional-Eclipse-Plugin/issues for more.
 
 ### Running the Evaluator
 The plug-in edu.cuny.hunter.optionalrefactoring.eval is the evaluation plug-in. Note that it is not included in the standard update site as that it user focused. To run the evaluator, clone the repository and build and run the plug-in from within Eclipse. This will load the plug-in edu.cuny.hunter.optionalrefactoring.eval (verify in "installation details.").
