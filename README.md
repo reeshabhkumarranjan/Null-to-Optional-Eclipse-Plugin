@@ -21,7 +21,8 @@ The project includes a maven configuration file using the tycho plug-in, which i
 - the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. 
   - These can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
   - Choose the 'update site': [The Eclipse Project Updates](http://download.eclipse.org/eclipse/updates/4.7) in 'Work With' field.
-- After installing these plugins, there will be multiple instances of each of two types of errors visible in the 'Problems' view:
+- After installing these plugins, there will be two 'Missing API Baseline' errors visible in the 'Problems' view. Simply quick fix these and reduce the errors to warnings, as it isn't particularly critical.
+![QuickFix](https://i.imgur.com/XATKKxA.png) ![changeToWarnings](https://i.imgur.com/SOKJkNr.png)
 
 #### Optionally, you may also install:
 Some useful plugins for working with AST's and the Java Model that are not part of the Eclipse SDK but can be downloaded from this update site: http://www.eclipse.org/jdt/ui/update-site.
