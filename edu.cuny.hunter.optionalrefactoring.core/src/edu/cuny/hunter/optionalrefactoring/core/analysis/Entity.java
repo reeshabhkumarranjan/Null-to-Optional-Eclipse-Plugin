@@ -29,8 +29,8 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
+import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
-import org.eclipse.jdt.internal.ui.text.correction.ASTResolving;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -110,7 +110,7 @@ public class Entity implements Iterable<IJavaElement>{
 		case ASTNode.SIMPLE_NAME :
 		case ASTNode.FIELD_ACCESS : {
 			// are we in an assignment expression ? if so we need to handle the right side
-			Assignment assignment = (Assignment) ASTResolving.findAncestor(node, ASTNode.ASSIGNMENT);
+			Assignment assignment = (Assignment) ASTNodes.getParent(node, ASTNode.ASSIGNMENT);
 			if (assignment != null) {
 				if (this.bridgeSourceRanges.containsKey(element)) return Action.BRIDGE_VALUE_OUT;
 				else return Action.CHANGE_N2O_LITERAL;
@@ -174,7 +174,7 @@ public class Entity implements Iterable<IJavaElement>{
 	}
 
 	private void transform(Expression node, Action action, CompilationUnitRewrite rewrite) {
-		Assignment assignment = (Assignment) ASTResolving.findAncestor(node, ASTNode.ASSIGNMENT);
+		Assignment assignment = (Assignment) ASTNodes.getParent(node, ASTNode.ASSIGNMENT);
 		if (assignment != null) node = assignment.getRightHandSide();
 		AST ast = node.getAST();
 		ASTRewrite astRewrite = rewrite.getASTRewrite();
@@ -183,7 +183,7 @@ public class Entity implements Iterable<IJavaElement>{
 	}
 
 	private void bridge(Expression node, CompilationUnitRewrite rewrite) {
-		Assignment assignment = (Assignment) ASTResolving.findAncestor(node, ASTNode.ASSIGNMENT);
+		Assignment assignment = (Assignment) ASTNodes.getParent(node, ASTNode.ASSIGNMENT);
 		if (assignment != null) node = assignment.getRightHandSide();
 		AST ast = node.getAST();
 		ASTRewrite astRewrite = rewrite.getASTRewrite();
