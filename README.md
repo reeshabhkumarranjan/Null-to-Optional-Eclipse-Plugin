@@ -7,6 +7,8 @@
 ## Introduction
 This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents ongoing work in developing an automated refactoring tool that would assist developers in optimizing their Java 8 code. The ultimate goal is to add to the Eclipse JDT a fully automated, semantics-preserving refactoring for legacy Java code that replaces occurrences of null values with instances of an appropriately parameterized optional type, first introduced in Java 8.
 
+The work done on this repository during the summer of 2018 was pursuant to [participation in Google Summer of Code by @orenwf](https://summerofcode.withgoogle.com/projects/?sp-page=2#6214280911781888). A brief summary of the experience can be found [here](https://gist.github.com/orenwf/82d506fe4f70dd2cd563c6baf86ee0ff).
+
 ### Installation for Usage And Development
 Currently, the plugin builds and runs in both evaluation and refactoring mode on [Eclipse Oxygen for RCP/RAP](https://www.eclipse.org/downloads/packages/release/oxygen/3a/eclipse-rcp-and-rap-developers).
 The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on the following projects and plugins being present in the workspace:
@@ -54,3 +56,4 @@ Some of what's missing:
 - There are many more cases for which this software will need to be improved, see https://github.com/ponder-lab/Null-to-Optional-Eclipse-Plugin/issues for more.
 
 ## Contributing
+Contributions are welcome. Please get in touch at `ponder` at `hunter.cuny.edu`.
