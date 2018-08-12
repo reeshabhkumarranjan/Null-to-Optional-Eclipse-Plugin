@@ -37,6 +37,7 @@ Create a new 'coverage configuration' for the package `edu.cuny.hunter.optionalr
 
 ### Running the Refactoring
 The user can initiate a refactoring by right-clicking on a project, source folder or .jar, package, compilation unit, type, field or method element inside the Package Explorer view. Mouse over 'Refactor' and then left-click on 'Convert Null To Optional' to run the plugin.
+The particular Java model element chosen will determine the extent of the scope of searching for `NullLiteral` instances in the AST. The results of the transitive type-dependency inferencing will possibly include values outside of this scope, depending on the design of the project.
 
 ![Using](https://i.imgur.com/j7Tjczz.png)
 
