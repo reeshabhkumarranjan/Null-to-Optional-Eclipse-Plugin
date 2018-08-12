@@ -41,6 +41,10 @@ The particular Java model element chosen will determine the extent of the scope 
 
 ![Using](https://i.imgur.com/j7Tjczz.png)
 
+The refactoring will present to the user a UI element that shows the elements which were `null` dependent but could not be refactored with consistent semantics, and the source files which can be refactored. The ones that can be refactored will be shown in a list with the state of the source file before and after transformation.
+
+![result](https://i.imgur.com/am3INSI.png)
+
 ### Running the Evaluator
 The plug-in edu.cuny.hunter.optionalrefactoring.eval is the evaluation plug-in. Note that it is not included in the standard update site as that it user focused. To run the evaluator, clone the repository and build and run the plug-in from within Eclipse. This will load the plug-in edu.cuny.hunter.optionalrefactoring.eval (verify in "installation details.").
 
