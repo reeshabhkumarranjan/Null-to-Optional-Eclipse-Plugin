@@ -9,6 +9,8 @@ This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents 
 
 The work done on this repository during the summer of 2018 was pursuant to [participation in Google Summer of Code by @orenwf](https://summerofcode.withgoogle.com/projects/?sp-page=2#6214280911781888). A brief summary of the experience can be found [here](https://gist.github.com/orenwf/82d506fe4f70dd2cd563c6baf86ee0ff).
 
+The plugin searches the Java AST for all instances of the `NullLiteral` type within a particular scope and determines all transitively type-dependent values including variables, fields, method parameters and method return values. It then produces an appropriate transformation which replaces values dependent on possibly `null` values with appropriately parameterized instances of `Optional<T>`.
+
 ### Installation for Usage And Development
 Currently, the plugin builds and runs in both evaluation and refactoring mode on [Eclipse Oxygen for RCP/RAP](https://www.eclipse.org/downloads/packages/release/oxygen/3a/eclipse-rcp-and-rap-developers).
 The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on the following projects and plugins being present in the workspace:
