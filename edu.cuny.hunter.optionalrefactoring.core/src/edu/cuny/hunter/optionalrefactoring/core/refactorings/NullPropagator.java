@@ -125,22 +125,6 @@ class NullPropagator {
 		this.monitor = monitor;
 	}
 
-	public Set<IJavaElement> getFound() {
-		return this.found;
-	}
-
-	public SimpleEntry<IJavaElement, Set<ISourceRange>> getSourceRangesToBridge() {
-		if (!this.sourceRangesToBridge.isEmpty())
-			return new SimpleEntry<>(this.element, this.sourceRangesToBridge);
-		else
-			return null;
-	}
-
-	public void process() throws CoreException {
-		if (this.name != null)
-			this.process(this.name);
-	}
-
 	private void extractSourceRange(ASTNode node) {
 		this.sourceRangesToBridge.add(Util.getBridgeableExpressionSourceRange(node));
 	}
@@ -158,7 +142,7 @@ class NullPropagator {
 			final AnonymousClassDeclaration acd = node.getAnonymousClassDeclaration();
 			final ITypeBinding binding = acd.resolveBinding();
 			final ITypeBinding superBinding = binding.getSuperclass();
-			for (IMethodBinding imb : Arrays.asList(superBinding.getDeclaredMethods())) {
+			for (IMethodBinding imb : Arrays.asList(superBinding.getDeclaredMethods()))
 				if (imb.isConstructor()) {
 					final ITypeBinding[] itb = imb.getParameterTypes();
 					if (itb.length > paramNumber) {
@@ -170,7 +154,6 @@ class NullPropagator {
 						}
 					}
 				}
-			}
 		}
 		if (meth == null)
 			throw new HarvesterASTException(Messages.Harvester_SourceNotPresent,
@@ -300,6 +283,22 @@ class NullPropagator {
 				SearchPattern.R_EXACT_MATCH);
 
 		this.findParameters(getFormalParameterNumber(node), pattern);
+	}
+
+	public Set<IJavaElement> getFound() {
+		return this.found;
+	}
+
+	public SimpleEntry<IJavaElement, Set<ISourceRange>> getSourceRangesToBridge() {
+		if (!this.sourceRangesToBridge.isEmpty())
+			return new SimpleEntry<>(this.element, this.sourceRangesToBridge);
+		else
+			return null;
+	}
+
+	public void process() throws CoreException {
+		if (this.name != null)
+			this.process(this.name);
 	}
 
 	private void process(ASTNode node) throws CoreException {

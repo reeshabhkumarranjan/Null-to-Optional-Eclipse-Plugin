@@ -40,6 +40,30 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 		this.setDescription(DESCRIPTION);
 	}
 
+	private void addBooleanButton(String text, Choices choice, BiConsumer<Boolean, Choices> valueConsumer,
+			Composite result) {
+		Button button = new Button(result, SWT.CHECK);
+		button.setText(text);
+		boolean value = this.processor.settings().get(choice);
+		valueConsumer.accept(value, choice);
+		button.setSelection(value);
+		button.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				Button btn = (Button) event.getSource();
+				boolean selection = btn.getSelection();
+				ConvertNullToOptionalRefactoringTypePage.this.settings.put(text, selection);
+				valueConsumer.accept(selection, choice);
+			}
+		});
+	}
+
+	@Override
+	public boolean canFlipToNextPage() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 	@Override
 	public void createControl(Composite parent) {
 		ProcessorBasedRefactoring processorBasedRefactoring = (ProcessorBasedRefactoring) this.getRefactoring();
@@ -62,45 +86,6 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 		Dialog.applyDialogFont(result);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(this.getControl(),
 				"optimize_logging_level_wizard_page_context");
-	}
-
-	private void addBooleanButton(String text, Choices choice, BiConsumer<Boolean, Choices> valueConsumer,
-			Composite result) {
-		Button button = new Button(result, SWT.CHECK);
-		button.setText(text);
-		boolean value = this.processor.settings().get(choice);
-		valueConsumer.accept(value, choice);
-		button.setSelection(value);
-		button.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent event) {
-				Button btn = (Button) event.getSource();
-				boolean selection = btn.getSelection();
-				ConvertNullToOptionalRefactoringTypePage.this.settings.put(text, selection);
-				valueConsumer.accept(selection, choice);
-			}
-		});
-	}
-
-	private ConvertNullToOptionalRefactoringProcessor getProcessor() {
-		return this.processor;
-	}
-
-	private void setProcessor(ConvertNullToOptionalRefactoringProcessor processor) {
-		this.processor = processor;
-	}
-
-	private void loadSettings() {
-		this.settings = this.getDialogSettings().getSection(DIALOG_SETTING_SECTION);
-		if (this.settings == null) {
-			this.settings = this.getDialogSettings().addNewSection(DIALOG_SETTING_SECTION);
-			for (Choices choice : Choices.values())
-				this.settings.put(choice.toString(), this.getProcessor().settings().get(choice));
-		}
-	}
-
-	private void updateStatus() {
-		this.setPageComplete(true);
 	}
 
 	@Override
@@ -140,9 +125,52 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 	}
 
 	@Override
+	public String getName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public IWizardPage getNextPage() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public IWizardPage getPreviousPage() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private ConvertNullToOptionalRefactoringProcessor getProcessor() {
+		return this.processor;
+	}
+
+	@Override
 	public String getTitle() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public IWizard getWizard() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isPageComplete() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	private void loadSettings() {
+		this.settings = this.getDialogSettings().getSection(DIALOG_SETTING_SECTION);
+		if (this.settings == null) {
+			this.settings = this.getDialogSettings().addNewSection(DIALOG_SETTING_SECTION);
+			for (Choices choice : Choices.values())
+				this.settings.put(choice.toString(), this.getProcessor().settings().get(choice));
+		}
 	}
 
 	@Override
@@ -164,6 +192,16 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 	}
 
 	@Override
+	public void setPreviousPage(IWizardPage page) {
+		// TODO Auto-generated method stub
+
+	}
+
+	private void setProcessor(ConvertNullToOptionalRefactoringProcessor processor) {
+		this.processor = processor;
+	}
+
+	@Override
 	public void setTitle(String title) {
 		// TODO Auto-generated method stub
 
@@ -176,51 +214,13 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 	}
 
 	@Override
-	public boolean canFlipToNextPage() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public IWizardPage getNextPage() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public IWizardPage getPreviousPage() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public IWizard getWizard() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean isPageComplete() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void setPreviousPage(IWizardPage page) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public void setWizard(IWizard newWizard) {
 		// TODO Auto-generated method stub
 
+	}
+
+	private void updateStatus() {
+		this.setPageComplete(true);
 	}
 
 }

@@ -25,12 +25,6 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  */
 public class ConvertNullToOptionalRefactoringWizard extends RefactoringWizard {
 
-	public ConvertNullToOptionalRefactoringWizard(Refactoring refactoring) {
-		super(refactoring,
-				RefactoringWizard.DIALOG_BASED_USER_INTERFACE & RefactoringWizard.CHECK_INITIAL_CONDITIONS_ON_OPEN);
-		this.setWindowTitle(Messages.Name);
-	}
-
 	public static void startRefactoring(IJavaElement[] javaElements, Shell shell, Optional<IProgressMonitor> monitor)
 			throws JavaModelException {
 		// TODO: Will need to set the target type at some point but see #23.
@@ -39,6 +33,12 @@ public class ConvertNullToOptionalRefactoringWizard extends RefactoringWizard {
 
 		new RefactoringStarter().activate(wizard, shell, RefactoringMessages.OpenRefactoringWizardAction_refactoring,
 				RefactoringSaveHelper.SAVE_REFACTORING);
+	}
+
+	public ConvertNullToOptionalRefactoringWizard(Refactoring refactoring) {
+		super(refactoring,
+				RefactoringWizard.DIALOG_BASED_USER_INTERFACE & RefactoringWizard.CHECK_INITIAL_CONDITIONS_ON_OPEN);
+		this.setWindowTitle(Messages.Name);
 	}
 
 	@Override

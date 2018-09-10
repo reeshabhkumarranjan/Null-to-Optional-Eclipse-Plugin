@@ -13,6 +13,17 @@ public class ConvertNullToOptionalRefactoringPlugin extends RefactoringPlugin {
 		return plugin;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin#getRefactoringId()
+	 */
+	@Override
+	protected String getRefactoringId() {
+		return ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID;
+	}
+
 	@Override
 	public void start(BundleContext context) throws Exception {
 		plugin = this;
@@ -23,16 +34,5 @@ public class ConvertNullToOptionalRefactoringPlugin extends RefactoringPlugin {
 	public void stop(BundleContext context) throws Exception {
 		plugin = null;
 		super.stop(context);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin#getRefactoringId()
-	 */
-	@Override
-	protected String getRefactoringId() {
-		return ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID;
 	}
 }

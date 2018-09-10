@@ -58,37 +58,15 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  */
 public class RefactorableHarvester {
 
-	private final IJavaElement refactoringRootElement;
-	private final ASTNode refactoringRootNode;
-	private final IJavaSearchScope scopeRoot;
-	private final RefactoringSettings settings;
-	private final IProgressMonitor monitor;
-	private final SearchEngine searchEngine = new SearchEngine();
-	private final Set<IJavaElement> nullSeeds = new LinkedHashSet<>();
-	private final WorkList workList = new WorkList();
-	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
-	private final Map<IJavaElement, Set<ISourceRange>> elementToBridgeableSourceRangeMap = new LinkedHashMap<>();
-	private final Set<Entity> passing = new LinkedHashSet<>();
-	private final Set<Entity> failing = new LinkedHashSet<>();
-
-	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope,
-			RefactoringSettings settings, IProgressMonitor m) {
-		this.refactoringRootElement = rootElement;
-		this.refactoringRootNode = rootNode;
-		this.monitor = m;
-		this.scopeRoot = scope;
-		this.settings = settings;
-	}
-
 	public static RefactorableHarvester of(ICompilationUnit i, CompilationUnit c, IJavaSearchScope scope,
 			RefactoringSettings settings, IProgressMonitor monitor) {
 		return new RefactorableHarvester(i, c, scope, settings, monitor);
 	}
 
-	public static RefactorableHarvester of(IType t, CompilationUnit c, IJavaSearchScope scope,
+	public static RefactorableHarvester of(IField f, CompilationUnit c, IJavaSearchScope scope,
 			RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
-		TypeDeclaration typeDecl = Util.findASTNode(t, c);
-		return new RefactorableHarvester(t, typeDecl, scope, settings, monitor);
+		FieldDeclaration fieldDecl = Util.findASTNode(f, c);
+		return new RefactorableHarvester(f, fieldDecl, scope, settings, monitor);
 	}
 
 	public static RefactorableHarvester of(IInitializer i, CompilationUnit c, IJavaSearchScope scope,
@@ -103,38 +81,49 @@ public class RefactorableHarvester {
 		return new RefactorableHarvester(m, methodDecl, scope, settings, monitor);
 	}
 
-	public static RefactorableHarvester of(IField f, CompilationUnit c, IJavaSearchScope scope,
+	public static RefactorableHarvester of(IType t, CompilationUnit c, IJavaSearchScope scope,
 			RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
-		FieldDeclaration fieldDecl = Util.findASTNode(f, c);
-		return new RefactorableHarvester(f, fieldDecl, scope, settings, monitor);
+		TypeDeclaration typeDecl = Util.findASTNode(t, c);
+		return new RefactorableHarvester(t, typeDecl, scope, settings, monitor);
 	}
 
-	Set<Entity> getPassing() {
-		return this.passing;
-	}
+	private final IJavaElement refactoringRootElement;
+	private final ASTNode refactoringRootNode;
+	private final IJavaSearchScope scopeRoot;
+	private final RefactoringSettings settings;
+	private final IProgressMonitor monitor;
+	private final SearchEngine searchEngine = new SearchEngine();
+	private final Set<IJavaElement> nullSeeds = new LinkedHashSet<>();
 
-	Set<Entity> getFailing() {
-		return this.failing;
+	private final WorkList workList = new WorkList();
+
+	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
+
+	private final Map<IJavaElement, Set<ISourceRange>> elementToBridgeableSourceRangeMap = new LinkedHashMap<>();
+
+	private final Set<Entity> passing = new LinkedHashSet<>();
+
+	private final Set<Entity> failing = new LinkedHashSet<>();
+
+	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope,
+			RefactoringSettings settings, IProgressMonitor m) {
+		this.refactoringRootElement = rootElement;
+		this.refactoringRootNode = rootNode;
+		this.monitor = m;
+		this.scopeRoot = scope;
+		this.settings = settings;
 	}
 
 	Map<IJavaElement, Set<ISourceRange>> getBridgeable() {
 		return this.elementToBridgeableSourceRangeMap;
 	}
 
-	private void reset() {
-		this.workList.clear();
-		this.nullSeeds.clear();
-		this.notRefactorable.clear();
+	Set<Entity> getFailing() {
+		return this.failing;
 	}
 
-	private Set<ComputationNode> trimForest(Set<ComputationNode> computationForest,
-			Set<IJavaElement> nonEnumerizableList) {
-		final Set<ComputationNode> ret = new LinkedHashSet<>(computationForest);
-		final TreeTrimingVisitor visitor = new TreeTrimingVisitor(ret, nonEnumerizableList);
-		// for each root in the computation forest
-		for (ComputationNode root : computationForest)
-			root.accept(visitor);
-		return ret;
+	Set<Entity> getPassing() {
+		return this.passing;
 	}
 
 	public RefactoringStatus harvestRefactorableContexts() throws CoreException {
@@ -230,6 +219,22 @@ public class RefactorableHarvester {
 		// if there are no passing sets, return an Error status else return an OK status
 		return Stream.concat(this.passing.stream(), this.failing.stream()).map(Entity::status)
 				.collect(RefactoringStatus::new, RefactoringStatus::merge, RefactoringStatus::merge);
+	}
+
+	private void reset() {
+		this.workList.clear();
+		this.nullSeeds.clear();
+		this.notRefactorable.clear();
+	}
+
+	private Set<ComputationNode> trimForest(Set<ComputationNode> computationForest,
+			Set<IJavaElement> nonEnumerizableList) {
+		final Set<ComputationNode> ret = new LinkedHashSet<>(computationForest);
+		final TreeTrimingVisitor visitor = new TreeTrimingVisitor(ret, nonEnumerizableList);
+		// for each root in the computation forest
+		for (ComputationNode root : computationForest)
+			root.accept(visitor);
+		return ret;
 	}
 
 }

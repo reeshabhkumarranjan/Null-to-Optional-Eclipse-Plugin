@@ -37,6 +37,10 @@ public class RefactoringSettings {
 		this.settings = settings;
 	}
 
+	public boolean bridgesLibraries() {
+		return this.settings.contains(Choices.BRIDGE_EXTERNAL);
+	}
+
 	public void createFromEnv() {
 		Map<String, String> choices = System.getenv();
 
@@ -62,12 +66,16 @@ public class RefactoringSettings {
 		return this.settings.contains(Choices.PERFORM_TRANSFORMATION);
 	}
 
+	public boolean get(Choices setting) {
+		return this.settings.contains(setting);
+	}
+
 	public boolean refactorsFields() {
 		return this.settings.contains(Choices.FIELDS);
 	}
 
-	public boolean seedsImplicit() {
-		return this.settings.contains(Choices.IMPLICIT_FIELDS);
+	public boolean refactorsLocalVariables() {
+		return this.settings.contains(Choices.LOCAL_VARS);
 	}
 
 	public boolean refactorsMethods() {
@@ -78,16 +86,8 @@ public class RefactoringSettings {
 		return this.settings.contains(Choices.METHOD_PARAMS);
 	}
 
-	public boolean refactorsLocalVariables() {
-		return this.settings.contains(Choices.LOCAL_VARS);
-	}
-
-	public boolean bridgesLibraries() {
-		return this.settings.contains(Choices.BRIDGE_EXTERNAL);
-	}
-
-	public boolean get(Choices setting) {
-		return this.settings.contains(setting);
+	public boolean seedsImplicit() {
+		return this.settings.contains(Choices.IMPLICIT_FIELDS);
 	}
 
 	public void set(boolean choice, Choices setting) {

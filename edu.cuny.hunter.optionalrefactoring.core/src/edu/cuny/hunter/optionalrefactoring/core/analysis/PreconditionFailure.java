@@ -64,26 +64,6 @@ public enum PreconditionFailure {
 	 */
 	CAST_EXPRESSION(8);
 
-	private int code;
-
-	private PreconditionFailure(int code) {
-		this.code = code;
-	}
-
-	public int getCode() {
-		return this.code;
-	}
-
-	/**
-	 * Convenience wrapper method
-	 */
-	public static SimpleEntry<IJavaElement, RefactoringStatus> handleFailure(HarvesterException e) {
-		if (e instanceof HarvesterASTException)
-			return handleFailure((HarvesterASTException) e);
-		else
-			return handleFailure((HarvesterJavaModelException) e);
-	}
-
 	/**
 	 * @param e
 	 *            This is thrown when we are traversing the AST and resolving
@@ -115,10 +95,19 @@ public enum PreconditionFailure {
 					// handled
 			String msg2 = Messages.Harvester_PreconditionFailureFailure + "\n" + msg;
 			Logger.getAnonymousLogger().severe(msg2);
-			return new SimpleEntry<>(null,
-					RefactoringStatus.createFatalErrorStatus(msg2));
+			return new SimpleEntry<>(null, RefactoringStatus.createFatalErrorStatus(msg2));
 		}
 		}
+	}
+
+	/**
+	 * Convenience wrapper method
+	 */
+	public static SimpleEntry<IJavaElement, RefactoringStatus> handleFailure(HarvesterException e) {
+		if (e instanceof HarvesterASTException)
+			return handleFailure((HarvesterASTException) e);
+		else
+			return handleFailure((HarvesterJavaModelException) e);
 	}
 
 	/**
@@ -131,14 +120,22 @@ public enum PreconditionFailure {
 		String msg = e.getMessage() + "\n" + e.toString();
 		switch (e.getFailure()) {
 		case MISSING_JAVA_ELEMENT: // not refactorable
-			return new SimpleEntry<>(e.getElement(),
-					RefactoringStatus.createErrorStatus(msg));
+			return new SimpleEntry<>(e.getElement(), RefactoringStatus.createErrorStatus(msg));
 		default: // something is terribly wrong because we have a PreconditionFailure we haven't
 					// handled
 			String msg2 = Messages.Harvester_PreconditionFailureFailure + "\n" + msg;
 			Logger.getAnonymousLogger().severe(msg2);
-			return new SimpleEntry<>(null,
-					RefactoringStatus.createFatalErrorStatus(msg2));
+			return new SimpleEntry<>(null, RefactoringStatus.createFatalErrorStatus(msg2));
 		}
+	}
+
+	private int code;
+
+	private PreconditionFailure(int code) {
+		this.code = code;
+	}
+
+	public int getCode() {
+		return this.code;
 	}
 }

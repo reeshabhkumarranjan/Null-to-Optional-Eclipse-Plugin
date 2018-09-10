@@ -51,6 +51,27 @@ public class ASTNodeFinder {
 			}
 
 			@Override
+			public boolean visit(QualifiedName node) {
+				if (!node.getName().getIdentifier().equals("length")) { // we've probably hit an array primitive
+					if (node.resolveBinding().getJavaElement().equals(target)) {
+						ASTNodeFinder.this.targetNodes.add(node);
+						return false;
+					}
+					return super.visit(node);
+				}
+				return false;
+			}
+
+			@Override
+			public boolean visit(SimpleName node) {
+				if (node.resolveBinding().getJavaElement().equals(target)) {
+					ASTNodeFinder.this.targetNodes.add(node);
+					return false;
+				}
+				return super.visit(node);
+			}
+
+			@Override
 			public boolean visit(SuperMethodInvocation node) {
 				if (node.resolveMethodBinding().getJavaElement().equals(target)) {
 					ASTNodeFinder.this.targetNodes.add(node);
@@ -66,27 +87,6 @@ public class ASTNodeFinder {
 					return false;
 				}
 				return super.visit(node);
-			}
-
-			@Override
-			public boolean visit(SimpleName node) {
-				if (node.resolveBinding().getJavaElement().equals(target)) {
-					ASTNodeFinder.this.targetNodes.add(node);
-					return false;
-				}
-				return super.visit(node);
-			}
-
-			@Override
-			public boolean visit(QualifiedName node) {
-				if (!node.getName().getIdentifier().equals("length")) { // we've probably hit an array primitive
-					if (node.resolveBinding().getJavaElement().equals(target)) {
-						ASTNodeFinder.this.targetNodes.add(node);
-						return false;
-					}
-					return super.visit(node);
-				}
-				return false;
 			}
 
 		}));

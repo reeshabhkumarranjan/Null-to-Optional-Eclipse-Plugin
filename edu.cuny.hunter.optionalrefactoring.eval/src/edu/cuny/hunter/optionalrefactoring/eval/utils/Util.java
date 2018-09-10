@@ -10,9 +10,6 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 public class Util {
-	private Util() {
-	}
-
 	public static IJavaProject[] getSelectedJavaProjectsFromEvent(ExecutionEvent event) throws ExecutionException {
 		ISelection currentSelection = HandlerUtil.getCurrentSelectionChecked(event);
 
@@ -20,5 +17,8 @@ public class Util {
 		IJavaProject[] javaProjects = list.stream().filter(e -> e instanceof IJavaProject)
 				.toArray(length -> new IJavaProject[length]);
 		return javaProjects;
+	}
+
+	private Util() {
 	}
 }
