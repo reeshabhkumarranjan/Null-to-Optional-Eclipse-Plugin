@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package edu.cuny.hunter.optionalrefactoring.core.descriptors;
 
@@ -20,13 +20,13 @@ public class ConvertNullToOptionalRefactoringDescriptor extends JavaRefactoringD
 	}
 
 	@SuppressWarnings("unchecked")
-	public ConvertNullToOptionalRefactoringDescriptor(String id, String project, String description,
-			String comment, @SuppressWarnings("rawtypes") Map arguments, int flags) {
+	public ConvertNullToOptionalRefactoringDescriptor(String id, String project, String description, String comment,
+			@SuppressWarnings("rawtypes") Map arguments, int flags) {
 		super(id, project, description, comment, arguments, flags);
 	}
 
-	public ConvertNullToOptionalRefactoringDescriptor(String project, String description,
-			String comment, @SuppressWarnings("rawtypes") Map arguments, int flags) {
+	public ConvertNullToOptionalRefactoringDescriptor(String project, String description, String comment,
+			@SuppressWarnings("rawtypes") Map arguments, int flags) {
 		this(REFACTORING_ID, project, description, comment, arguments, flags);
 	}
 

@@ -9,19 +9,14 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IPackageFragmentRoot;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.util.SelectionUtil;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
+
 import edu.cuny.hunter.optionalrefactoring.ui.wizards.ConvertNullToOptionalRefactoringWizard;
 
 public class ConvertNullToOptionalHandler extends AbstractHandler {
@@ -37,14 +32,13 @@ public class ConvertNullToOptionalHandler extends AbstractHandler {
 
 		Set<IJavaElement> javaElementSet = new HashSet<>();
 
-		if (list != null) {
+		if (list != null)
 			try {
-				for (Object obj : list) {
+				for (Object obj : list)
 					if (obj instanceof IJavaElement) {
 						IJavaElement jElem = (IJavaElement) obj;
 						javaElementSet.add(jElem);
 					}
-				}
 
 				Shell shell = HandlerUtil.getActiveShellChecked(event);
 				ConvertNullToOptionalRefactoringWizard.startRefactoring(
@@ -53,7 +47,6 @@ public class ConvertNullToOptionalHandler extends AbstractHandler {
 				JavaPlugin.log(e);
 				throw new ExecutionException("Failed to start refactoring", e);
 			}
-		}
 		// TODO: What do we do if there was no input? Do we display some
 		// message?
 		return null;

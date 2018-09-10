@@ -7,21 +7,21 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 public class HarvesterJavaModelException extends HarvesterException {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -2513355912944609251L;
-	
+
 	private final IJavaElement element;
-	
+
 	public HarvesterJavaModelException(String message, PreconditionFailure failure, IJavaElement element) {
-		super(message,failure);
+		super(message, failure);
 		this.element = element;
 	}
 
 	public IJavaElement getElement() {
-		return element;
+		return this.element;
 	}
-	
+
 	@Override
 	public String toString() {
 		final StringBuffer ret = new StringBuffer();

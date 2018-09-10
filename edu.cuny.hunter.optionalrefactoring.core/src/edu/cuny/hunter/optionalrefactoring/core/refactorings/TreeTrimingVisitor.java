@@ -10,8 +10,7 @@ class TreeTrimingVisitor implements Visitor {
 	private final Set<ComputationNode> computationForest;
 	private final Set<IJavaElement> nonEnumerizableList;
 
-	public TreeTrimingVisitor(Set<ComputationNode> computationForest,
-			Set<IJavaElement> nonEnumerizableList) {
+	public TreeTrimingVisitor(Set<ComputationNode> computationForest, Set<IJavaElement> nonEnumerizableList) {
 		this.nonEnumerizableList = nonEnumerizableList;
 		this.computationForest = computationForest;
 	}

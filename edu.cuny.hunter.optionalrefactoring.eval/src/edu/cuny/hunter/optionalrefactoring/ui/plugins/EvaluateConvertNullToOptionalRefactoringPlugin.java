@@ -4,9 +4,9 @@ import org.eclipse.core.runtime.Plugin;
 import org.osgi.framework.BundleContext;
 
 public class EvaluateConvertNullToOptionalRefactoringPlugin extends Plugin {
-	
+
 	private static EvaluateConvertNullToOptionalRefactoringPlugin plugin;
-	
+
 	public static Plugin getDefault() {
 		return plugin;
 	}

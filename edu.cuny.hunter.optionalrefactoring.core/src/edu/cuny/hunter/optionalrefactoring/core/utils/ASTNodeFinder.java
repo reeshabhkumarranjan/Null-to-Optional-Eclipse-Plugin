@@ -22,16 +22,16 @@ public class ASTNodeFinder {
 	}
 
 	private final List<TypeDeclaration> types;
-	
+
 	private final List<ASTNode> targetNodes = new LinkedList<>();
-	
+
 	private ASTNodeFinder(CompilationUnit scope) {
 		this.types = scope.types();
 	}
-	
+
 	public List<ASTNode> find(IJavaElement target) {
 		this.types.forEach(type -> type.accept(new ASTVisitor() {
-			
+
 			@Override
 			public boolean visit(MethodDeclaration node) {
 				if (node.resolveBinding().getJavaElement().equals(target)) {
@@ -40,7 +40,7 @@ public class ASTNodeFinder {
 				}
 				return super.visit(node);
 			}
-			
+
 			@Override
 			public boolean visit(MethodInvocation node) {
 				if (node.resolveMethodBinding().getJavaElement().equals(target)) {
@@ -49,7 +49,7 @@ public class ASTNodeFinder {
 				}
 				return super.visit(node);
 			}
-			
+
 			@Override
 			public boolean visit(SuperMethodInvocation node) {
 				if (node.resolveMethodBinding().getJavaElement().equals(target)) {
@@ -58,7 +58,7 @@ public class ASTNodeFinder {
 				}
 				return super.visit(node);
 			}
-			
+
 			@Override
 			public boolean visit(VariableDeclarationFragment node) {
 				if (node.resolveBinding().getJavaElement().equals(target)) {
@@ -67,7 +67,7 @@ public class ASTNodeFinder {
 				}
 				return super.visit(node);
 			}
-			
+
 			@Override
 			public boolean visit(SimpleName node) {
 				if (node.resolveBinding().getJavaElement().equals(target)) {
@@ -76,16 +76,17 @@ public class ASTNodeFinder {
 				}
 				return super.visit(node);
 			}
-			
+
 			@Override
 			public boolean visit(QualifiedName node) {
-				if (!node.getName().getIdentifier().equals("length")) {	// we've probably hit an array primitive
+				if (!node.getName().getIdentifier().equals("length")) { // we've probably hit an array primitive
 					if (node.resolveBinding().getJavaElement().equals(target)) {
 						ASTNodeFinder.this.targetNodes.add(node);
 						return false;
 					}
 					return super.visit(node);
-				} return false;
+				}
+				return false;
 			}
 
 		}));

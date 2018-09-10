@@ -6,9 +6,8 @@ public class UnionComputationNode extends ComputationNode {
 	@Override
 	public void accept(Visitor visitor) {
 		visitor.visit(this);
-		for (ComputationNode node : this.children) {
+		for (ComputationNode node : this.children)
 			node.accept(visitor);
-		}
 	}
 
 	@Override

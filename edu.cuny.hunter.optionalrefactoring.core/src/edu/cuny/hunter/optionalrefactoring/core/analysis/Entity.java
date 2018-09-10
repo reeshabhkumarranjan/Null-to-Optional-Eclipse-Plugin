@@ -38,27 +38,28 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.ASTNodeFinder;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 @SuppressWarnings("restriction")
-public class Entity implements Iterable<IJavaElement>{
+public class Entity implements Iterable<IJavaElement> {
 
 	private final Set<IJavaElement> elements;
-	private final Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges;
+	private final Map<IJavaElement, Set<ISourceRange>> bridgeSourceRanges;
 	private final RefactoringStatus status;
 
-	private final Map<CompilationUnitRewrite,Set<IJavaElement>> rewriteMap = new LinkedHashMap<>();
+	private final Map<CompilationUnitRewrite, Set<IJavaElement>> rewriteMap = new LinkedHashMap<>();
 
-	public static Entity create(Set<IJavaElement> elements, Map<IJavaElement,Set<ISourceRange>> bsr) {
-		Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges = bsr.keySet().stream()
-				.filter(elements::contains).collect(Collectors.toMap(x->x, x->bsr.get(x)));
+	public static Entity create(Set<IJavaElement> elements, Map<IJavaElement, Set<ISourceRange>> bsr) {
+		Map<IJavaElement, Set<ISourceRange>> bridgeSourceRanges = bsr.keySet().stream().filter(elements::contains)
+				.collect(Collectors.toMap(x -> x, x -> bsr.get(x)));
 		return new Entity(elements, bridgeSourceRanges, new RefactoringStatus());
 	}
 
-	public static Entity fail(IJavaElement element, Map<IJavaElement,Set<ISourceRange>> bsr) {
-		Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges = bsr.keySet().stream()
-				.filter(element::equals).collect(Collectors.toMap(x->x, x->bsr.get(x)));
-		return new Entity(Util.setOf(element),bridgeSourceRanges,RefactoringStatus.createErrorStatus(Messages.Excluded_by_Settings));
+	public static Entity fail(IJavaElement element, Map<IJavaElement, Set<ISourceRange>> bsr) {
+		Map<IJavaElement, Set<ISourceRange>> bridgeSourceRanges = bsr.keySet().stream().filter(element::equals)
+				.collect(Collectors.toMap(x -> x, x -> bsr.get(x)));
+		return new Entity(Util.setOf(element), bridgeSourceRanges,
+				RefactoringStatus.createErrorStatus(Messages.Excluded_by_Settings));
 	}
 
-	private Entity(Set<IJavaElement> elements, Map<IJavaElement,Set<ISourceRange>> bridgeSourceRanges, 
+	private Entity(Set<IJavaElement> elements, Map<IJavaElement, Set<ISourceRange>> bridgeSourceRanges,
 			RefactoringStatus status) {
 		this.elements = elements;
 		this.status = status;
@@ -76,7 +77,8 @@ public class Entity implements Iterable<IJavaElement>{
 	public void addRewrite(CompilationUnitRewrite rewrite, IJavaElement element) {
 		if (this.rewriteMap.containsKey(rewrite))
 			this.rewriteMap.get(rewrite).add(element);
-		else this.rewriteMap.put(rewrite, Util.setOf(element));
+		else
+			this.rewriteMap.put(rewrite, Util.setOf(element));
 	}
 
 	public void transform() throws CoreException {
@@ -95,72 +97,88 @@ public class Entity implements Iterable<IJavaElement>{
 	}
 
 	/**
-	 * @param element 
+	 * @param element
 	 * @param element
 	 * @return the appropriate action
-	 * @throws CoreException 
+	 * @throws CoreException
 	 */
 	private Action determine(ASTNode node, IJavaElement element) throws CoreException {
 		switch (node.getNodeType()) {
-		/* For values, if these are not in the bridge list, we leave it alone, 
-		 * because its declaration would already have been properly transformed.
-		 * If they are in it, we bridge them.
+		/*
+		 * For values, if these are not in the bridge list, we leave it alone, because
+		 * its declaration would already have been properly transformed. If they are in
+		 * it, we bridge them.
 		 */
-		case ASTNode.QUALIFIED_NAME :
-		case ASTNode.SIMPLE_NAME :
-		case ASTNode.FIELD_ACCESS : {
+		case ASTNode.QUALIFIED_NAME:
+		case ASTNode.SIMPLE_NAME:
+		case ASTNode.FIELD_ACCESS: {
 			// are we in an assignment expression ? if so we need to handle the right side
 			Assignment assignment = (Assignment) ASTNodes.getParent(node, ASTNode.ASSIGNMENT);
-			if (assignment != null) {
-				if (this.bridgeSourceRanges.containsKey(element)) return Action.BRIDGE_VALUE_OUT;
-				else return Action.CHANGE_N2O_LITERAL;
-			}
+			if (assignment != null)
+				if (this.bridgeSourceRanges.containsKey(element))
+					return Action.BRIDGE_VALUE_OUT;
+				else
+					return Action.CHANGE_N2O_LITERAL;
 		}
-		case ASTNode.SUPER_METHOD_INVOCATION :
-		case ASTNode.METHOD_INVOCATION :
-		case ASTNode.CLASS_INSTANCE_CREATION :
+		case ASTNode.SUPER_METHOD_INVOCATION:
+		case ASTNode.METHOD_INVOCATION:
+		case ASTNode.CLASS_INSTANCE_CREATION:
 			if (this.bridgeSourceRanges.containsKey(element))
 				return Action.BRIDGE_VALUE_OUT;
-			else return Action.NIL;
-			/*we can't deal with these cases yet, need to research the API more, 
-			 * but sets including them won't be propagated anyway*/
-		case ASTNode.SUPER_METHOD_REFERENCE :
-		case ASTNode.EXPRESSION_METHOD_REFERENCE :
-		case ASTNode.TYPE_METHOD_REFERENCE :
-			return Action.NIL;
-			/*if we have a var decl fragment in the bridge list, bridge it, otherwise
-			 * we transform it's type to Optional and it's right side gets wrapped if it's a literal
+			else
+				return Action.NIL;
+			/*
+			 * we can't deal with these cases yet, need to research the API more, but sets
+			 * including them won't be propagated anyway
 			 */
-		case ASTNode.VARIABLE_DECLARATION_FRAGMENT :
+		case ASTNode.SUPER_METHOD_REFERENCE:
+		case ASTNode.EXPRESSION_METHOD_REFERENCE:
+		case ASTNode.TYPE_METHOD_REFERENCE:
+			return Action.NIL;
+		/*
+		 * if we have a var decl fragment in the bridge list, bridge it, otherwise we
+		 * transform it's type to Optional and it's right side gets wrapped if it's a
+		 * literal
+		 */
+		case ASTNode.VARIABLE_DECLARATION_FRAGMENT:
 			if (this.bridgeSourceRanges.containsKey(element))
 				return Action.BRIDGE_N2O_VAR_DECL;
-			else return Action.CHANGE_N2O_VAR_DECL;
-		case ASTNode.SINGLE_VARIABLE_DECLARATION :
+			else
+				return Action.CHANGE_N2O_VAR_DECL;
+		case ASTNode.SINGLE_VARIABLE_DECLARATION:
 			return Action.CHANGE_N2O_PARAM;
-		case ASTNode.METHOD_DECLARATION :
+		case ASTNode.METHOD_DECLARATION:
 			return Action.CHANGE_N2O_METH_DECL;
-		default : return Action.NIL;
+		default:
+			return Action.NIL;
 		}
 	}
 
 	private void process(ASTNode node, Action action, CompilationUnitRewrite rewrite) {
 		switch (action) {
-		case NIL :
+		case NIL:
 			break;
-		case CHANGE_N2O_PARAM : transform((SingleVariableDeclaration)node, rewrite);
-		break;
-		case CHANGE_N2O_VAR_DECL : transform((VariableDeclarationFragment)node, action, rewrite);
-		break;
-		case BRIDGE_N2O_VAR_DECL : bridge((VariableDeclarationFragment)node, rewrite);
-		break;
-		case CHANGE_N2O_METH_DECL : transform((MethodDeclaration)node, action, rewrite);
-		break;
-		case BRIDGE_VALUE_OUT: bridge((Expression)node, rewrite);
-		break;
-		case CHANGE_N2O_LITERAL: transform((Expression)node, action, rewrite);
-		break;
-		case BRIDGE_VALUE_IN: bridge((Name)node, action, rewrite);
-		break;
+		case CHANGE_N2O_PARAM:
+			this.transform((SingleVariableDeclaration) node, rewrite);
+			break;
+		case CHANGE_N2O_VAR_DECL:
+			this.transform((VariableDeclarationFragment) node, action, rewrite);
+			break;
+		case BRIDGE_N2O_VAR_DECL:
+			this.bridge((VariableDeclarationFragment) node, rewrite);
+			break;
+		case CHANGE_N2O_METH_DECL:
+			this.transform((MethodDeclaration) node, action, rewrite);
+			break;
+		case BRIDGE_VALUE_OUT:
+			this.bridge((Expression) node, rewrite);
+			break;
+		case CHANGE_N2O_LITERAL:
+			this.transform((Expression) node, action, rewrite);
+			break;
+		case BRIDGE_VALUE_IN:
+			this.bridge((Name) node, action, rewrite);
+			break;
 		default:
 			break;
 		}
@@ -175,7 +193,8 @@ public class Entity implements Iterable<IJavaElement>{
 
 	private void transform(Expression node, Action action, CompilationUnitRewrite rewrite) {
 		Assignment assignment = (Assignment) ASTNodes.getParent(node, ASTNode.ASSIGNMENT);
-		if (assignment != null) node = assignment.getRightHandSide();
+		if (assignment != null)
+			node = assignment.getRightHandSide();
 		AST ast = node.getAST();
 		ASTRewrite astRewrite = rewrite.getASTRewrite();
 		ASTNode copy = this.processRightHandSide(ast, action, node);
@@ -184,7 +203,8 @@ public class Entity implements Iterable<IJavaElement>{
 
 	private void bridge(Expression node, CompilationUnitRewrite rewrite) {
 		Assignment assignment = (Assignment) ASTNodes.getParent(node, ASTNode.ASSIGNMENT);
-		if (assignment != null) node = assignment.getRightHandSide();
+		if (assignment != null)
+			node = assignment.getRightHandSide();
 		AST ast = node.getAST();
 		ASTRewrite astRewrite = rewrite.getASTRewrite();
 		ASTNode copy = this.orElseOptional(ast, node);
@@ -203,7 +223,7 @@ public class Entity implements Iterable<IJavaElement>{
 			public boolean visit(ReturnStatement ret) {
 				Expression expression = ret.getExpression();
 				Expression wrapped = Entity.this.processRightHandSide(ast, action, expression);
-				if (!wrapped.equals(expression)) 
+				if (!wrapped.equals(expression))
 					ret.setExpression(wrapped);
 				return super.visit(ret);
 			}
@@ -214,7 +234,7 @@ public class Entity implements Iterable<IJavaElement>{
 	private void transform(SingleVariableDeclaration node, CompilationUnitRewrite rewrite) {
 		AST ast = node.getAST();
 		ASTRewrite astRewrite = rewrite.getASTRewrite();
-		SingleVariableDeclaration copy = (SingleVariableDeclaration)ASTNode.copySubtree(ast, node);
+		SingleVariableDeclaration copy = (SingleVariableDeclaration) ASTNode.copySubtree(ast, node);
 		Type parameterized = this.getConvertedType(ast, copy.getType().toString());
 		copy.setType(parameterized);
 		astRewrite.replace(node, copy, null);
@@ -227,21 +247,21 @@ public class Entity implements Iterable<IJavaElement>{
 		ASTNode copy = ASTNode.copySubtree(ast, parent);
 		// first transform the declaration's type
 		switch (copy.getNodeType()) {
-		case ASTNode.FIELD_DECLARATION : {
-			FieldDeclaration fieldDeclCopy = (FieldDeclaration)copy;
+		case ASTNode.FIELD_DECLARATION: {
+			FieldDeclaration fieldDeclCopy = (FieldDeclaration) copy;
 			Type parameterized = this.getConvertedType(ast, fieldDeclCopy.getType().toString());
 			fieldDeclCopy.setType(parameterized);
 			break;
 		}
-		case ASTNode.VARIABLE_DECLARATION_EXPRESSION : {
-			VariableDeclarationExpression varDeclCopy = (VariableDeclarationExpression)copy;
-			Type parameterized = this.getConvertedType(ast,varDeclCopy.getType().toString());
+		case ASTNode.VARIABLE_DECLARATION_EXPRESSION: {
+			VariableDeclarationExpression varDeclCopy = (VariableDeclarationExpression) copy;
+			Type parameterized = this.getConvertedType(ast, varDeclCopy.getType().toString());
 			varDeclCopy.setType(parameterized);
 			break;
 		}
-		case ASTNode.VARIABLE_DECLARATION_STATEMENT : {
-			VariableDeclarationStatement varDeclCopy = (VariableDeclarationStatement)copy;
-			Type parameterized = this.getConvertedType(ast,varDeclCopy.getType().toString());
+		case ASTNode.VARIABLE_DECLARATION_STATEMENT: {
+			VariableDeclarationStatement varDeclCopy = (VariableDeclarationStatement) copy;
+			Type parameterized = this.getConvertedType(ast, varDeclCopy.getType().toString());
 			varDeclCopy.setType(parameterized);
 			break;
 		}
@@ -252,9 +272,10 @@ public class Entity implements Iterable<IJavaElement>{
 			public boolean visit(VariableDeclarationFragment recovered) {
 				if (recovered.getName().toString().equals(node.getName().toString())) {
 					Expression expression = recovered.getInitializer();
-					if (expression != null) {	// i.e. we're not on an uninitialized variable decl
+					if (expression != null) { // i.e. we're not on an uninitialized variable decl
 						Expression wrapped = Entity.this.processRightHandSide(ast, action, expression);
-						if (wrapped != expression) recovered.setInitializer(wrapped);
+						if (wrapped != expression)
+							recovered.setInitializer(wrapped);
 					}
 				}
 				return super.visit(recovered);
@@ -265,7 +286,7 @@ public class Entity implements Iterable<IJavaElement>{
 
 	private void bridge(VariableDeclarationFragment node, CompilationUnitRewrite rewrite) {
 		AST ast = node.getAST();
-		VariableDeclarationFragment copy = (VariableDeclarationFragment)ASTNode.copySubtree(ast, node);
+		VariableDeclarationFragment copy = (VariableDeclarationFragment) ASTNode.copySubtree(ast, node);
 		copy.setInitializer(this.orElseOptional(ast, node.getInitializer()));
 		ASTRewrite astRewrite = rewrite.getASTRewrite();
 		astRewrite.replace(node, copy, null);
@@ -273,27 +294,28 @@ public class Entity implements Iterable<IJavaElement>{
 
 	private Expression processRightHandSide(AST ast, Action action, Expression expression) {
 		switch (expression.getNodeType()) {
-		case ASTNode.NULL_LITERAL :
+		case ASTNode.NULL_LITERAL:
 			return this.emptyOptional(ast);
-		case ASTNode.SIMPLE_NAME :
-		case ASTNode.QUALIFIED_NAME : {
+		case ASTNode.SIMPLE_NAME:
+		case ASTNode.QUALIFIED_NAME: {
 			switch (action) {
-			case BRIDGE_VALUE_IN :
+			case BRIDGE_VALUE_IN:
 				return this.ofNullableOptional(ast, expression);
-			case BRIDGE_VALUE_OUT :
+			case BRIDGE_VALUE_OUT:
 				return this.orElseOptional(ast, expression);
-			case BRIDGE_N2O_VAR_DECL :
+			case BRIDGE_N2O_VAR_DECL:
 				return this.ofNullableOptional(ast, expression);
-			default : return expression;
+			default:
+				return expression;
 			}
 		}
-		case ASTNode.BOOLEAN_LITERAL :
-		case ASTNode.CHARACTER_LITERAL :
-		case ASTNode.NUMBER_LITERAL :
-		case ASTNode.STRING_LITERAL :
-		case ASTNode.TYPE_LITERAL :
-		default :
-			return ofOptional(ast,expression);
+		case ASTNode.BOOLEAN_LITERAL:
+		case ASTNode.CHARACTER_LITERAL:
+		case ASTNode.NUMBER_LITERAL:
+		case ASTNode.STRING_LITERAL:
+		case ASTNode.TYPE_LITERAL:
+		default:
+			return this.ofOptional(ast, expression);
 		}
 	}
 
@@ -316,7 +338,7 @@ public class Entity implements Iterable<IJavaElement>{
 		MethodInvocation optionalOf = ast.newMethodInvocation();
 		optionalOf.setExpression(ast.newSimpleName("Optional"));
 		optionalOf.setName(ast.newSimpleName("ofNullable"));
-		optionalOf.arguments().add(0,transformed);
+		optionalOf.arguments().add(0, transformed);
 		return optionalOf;
 	}
 
@@ -325,7 +347,7 @@ public class Entity implements Iterable<IJavaElement>{
 		MethodInvocation optionalOf = ast.newMethodInvocation();
 		optionalOf.setExpression(ast.newSimpleName("Optional"));
 		optionalOf.setName(ast.newSimpleName("of"));
-		optionalOf.arguments().add(0,transformed);
+		optionalOf.arguments().add(0, transformed);
 		return optionalOf;
 	}
 
@@ -334,7 +356,7 @@ public class Entity implements Iterable<IJavaElement>{
 		MethodInvocation orElse = ast.newMethodInvocation();
 		orElse.setExpression(transformed);
 		orElse.setName(ast.newSimpleName("orElse"));
-		orElse.arguments().add(0,ast.newNullLiteral());		
+		orElse.arguments().add(0, ast.newNullLiteral());
 		return orElse;
 	}
 

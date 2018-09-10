@@ -2,6 +2,7 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -42,7 +43,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 	public Set<Expression> getExpressions() {
 		return this.expressions;
 	}
-	
+
 	public Set<ISourceRange> getSourceRangesToBridge() {
 		return this.sourceRangesToBridge;
 	}
@@ -50,8 +51,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(ClassInstanceCreation node) {
 		if (node.getType().getStartPosition() == this.loc) {
-			final Expression param = (Expression) node.arguments().get(
-					this.paramNumber);
+			final Expression param = (Expression) node.arguments().get(this.paramNumber);
 			this.expressions.add(param);
 		}
 
@@ -61,8 +61,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(ConstructorInvocation node) {
 		if (node.getStartPosition() == this.loc) {
-			final Expression param = (Expression) node.arguments().get(
-					this.paramNumber);
+			final Expression param = (Expression) node.arguments().get(this.paramNumber);
 			this.expressions.add(param);
 		}
 
@@ -72,8 +71,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(MethodDeclaration node) {
 		if (node.getName().getStartPosition() == this.loc) {
-			final SingleVariableDeclaration svd = (SingleVariableDeclaration) node
-					.parameters().get(this.paramNumber);
+			final SingleVariableDeclaration svd = (SingleVariableDeclaration) node.parameters().get(this.paramNumber);
 
 			final IJavaElement element = Util.resolveElement(svd);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
@@ -87,8 +85,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(MethodInvocation node) {
 		if (node.getName().getStartPosition() == this.loc) {
-			final Expression param = (Expression) node.arguments().get(
-					this.paramNumber);
+			final Expression param = (Expression) node.arguments().get(this.paramNumber);
 			this.expressions.add(param);
 		}
 
@@ -98,8 +95,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(SuperConstructorInvocation node) {
 		if (node.getStartPosition() == this.loc) {
-			final Expression param = (Expression) node.arguments().get(
-					this.paramNumber);
+			final Expression param = (Expression) node.arguments().get(this.paramNumber);
 			this.expressions.add(param);
 		}
 
@@ -109,8 +105,7 @@ class ParameterProcessingVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(SuperMethodInvocation node) {
 		if (node.getName().getStartPosition() == this.loc) {
-			final Expression param = (Expression) node.arguments().get(
-					this.paramNumber);
+			final Expression param = (Expression) node.arguments().get(this.paramNumber);
 			this.expressions.add(param);
 		}
 

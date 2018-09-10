@@ -1,7 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.ui.wizards;
 
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogSettings;
@@ -30,15 +29,15 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 
 	private static final String DIALOG_SETTING_SECTION = "ConvertN2O"; //$NON-NLS-1$
 
-	public final String PAGE_NAME; //$NON-NLS-1$
-	
+	public final String PAGE_NAME;
+
 	private ConvertNullToOptionalRefactoringProcessor processor;
 	private IDialogSettings settings;
 
 	public ConvertNullToOptionalRefactoringTypePage(String typePageName) {
 		super(typePageName);
 		this.PAGE_NAME = typePageName;
-		setDescription(DESCRIPTION);
+		this.setDescription(DESCRIPTION);
 	}
 
 	@Override
@@ -56,10 +55,8 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 		result.setLayout(layout);
 
 		// set up buttons.
-		for (Choices choice : Choices.values()) {
+		for (Choices choice : Choices.values())
 			this.addBooleanButton("Refactor Fields", choice, this.processor.settings()::set, result);
-		}
-		
 
 		this.updateStatus();
 		Dialog.applyDialogFont(result);
@@ -67,11 +64,12 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 				"optimize_logging_level_wizard_page_context");
 	}
 
-	private void addBooleanButton(String text, Choices choice, BiConsumer<Boolean,Choices> valueConsumer, Composite result) {
+	private void addBooleanButton(String text, Choices choice, BiConsumer<Boolean, Choices> valueConsumer,
+			Composite result) {
 		Button button = new Button(result, SWT.CHECK);
 		button.setText(text);
 		boolean value = this.processor.settings().get(choice);
-		valueConsumer.accept(value,choice);
+		valueConsumer.accept(value, choice);
 		button.setSelection(value);
 		button.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -79,7 +77,7 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 				Button btn = (Button) event.getSource();
 				boolean selection = btn.getSelection();
 				ConvertNullToOptionalRefactoringTypePage.this.settings.put(text, selection);
-				valueConsumer.accept(selection,choice);
+				valueConsumer.accept(selection, choice);
 			}
 		});
 	}
@@ -91,7 +89,7 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 	private void setProcessor(ConvertNullToOptionalRefactoringProcessor processor) {
 		this.processor = processor;
 	}
-	
+
 	private void loadSettings() {
 		this.settings = this.getDialogSettings().getSection(DIALOG_SETTING_SECTION);
 		if (this.settings == null) {

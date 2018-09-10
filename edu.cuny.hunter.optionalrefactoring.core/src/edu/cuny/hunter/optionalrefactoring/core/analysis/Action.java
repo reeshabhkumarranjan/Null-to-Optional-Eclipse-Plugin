@@ -1,8 +1,7 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 /**
- * @author oren
- * The types of transformations that can be made on the AST.
+ * @author oren The types of transformations that can be made on the AST.
  */
 public enum Action {
 
@@ -13,9 +12,10 @@ public enum Action {
 	/**
 	 * Transform to a parameterized optional type and wrap value if any.
 	 */
-	CHANGE_N2O_VAR_DECL, 
+	CHANGE_N2O_VAR_DECL,
 	/**
-	 * Transform the right side of the declaration whose type is now Optional into it's raw type or null
+	 * Transform the right side of the declaration whose type is now Optional into
+	 * it's raw type or null
 	 */
 	BRIDGE_N2O_VAR_DECL,
 	/**
@@ -27,11 +27,13 @@ public enum Action {
 	 */
 	CHANGE_N2O_METH_DECL,
 	/**
-	 * Transform the value of a variable or invocation with optional type to it's raw type or null
+	 * Transform the value of a variable or invocation with optional type to it's
+	 * raw type or null
 	 */
-	BRIDGE_VALUE_OUT, 
+	BRIDGE_VALUE_OUT,
 	/**
-	 * Transform the literal on the right hand side of an assignment into an optional.
+	 * Transform the literal on the right hand side of an assignment into an
+	 * optional.
 	 */
 	CHANGE_N2O_LITERAL,
 	/**

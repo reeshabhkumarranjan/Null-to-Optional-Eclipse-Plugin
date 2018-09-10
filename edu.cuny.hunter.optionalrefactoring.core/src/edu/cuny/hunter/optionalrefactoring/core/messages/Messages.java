@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package edu.cuny.hunter.optionalrefactoring.core.messages;
 
@@ -34,7 +34,7 @@ public class Messages extends NLS {
 	public static String Harvester_JavaModelError;
 	public static String Harvester_SetFailure;
 	public static String Excluded_by_Settings;
-	
+
 	static {
 		// initialize resource bundle
 		NLS.initializeMessages(BUNDLE_NAME, Messages.class);

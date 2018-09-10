@@ -1,13 +1,12 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.Collections;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.stream.Collectors;
-import java.util.stream.*;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -41,16 +40,20 @@ import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
- * 
+ *
  * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>
- * 
- * This class controls the parsing and accumulation of NullLiteral dependent program elements from the AST.
- * It uses static factory methods for each type of IJavaElement from the model which the plugin can be run on.
- * 
- * It's main driver method harvestRefactorableContexts() produces a Set<TypeDependentElementSet> which is
- * passed to the caller. It also retains a TypeDependentElementSet for all of the program elements which are
- * null dependent but that do not meet the criteria for refactoring, for example, due to being dependent on
- * generated code or code in read only resources.
+ *
+ *         This class controls the parsing and accumulation of NullLiteral
+ *         dependent program elements from the AST. It uses static factory
+ *         methods for each type of IJavaElement from the model which the plugin
+ *         can be run on.
+ *
+ *         It's main driver method harvestRefactorableContexts() produces a
+ *         Set<TypeDependentElementSet> which is passed to the caller. It also
+ *         retains a TypeDependentElementSet for all of the program elements
+ *         which are null dependent but that do not meet the criteria for
+ *         refactoring, for example, due to being dependent on generated code or
+ *         code in read only resources.
  *
  */
 public class RefactorableHarvester {
@@ -68,8 +71,8 @@ public class RefactorableHarvester {
 	private final Set<Entity> passing = new LinkedHashSet<>();
 	private final Set<Entity> failing = new LinkedHashSet<>();
 
-	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, 
-			IJavaSearchScope scope, RefactoringSettings settings, IProgressMonitor m) {
+	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope,
+			RefactoringSettings settings, IProgressMonitor m) {
 		this.refactoringRootElement = rootElement;
 		this.refactoringRootNode = rootNode;
 		this.monitor = m;
@@ -77,31 +80,31 @@ public class RefactorableHarvester {
 		this.settings = settings;
 	}
 
-	public static RefactorableHarvester of(ICompilationUnit i, CompilationUnit c, 
-			IJavaSearchScope scope, RefactoringSettings settings, IProgressMonitor monitor) {
+	public static RefactorableHarvester of(ICompilationUnit i, CompilationUnit c, IJavaSearchScope scope,
+			RefactoringSettings settings, IProgressMonitor monitor) {
 		return new RefactorableHarvester(i, c, scope, settings, monitor);
 	}
 
-	public static RefactorableHarvester of(IType t, CompilationUnit c, 
-			IJavaSearchScope scope, RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
+	public static RefactorableHarvester of(IType t, CompilationUnit c, IJavaSearchScope scope,
+			RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
 		TypeDeclaration typeDecl = Util.findASTNode(t, c);
 		return new RefactorableHarvester(t, typeDecl, scope, settings, monitor);
 	}
 
-	public static RefactorableHarvester of(IInitializer i, CompilationUnit c, 
-			IJavaSearchScope scope, RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
-		Initializer initializer = Util.findASTNode(i,c);
+	public static RefactorableHarvester of(IInitializer i, CompilationUnit c, IJavaSearchScope scope,
+			RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
+		Initializer initializer = Util.findASTNode(i, c);
 		return new RefactorableHarvester(i, initializer, scope, settings, monitor);
 	}
 
-	public static RefactorableHarvester of(IMethod m, CompilationUnit c, 
-			IJavaSearchScope scope, RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
-		MethodDeclaration methodDecl = Util.findASTNode(m, c); 
+	public static RefactorableHarvester of(IMethod m, CompilationUnit c, IJavaSearchScope scope,
+			RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
+		MethodDeclaration methodDecl = Util.findASTNode(m, c);
 		return new RefactorableHarvester(m, methodDecl, scope, settings, monitor);
 	}
 
-	public static RefactorableHarvester of(IField f, CompilationUnit c, 
-			IJavaSearchScope scope, RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
+	public static RefactorableHarvester of(IField f, CompilationUnit c, IJavaSearchScope scope,
+			RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
 		FieldDeclaration fieldDecl = Util.findASTNode(f, c);
 		return new RefactorableHarvester(f, fieldDecl, scope, settings, monitor);
 	}
@@ -114,7 +117,7 @@ public class RefactorableHarvester {
 		return this.failing;
 	}
 
-	Map<IJavaElement,Set<ISourceRange>> getBridgeable() {
+	Map<IJavaElement, Set<ISourceRange>> getBridgeable() {
 		return this.elementToBridgeableSourceRangeMap;
 	}
 
@@ -127,26 +130,26 @@ public class RefactorableHarvester {
 	private Set<ComputationNode> trimForest(Set<ComputationNode> computationForest,
 			Set<IJavaElement> nonEnumerizableList) {
 		final Set<ComputationNode> ret = new LinkedHashSet<>(computationForest);
-		final TreeTrimingVisitor visitor = new TreeTrimingVisitor(ret,
-				nonEnumerizableList);
+		final TreeTrimingVisitor visitor = new TreeTrimingVisitor(ret, nonEnumerizableList);
 		// for each root in the computation forest
-		for (ComputationNode root : computationForest) {
+		for (ComputationNode root : computationForest)
 			root.accept(visitor);
-		}
 		return ret;
 	}
 
 	public RefactoringStatus harvestRefactorableContexts() throws CoreException {
 
 		this.reset();
-		// this worklist starts with the immediate type-dependent entities on null expressions.
+		// this worklist starts with the immediate type-dependent entities on null
+		// expressions.
 		NullSeeder seeder = new NullSeeder(this.refactoringRootNode, this.settings);
 		// if no nulls pass the preconditions, return an Error status
-		if (!seeder.seedNulls()) return RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
+		if (!seeder.seedNulls())
+			return RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
 		// otherwise get the passing null type dependent entities
 		this.nullSeeds.addAll(seeder.getPassing());
 		// and put just the IJavaElements into the workList
-		this.workList.addAll(nullSeeds);
+		this.workList.addAll(this.nullSeeds);
 
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
@@ -154,29 +157,24 @@ public class RefactorableHarvester {
 			final IJavaElement searchElement = this.workList.next();
 
 			// build a search pattern to find all occurrences of the searchElement.
-			final SearchPattern pattern = SearchPattern.createPattern(searchElement, 
-					IJavaSearchConstants.ALL_OCCURRENCES, 
-					SearchPattern.R_EXACT_MATCH);
+			final SearchPattern pattern = SearchPattern.createPattern(searchElement,
+					IJavaSearchConstants.ALL_OCCURRENCES, SearchPattern.R_EXACT_MATCH);
 
 			final SearchRequestor requestor = new SearchRequestor() {
 				@Override
-				public void acceptSearchMatch(SearchMatch match)
-						throws CoreException {
-					if (match.getAccuracy() == SearchMatch.A_ACCURATE
-							&& !match.isInsideDocComment()
-							// We are finding import declarations for some reason, they should be ignored
-							&& ((IJavaElement) match.getElement()).getElementType() != IJavaElement.IMPORT_DECLARATION) {
-						// here, we have search match. 
+				public void acceptSearchMatch(SearchMatch match) throws CoreException {
+					if (match.getAccuracy() == SearchMatch.A_ACCURATE && !match.isInsideDocComment()
+					// We are finding import declarations for some reason, they should be ignored
+							&& ((IJavaElement) match.getElement())
+									.getElementType() != IJavaElement.IMPORT_DECLARATION) {
+						// here, we have search match.
 						// convert the matchingElement to an ASTNode.
-						ASTNode node = Util.getExactASTNode(match,
-								RefactorableHarvester.this.monitor);
+						ASTNode node = Util.getExactASTNode(match, RefactorableHarvester.this.monitor);
 
 						// now we have the ASTNode corresponding to the match.
 						// process the matching ASTNode.
-						NullPropagator processor = new NullPropagator(node,
-								(IJavaElement)match.getElement(),
-								RefactorableHarvester.this.scopeRoot,
-								RefactorableHarvester.this.settings,
+						NullPropagator processor = new NullPropagator(node, (IJavaElement) match.getElement(),
+								RefactorableHarvester.this.scopeRoot, RefactorableHarvester.this.settings,
 								RefactorableHarvester.this.monitor);
 
 						processor.process();
@@ -184,15 +182,15 @@ public class RefactorableHarvester {
 						// add to the workList all of the type-dependent stuff we found.
 						RefactorableHarvester.this.workList.addAll(processor.getFound());
 						// add to the bridgeableSourceRangeMap all the source ranges that can be bridged
-						SimpleEntry<IJavaElement,Set<ISourceRange>> entry = processor.getSourceRangesToBridge();
-						if (entry != null) {
+						SimpleEntry<IJavaElement, Set<ISourceRange>> entry = processor.getSourceRangesToBridge();
+						if (entry != null)
 							if (RefactorableHarvester.this.elementToBridgeableSourceRangeMap
 									.containsKey(entry.getKey()))
-								RefactorableHarvester.this.elementToBridgeableSourceRangeMap
-								.get(entry.getKey()).addAll(entry.getValue());
-							else RefactorableHarvester.this.elementToBridgeableSourceRangeMap
-							.put(entry.getKey(), entry.getValue());
-						}
+								RefactorableHarvester.this.elementToBridgeableSourceRangeMap.get(entry.getKey())
+										.addAll(entry.getValue());
+							else
+								RefactorableHarvester.this.elementToBridgeableSourceRangeMap.put(entry.getKey(),
+										entry.getValue());
 					}
 				}
 			};
@@ -200,39 +198,38 @@ public class RefactorableHarvester {
 			// here, we're actually doing the search.
 			try {
 				this.searchEngine.search(pattern,
-						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, 
-						this.scopeRoot,
-						requestor, 
-						this.monitor);
+						new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, this.scopeRoot,
+						requestor, this.monitor);
 
 			} catch (final HarvesterException e) {
-				this.notRefactorable.addAll(this.workList
-						.getCurrentComputationTreeElements());
+				this.notRefactorable.addAll(this.workList.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
 				this.nullSeeds.removeIf(entity -> this.notRefactorable.contains(entity));
 				continue;
-			} 
+			}
 		}
 
-		final Set<ComputationNode> computationForest = this.trimForest(this.workList
-				.getComputationForest(), this.notRefactorable);
+		final Set<ComputationNode> computationForest = this.trimForest(this.workList.getComputationForest(),
+				this.notRefactorable);
 
-		final Set<Set<IJavaElement>> candidateSets = Util
-				.getElementForest(computationForest);
+		final Set<Set<IJavaElement>> candidateSets = Util.getElementForest(computationForest);
 
 		// convert the set of passing type dependent sets into sets of TDES
-		// It is a set of sets of type-dependent elements. You start with the seed, you grow the seeds into these sets. 
-		this.passing.addAll(candidateSets.stream().map(set -> Entity.create(set, this.elementToBridgeableSourceRangeMap))
-				.collect(Collectors.toSet()));
+		// It is a set of sets of type-dependent elements. You start with the seed, you
+		// grow the seeds into these sets.
+		this.passing.addAll(candidateSets.stream()
+				.map(set -> Entity.create(set, this.elementToBridgeableSourceRangeMap)).collect(Collectors.toSet()));
 
-		// keep in the notRefactorable list only anything that was in the originally seeded elements
+		// keep in the notRefactorable list only anything that was in the originally
+		// seeded elements
 		this.notRefactorable.retainAll(seeder.getPassing());
-		// turn the not refactorable list into a set of singleton TDES for consistency 
-		this.failing.addAll(notRefactorable.stream().map(element -> Entity.fail(element, 
-				this.elementToBridgeableSourceRangeMap)).collect(Collectors.toSet()));
+		// turn the not refactorable list into a set of singleton TDES for consistency
+		this.failing.addAll(this.notRefactorable.stream()
+				.map(element -> Entity.fail(element, this.elementToBridgeableSourceRangeMap))
+				.collect(Collectors.toSet()));
 		// if there are no passing sets, return an Error status else return an OK status
-		return Stream.concat(passing.stream(),failing.stream())
-				.map(Entity::status).collect(RefactoringStatus::new, RefactoringStatus::merge, RefactoringStatus::merge);
+		return Stream.concat(this.passing.stream(), this.failing.stream()).map(Entity::status)
+				.collect(RefactoringStatus::new, RefactoringStatus::merge, RefactoringStatus::merge);
 	}
 
 }

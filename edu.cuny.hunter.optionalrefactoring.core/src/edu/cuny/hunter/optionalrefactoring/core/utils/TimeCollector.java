@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package edu.cuny.hunter.optionalrefactoring.core.utils;
 
@@ -13,19 +13,19 @@ public class TimeCollector {
 	private long start;
 
 	public void start() {
-		start = System.currentTimeMillis();
+		this.start = System.currentTimeMillis();
 	}
 
 	public void stop() {
-		final long elapsed = System.currentTimeMillis() - start;
-		collectedTime += elapsed;
+		final long elapsed = System.currentTimeMillis() - this.start;
+		this.collectedTime += elapsed;
 	}
 
 	public long getCollectedTime() {
-		return collectedTime;
+		return this.collectedTime;
 	}
 
 	public void clear() {
-		collectedTime = 0;
+		this.collectedTime = 0;
 	}
 }

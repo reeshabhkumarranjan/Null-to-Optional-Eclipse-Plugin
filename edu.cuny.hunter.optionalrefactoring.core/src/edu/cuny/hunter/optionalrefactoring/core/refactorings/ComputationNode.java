@@ -20,9 +20,8 @@ public abstract class ComputationNode implements Visitable {
 
 	public List<ComputationNode> getAllChildren() {
 		final List<ComputationNode> ret = new ArrayList<>(this.children);
-		for (ComputationNode child : this.children) {
+		for (ComputationNode child : this.children)
 			ret.addAll(child.getAllChildren());
-		}
 		return ret;
 	}
 

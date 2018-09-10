@@ -2,7 +2,6 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,13 +53,13 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
+
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
-
 
 /**
  * @author <a href="mailto:raffi.khatchadourian@hunter.cuny.edu">Raffi
@@ -91,22 +90,24 @@ class NullPropagator {
 
 	/**
 	 * Returns to formal parameter number of svd starting from zero.
-	 * 
+	 *
 	 * @param svd
 	 *            The formal parameter.
 	 * @return The formal parameter number starting at zero.
 	 */
 	private static int getFormalParameterNumber(SingleVariableDeclaration svd) {
-		if (svd.getParent() instanceof CatchClause) return 0;
+		if (svd.getParent() instanceof CatchClause)
+			return 0;
 		final MethodDeclaration decl = (MethodDeclaration) svd.getParent();
 		return decl.parameters().indexOf(svd);
 	}
+
 	private final Set<IJavaElement> found = new LinkedHashSet<>();
 
 	private final IProgressMonitor monitor;
 
 	private final Expression name;
-	
+
 	private final IJavaElement element;
 
 	private final IJavaSearchScope scope;
@@ -115,8 +116,8 @@ class NullPropagator {
 
 	private final Set<ISourceRange> sourceRangesToBridge = new LinkedHashSet<>();
 
-	public NullPropagator(ASTNode node, IJavaElement element,
-			IJavaSearchScope scope, RefactoringSettings settings, IProgressMonitor monitor) {
+	public NullPropagator(ASTNode node, IJavaElement element, IJavaSearchScope scope, RefactoringSettings settings,
+			IProgressMonitor monitor) {
 		this.name = (Expression) node;
 		this.element = element;
 		this.scope = scope;
@@ -130,8 +131,9 @@ class NullPropagator {
 
 	public SimpleEntry<IJavaElement, Set<ISourceRange>> getSourceRangesToBridge() {
 		if (!this.sourceRangesToBridge.isEmpty())
-			return new SimpleEntry<IJavaElement,Set<ISourceRange>>(this.element,this.sourceRangesToBridge);
-		else return null;
+			return new SimpleEntry<>(this.element, this.sourceRangesToBridge);
+		else
+			return null;
 	}
 
 	public void process() throws CoreException {
@@ -140,34 +142,29 @@ class NullPropagator {
 	}
 
 	private void extractSourceRange(ASTNode node) {
-		this.sourceRangesToBridge.add(
-					Util.getBridgeableExpressionSourceRange(node));
+		this.sourceRangesToBridge.add(Util.getBridgeableExpressionSourceRange(node));
 	}
 
-	private void findFormalsForVariable(ClassInstanceCreation node)
-			throws JavaModelException, CoreException {
+	private void findFormalsForVariable(ClassInstanceCreation node) throws JavaModelException, CoreException {
 		final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
 		final IMethodBinding b = node.resolveConstructorBinding();
-		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ClassInstanceCreation: ", 
-				PreconditionFailure.MISSING_BINDING, node);
+		if (b == null)
+			throw new HarvesterASTException("While trying to resolve the binding for a ClassInstanceCreation: ",
+					PreconditionFailure.MISSING_BINDING, node);
 
 		IMethod meth = (IMethod) b.getJavaElement();
 		if (meth == null && node.getAnonymousClassDeclaration() != null) {
 			// most likely an anonymous class.
-			final AnonymousClassDeclaration acd = node
-					.getAnonymousClassDeclaration();
+			final AnonymousClassDeclaration acd = node.getAnonymousClassDeclaration();
 			final ITypeBinding binding = acd.resolveBinding();
 			final ITypeBinding superBinding = binding.getSuperclass();
-			for (final Iterator<IMethodBinding> it = Arrays.asList(
-					superBinding.getDeclaredMethods()).iterator(); it.hasNext();) {
-				final IMethodBinding imb = it.next();
+			for (IMethodBinding imb : Arrays.asList(superBinding.getDeclaredMethods())) {
 				if (imb.isConstructor()) {
 					final ITypeBinding[] itb = imb.getParameterTypes();
 					if (itb.length > paramNumber) {
 						final ITypeBinding ithParamType = itb[paramNumber];
-						if (ithParamType.isEqualTo(((Expression) node
-								.arguments().get(paramNumber))
-								.resolveTypeBinding())) {
+						if (ithParamType
+								.isEqualTo(((Expression) node.arguments().get(paramNumber)).resolveTypeBinding())) {
 							meth = (IMethod) imb.getJavaElement();
 							break;
 						}
@@ -175,59 +172,52 @@ class NullPropagator {
 				}
 			}
 		}
-		if (meth == null) throw new HarvesterASTException(Messages.Harvester_SourceNotPresent,
-				PreconditionFailure.MISSING_JAVA_ELEMENT,
-				node);
+		if (meth == null)
+			throw new HarvesterASTException(Messages.Harvester_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT, node);
 
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
 			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT,
-					meth);
+					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
 		else
 			this.findFormalsForVariable(top, paramNumber);
 	}
 
-	private void findFormalsForVariable(ConstructorInvocation node)
-			throws JavaModelException, CoreException {
+	private void findFormalsForVariable(ConstructorInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveConstructorBinding();
-		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a ConstructorInvocation: ", 
-				PreconditionFailure.MISSING_BINDING,
-				node);
+		if (b == null)
+			throw new HarvesterASTException("While trying to resolve the binding for a ConstructorInvocation: ",
+					PreconditionFailure.MISSING_BINDING, node);
 
 		final IMethod meth = (IMethod) b.getJavaElement();
 
-		if (meth == null) 
+		if (meth == null)
 			throw new HarvesterASTException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT,
-					node);
+					PreconditionFailure.MISSING_JAVA_ELEMENT, node);
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
 			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT,
-					meth);
+					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
 		else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
-	private void findFormalsForVariable(IMethod correspondingMethod,
-			final int paramNumber) throws CoreException {
+	private void findFormalsForVariable(IMethod correspondingMethod, final int paramNumber) throws CoreException {
 
-		final SearchPattern pattern = SearchPattern.createPattern(
-				correspondingMethod, IJavaSearchConstants.DECLARATIONS,
-				SearchPattern.R_EXACT_MATCH);
+		final SearchPattern pattern = SearchPattern.createPattern(correspondingMethod,
+				IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH);
 
 		this.findParameters(paramNumber, pattern);
 	}
 
-	private void findFormalsForVariable(MethodInvocation node)
-			throws JavaModelException, CoreException {
+	private void findFormalsForVariable(MethodInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveMethodBinding();
-		if (b == null) throw new HarvesterASTException("While trying to resolve the binding for a MethodInvocation: ", 
-				PreconditionFailure.MISSING_BINDING,
-				node);
+		if (b == null)
+			throw new HarvesterASTException("While trying to resolve the binding for a MethodInvocation: ",
+					PreconditionFailure.MISSING_BINDING, node);
 
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
@@ -238,67 +228,53 @@ class NullPropagator {
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
-	private void findFormalsForVariable(SuperConstructorInvocation node)
-			throws JavaModelException, CoreException {
+	private void findFormalsForVariable(SuperConstructorInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveConstructorBinding();
-		if (b == null) throw new HarvesterASTException(
-				"While trying to resolve the binding for a SuperConstructorInvocation: ", 
-				PreconditionFailure.MISSING_BINDING,
-				node);
+		if (b == null)
+			throw new HarvesterASTException("While trying to resolve the binding for a SuperConstructorInvocation: ",
+					PreconditionFailure.MISSING_BINDING, node);
 
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
 			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT,
-					meth);
+					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
 		else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
-	private void findFormalsForVariable(SuperMethodInvocation node)
-			throws JavaModelException, CoreException {
+	private void findFormalsForVariable(SuperMethodInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveMethodBinding();
-		if (b == null) throw new HarvesterASTException(
-				"While trying to resolve the binding for a SuperMethodInvocation: ", 
-				PreconditionFailure.MISSING_BINDING,
-				node);
+		if (b == null)
+			throw new HarvesterASTException("While trying to resolve the binding for a SuperMethodInvocation: ",
+					PreconditionFailure.MISSING_BINDING, node);
 
-		final IMethod meth = (IMethod) node.resolveMethodBinding()
-				.getJavaElement();
+		final IMethod meth = (IMethod) node.resolveMethodBinding().getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
 			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT,
-					meth);
+					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
 		else
-			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(),
-					this.name));
+			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
-	private void findParameters(final int paramNumber, SearchPattern pattern)
-			throws CoreException {
+	private void findParameters(final int paramNumber, SearchPattern pattern) throws CoreException {
 
 		final SearchRequestor requestor = new SearchRequestor() {
 
 			@Override
-			public void acceptSearchMatch(SearchMatch match)
-					throws CoreException {
-				if (match.getAccuracy() == SearchMatch.A_ACCURATE
-						&& !match.isInsideDocComment()) {
+			public void acceptSearchMatch(SearchMatch match) throws CoreException {
+				if (match.getAccuracy() == SearchMatch.A_ACCURATE && !match.isInsideDocComment()) {
 					IJavaElement elem = (IJavaElement) match.getElement();
-					ASTNode node = Util.getASTNode(elem,
-							NullPropagator.this.monitor);
-					ParameterProcessingVisitor visitor = new ParameterProcessingVisitor(
-							paramNumber, match.getOffset());
+					ASTNode node = Util.getASTNode(elem, NullPropagator.this.monitor);
+					ParameterProcessingVisitor visitor = new ParameterProcessingVisitor(paramNumber, match.getOffset());
 					node.accept(visitor);
 					NullPropagator.this.found.addAll(visitor.getElements());
 					NullPropagator.this.sourceRangesToBridge.addAll(visitor.getSourceRangesToBridge());
-					for (Iterator it = visitor.getExpressions().iterator(); it
-							.hasNext();) {
-						Expression exp = (Expression) it.next();
+					for (Object element2 : visitor.getExpressions()) {
+						Expression exp = (Expression) element2;
 						NullPropagator.this.processExpression(exp);
 					}
 				}
@@ -306,24 +282,22 @@ class NullPropagator {
 		};
 
 		final SearchEngine searchEngine = new SearchEngine();
-		searchEngine.search(pattern, new SearchParticipant[] { SearchEngine
-				.getDefaultSearchParticipant() }, this.scope, requestor, null);
+		searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, this.scope,
+				requestor, null);
 	}
 
-	private void findVariablesForFormal(SingleVariableDeclaration node)
-			throws CoreException {
+	private void findVariablesForFormal(SingleVariableDeclaration node) throws CoreException {
 
 		// Find invocations of the corresponding method.
 		final IVariableBinding b = node.resolveBinding();
-		if (b == null) throw new HarvesterASTException(
-				"While trying to resolve the binding for a SingleVariableDeclaration: ", 
-				PreconditionFailure.MISSING_BINDING,
-				node);
+		if (b == null)
+			throw new HarvesterASTException("While trying to resolve the binding for a SingleVariableDeclaration: ",
+					PreconditionFailure.MISSING_BINDING, node);
 
 		final IMethod meth = (IMethod) b.getDeclaringMethod().getJavaElement();
 
-		final SearchPattern pattern = SearchPattern.createPattern(meth,
-				IJavaSearchConstants.REFERENCES, SearchPattern.R_EXACT_MATCH);
+		final SearchPattern pattern = SearchPattern.createPattern(meth, IJavaSearchConstants.REFERENCES,
+				SearchPattern.R_EXACT_MATCH);
 
 		this.findParameters(getFormalParameterNumber(node), pattern);
 	}
@@ -339,7 +313,7 @@ class NullPropagator {
 			break;
 		}
 
-		case ASTNode.ARRAY_CREATION: {		
+		case ASTNode.ARRAY_CREATION: {
 			final ArrayCreation creation = (ArrayCreation) node;
 			boolean legal = true;
 			for (Object o : creation.dimensions()) {
@@ -347,9 +321,7 @@ class NullPropagator {
 				// if coming up from the index.
 				if (containedIn(dimension, this.name)) {
 					legal = false;
-					throw new HarvesterASTException(
-							Messages.Harvester_ASTNodeError, 
-							PreconditionFailure.AST_ERROR,
+					throw new HarvesterASTException(Messages.Harvester_ASTNodeError, PreconditionFailure.AST_ERROR,
 							node);
 				}
 			}
@@ -360,14 +332,11 @@ class NullPropagator {
 			break;
 		}
 
-		case ASTNode.ARRAY_ACCESS: {			
+		case ASTNode.ARRAY_ACCESS: {
 			final ArrayAccess access = (ArrayAccess) node;
 			// if coming up from the index.
 			if (containedIn(access.getIndex(), this.name))
-				throw new HarvesterASTException(
-						Messages.Harvester_ASTNodeError, 
-						PreconditionFailure.AST_ERROR,
-						node);
+				throw new HarvesterASTException(Messages.Harvester_ASTNodeError, PreconditionFailure.AST_ERROR, node);
 			else
 				this.process(node.getParent());
 			break;
@@ -383,18 +352,16 @@ class NullPropagator {
 		case ASTNode.VARIABLE_DECLARATION_STATEMENT: {
 			final VariableDeclarationStatement vds = (VariableDeclarationStatement) node;
 			for (Object o : vds.fragments()) {
-				final VariableDeclarationFragment vdf = (VariableDeclarationFragment)o;
+				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 				final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
-				if (!this.found.contains(element)) {
-					if (!this.settings.refactorsLocalVariables() || 
-							(this.settings.bridgesLibraries() && 
-									(element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))) {
+				if (!this.found.contains(element))
+					if (!this.settings.refactorsLocalVariables() || this.settings.bridgesLibraries()
+							&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
 						this.extractSourceRange(node);
-					} else {
+					else {
 						this.found.add(element);
 						this.processExpression(vdf.getInitializer());
 					}
-				}
 			}
 			break;
 
@@ -403,19 +370,19 @@ class NullPropagator {
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT: {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) node;
 			final IJavaElement element = Util.resolveElement(vdf);
-			if (!this.found.contains(element)) {	// we don't want to keep processing if it does
-				if (	( !this.settings.refactorsLocalVariables() 
-						&& !vdf.resolveBinding().isField() )
-						|| 	( !this.settings.refactorsFields() 
-								&& vdf.resolveBinding().isField()) ) {
+			if (!this.found.contains(element)) { // we don't want to keep processing if it does
+				if (!this.settings.refactorsLocalVariables() && !vdf.resolveBinding().isField()
+						|| !this.settings.refactorsFields() && vdf.resolveBinding().isField()) {
 					this.extractSourceRange(node);
 					return;
 				}
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 					if (this.settings.bridgesLibraries())
 						this.extractSourceRange(vdf);
-					else return;
-				else this.found.add(element);
+					else
+						return;
+				else
+					this.found.add(element);
 				this.processExpression(vdf.getInitializer());
 			}
 			break;
@@ -427,16 +394,14 @@ class NullPropagator {
 			for (Object o : fd.fragments()) {
 				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 				final IJavaElement element = Util.resolveElement(vdf);
-				if (!this.found.contains(element)) {
-					if (!this.settings.refactorsFields() || 
-							(this.settings.bridgesLibraries() && 
-									(element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))) {
+				if (!this.found.contains(element))
+					if (!this.settings.refactorsFields() || this.settings.bridgesLibraries()
+							&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
 						this.extractSourceRange(node);
-					} else {
+					else {
 						this.found.add(element);
 						this.processExpression(vdf.getInitializer());
 					}
-				}
 			}
 			break;
 
@@ -452,12 +417,11 @@ class NullPropagator {
 		case ASTNode.SWITCH_STATEMENT: {
 			final SwitchStatement sw = (SwitchStatement) node;
 			this.processExpression(sw.getExpression());
-			for (Object o : sw.statements()) {
+			for (Object o : sw.statements())
 				if (o instanceof SwitchCase) {
 					final SwitchCase sc = (SwitchCase) o;
 					this.processExpression(sc.getExpression());
 				}
-			}
 			break;
 		}
 
@@ -469,7 +433,7 @@ class NullPropagator {
 		}
 
 		case ASTNode.RETURN_STATEMENT: {
-			
+
 			final ReturnStatement rs = (ReturnStatement) node;
 
 			// process what is being returned.
@@ -485,17 +449,16 @@ class NullPropagator {
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 			if (top == null)
-				throw new HarvesterJavaModelException(
-						Messages.Harvester_SourceNotPresent, 
+				throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-			else {
-				// Check the topmost method.
-				if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-					if (this.settings.bridgesLibraries())
-						this.extractSourceRange(methDecl);
-					else return;
-				else this.found.add(top);
-			}
+			else // Check the topmost method.
+			if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
+				if (this.settings.bridgesLibraries())
+					this.extractSourceRange(methDecl);
+				else
+					return;
+			else
+				this.found.add(top);
 			break;
 
 		}
@@ -511,8 +474,7 @@ class NullPropagator {
 				@Override
 				public boolean visit(ReturnStatement node) {
 					try {
-						NullPropagator.this.processExpression(node
-								.getExpression());
+						NullPropagator.this.processExpression(node.getExpression());
 					} catch (JavaModelException E) {
 						throw new RuntimeException(E);
 					} catch (CoreException e) {
@@ -533,7 +495,7 @@ class NullPropagator {
 			// if coming up from a argument.
 			if (containedIn(ctorCall.arguments(), this.name)) {
 				final int paramNumber = Util.getParamNumber(ctorCall.arguments(), this.name);
-				IJavaElement element = Util.resolveElement(ctorCall,paramNumber);
+				IJavaElement element = Util.resolveElement(ctorCall, paramNumber);
 				if (!this.settings.refactorsParameters()) {
 					this.extractSourceRange(ctorCall);
 					return;
@@ -541,7 +503,8 @@ class NullPropagator {
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 					if (this.settings.bridgesLibraries())
 						this.extractSourceRange(ctorCall);
-					else return;
+					else
+						return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
@@ -562,7 +525,8 @@ class NullPropagator {
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 					if (this.settings.bridgesLibraries())
 						this.extractSourceRange(ctorCall);
-					else return;
+					else
+						return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
@@ -583,7 +547,8 @@ class NullPropagator {
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 					if (this.settings.bridgesLibraries())
 						this.extractSourceRange(ctorCall);
-					else return;
+					else
+						return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
@@ -604,7 +569,8 @@ class NullPropagator {
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 					if (this.settings.bridgesLibraries())
 						this.extractSourceRange(smi);
-					else return;
+					else
+						return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(smi);
@@ -625,7 +591,8 @@ class NullPropagator {
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 					if (this.settings.bridgesLibraries())
 						this.extractSourceRange(mi);
-					else return;
+					else
+						return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(mi);
@@ -653,8 +620,10 @@ class NullPropagator {
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 				if (this.settings.bridgesLibraries())
 					this.extractSourceRange(svd);
-				else return;
-			else this.found.add(element);
+				else
+					return;
+			else
+				this.found.add(element);
 			// take care of remote usage.
 			// go find variables on the corresponding calls.
 			this.findVariablesForFormal(svd);
@@ -662,9 +631,8 @@ class NullPropagator {
 
 		}
 
-
-		case ASTNode.ENHANCED_FOR_STATEMENT : {
-			final SingleVariableDeclaration svd = ((EnhancedForStatement)node).getParameter();
+		case ASTNode.ENHANCED_FOR_STATEMENT: {
+			final SingleVariableDeclaration svd = ((EnhancedForStatement) node).getParameter();
 			IJavaElement element = Util.resolveElement(svd);
 			if (!this.settings.refactorsParameters()) {
 				this.extractSourceRange(svd);
@@ -673,8 +641,10 @@ class NullPropagator {
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 				if (this.settings.bridgesLibraries())
 					this.extractSourceRange(svd);
-				else return;
-			else this.found.add(element);
+				else
+					return;
+			else
+				this.found.add(element);
 			break;
 
 		}
@@ -685,16 +655,14 @@ class NullPropagator {
 		}
 
 		case ASTNode.CAST_EXPRESSION: {
-			throw new HarvesterASTException(Messages.Harvester_CastExpression, 
-					PreconditionFailure.CAST_EXPRESSION,
+			throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION,
 					node);
 		}
 
-		case ASTNode.SUPER_METHOD_REFERENCE :
-		case ASTNode.EXPRESSION_METHOD_REFERENCE :
-		case ASTNode.TYPE_METHOD_REFERENCE :
-			throw new HarvesterASTException(Messages.Excluded_by_Settings,
-					PreconditionFailure.EXCLUDED_SETTING, node);
+		case ASTNode.SUPER_METHOD_REFERENCE:
+		case ASTNode.EXPRESSION_METHOD_REFERENCE:
+		case ASTNode.TYPE_METHOD_REFERENCE:
+			throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 
 		case ASTNode.INSTANCEOF_EXPRESSION:
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
@@ -703,13 +671,12 @@ class NullPropagator {
 		case ASTNode.NUMBER_LITERAL:
 		case ASTNode.CHARACTER_LITERAL:
 		case ASTNode.POSTFIX_EXPRESSION:
-		case ASTNode.PREFIX_EXPRESSION: 
+		case ASTNode.PREFIX_EXPRESSION:
 		case ASTNode.WHILE_STATEMENT:
 			break;
 
 		default: {
-			throw new HarvesterASTException(Messages.Harvester_ASTNodeError, 
-					PreconditionFailure.AST_ERROR, node);
+			throw new HarvesterASTException(Messages.Harvester_ASTNodeError, PreconditionFailure.AST_ERROR, node);
 		}
 		}
 	}
@@ -726,8 +693,10 @@ class NullPropagator {
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 				if (this.settings.bridgesLibraries())
 					this.extractSourceRange(name);
-				else return;
-			else this.found.add(element);
+				else
+					return;
+			else
+				this.found.add(element);
 			break;
 		}
 
@@ -745,9 +714,8 @@ class NullPropagator {
 
 		case ASTNode.ARRAY_INITIALIZER: {
 			final ArrayInitializer init = (ArrayInitializer) node;
-			for (Object exp : init.expressions()) {
-				this.processExpression((Expression)exp);
-			}
+			for (Object exp : init.expressions())
+				this.processExpression((Expression) exp);
 			break;
 		}
 
@@ -763,7 +731,7 @@ class NullPropagator {
 			// if coming up from a argument.
 			if (containedIn(ctorCall.arguments(), this.name)) {
 				final int paramNumber = Util.getParamNumber(ctorCall.arguments(), this.name);
-				IJavaElement element = Util.resolveElement(ctorCall,paramNumber);
+				IJavaElement element = Util.resolveElement(ctorCall, paramNumber);
 				if (!this.settings.refactorsParameters()) {
 					this.extractSourceRange(ctorCall);
 					return;
@@ -771,7 +739,8 @@ class NullPropagator {
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 					if (this.settings.bridgesLibraries())
 						this.extractSourceRange(ctorCall);
-					else return;
+					else
+						return;
 				else
 					// go find the formals.
 					this.findFormalsForVariable(ctorCall);
@@ -797,8 +766,10 @@ class NullPropagator {
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 				if (this.settings.bridgesLibraries())
 					this.extractSourceRange(fieldAccess);
-				else return;
-			else this.found.add(element);
+				else
+					return;
+			else
+				this.found.add(element);
 			break;
 
 		}
@@ -809,8 +780,7 @@ class NullPropagator {
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 			if (top == null)
-				throw new HarvesterJavaModelException(
-						Messages.Harvester_SourceNotPresent, 
+				throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
 			else {
 				// Check the topmost method.
@@ -821,8 +791,10 @@ class NullPropagator {
 				if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
 					if (this.settings.bridgesLibraries())
 						this.extractSourceRange(m);
-					else return;
-				else this.found.add(top);
+					else
+						return;
+				else
+					this.found.add(top);
 			}
 			break;
 
@@ -844,8 +816,10 @@ class NullPropagator {
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 				if (this.settings.bridgesLibraries())
 					this.extractSourceRange(superFieldAccess);
-				else return;
-			else this.found.add(element);
+				else
+					return;
+			else
+				this.found.add(element);
 			break;
 		}
 
@@ -855,8 +829,7 @@ class NullPropagator {
 			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 			if (top == null)
-				throw new HarvesterJavaModelException(
-						Messages.Harvester_SourceNotPresent, 
+				throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
 						PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
 			else {
 				// Check the topmost method.
@@ -867,8 +840,10 @@ class NullPropagator {
 				if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
 					if (this.settings.bridgesLibraries())
 						this.extractSourceRange(sm);
-					else return;
-				else this.found.add(top);
+					else
+						return;
+				else
+					this.found.add(top);
 			}
 			break;
 
@@ -878,29 +853,28 @@ class NullPropagator {
 			final VariableDeclarationExpression varDec = (VariableDeclarationExpression) node;
 			List<VariableDeclarationFragment> _fragments = varDec.fragments();
 			for (Object o : varDec.fragments()) {
-				final VariableDeclarationFragment vdf = (VariableDeclarationFragment)o;
+				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 				final IJavaElement element = Util.resolveElement(vdf);
-				if ( !this.settings.refactorsLocalVariables() || 
-						(this.settings.bridgesLibraries() && 
-								(element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)) )) {
+				if (!this.settings.refactorsLocalVariables() || this.settings.bridgesLibraries()
+						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
 					this.extractSourceRange(vdf);
-				} else this.found.add(element);
+				else
+					this.found.add(element);
 			}
 			break;
 
 		}
-		
-		case ASTNode.SUPER_METHOD_REFERENCE :
-		case ASTNode.EXPRESSION_METHOD_REFERENCE :
-		case ASTNode.TYPE_METHOD_REFERENCE :
-			throw new HarvesterASTException(Messages.Excluded_by_Settings,
-					PreconditionFailure.EXCLUDED_SETTING, node);
+
+		case ASTNode.SUPER_METHOD_REFERENCE:
+		case ASTNode.EXPRESSION_METHOD_REFERENCE:
+		case ASTNode.TYPE_METHOD_REFERENCE:
+			throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
 
 		case ASTNode.CAST_EXPRESSION: {
-			throw new HarvesterASTException(Messages.Harvester_CastExpression, 
-					PreconditionFailure.CAST_EXPRESSION, node);
+			throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION,
+					node);
 		}
-		case ASTNode.NULL_LITERAL : 
+		case ASTNode.NULL_LITERAL:
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
 		case ASTNode.IF_STATEMENT:
 		case ASTNode.BOOLEAN_LITERAL:
@@ -909,13 +883,12 @@ class NullPropagator {
 		case ASTNode.STRING_LITERAL:
 		case ASTNode.POSTFIX_EXPRESSION:
 		case ASTNode.INFIX_EXPRESSION:
-		case ASTNode.PREFIX_EXPRESSION: 
+		case ASTNode.PREFIX_EXPRESSION:
 		case ASTNode.THIS_EXPRESSION:
 			break;
 
 		default: {
-			throw new HarvesterASTException(Messages.Harvester_ASTNodeError, 
-					PreconditionFailure.AST_ERROR, node);
+			throw new HarvesterASTException(Messages.Harvester_ASTNodeError, PreconditionFailure.AST_ERROR, node);
 		}
 		}
 	}
