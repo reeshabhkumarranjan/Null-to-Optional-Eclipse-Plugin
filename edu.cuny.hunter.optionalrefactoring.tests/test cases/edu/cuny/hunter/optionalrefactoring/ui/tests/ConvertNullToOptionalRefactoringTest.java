@@ -28,7 +28,7 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import edu.cuny.citytech.refactoring.common.tests.RefactoringTest;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.CHOICES;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.Choices;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
@@ -148,7 +148,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	private void propagationHelper(Set<Set<String>> expectedPassingSets, Set<Set<String>> expectedFailingSet, 
-			CHOICES turnOff, RefactoringStatus expectedStatus) throws Exception {
+			Choices turnOff, RefactoringStatus expectedStatus) throws Exception {
 
 		System.out.println();
 		// compute the actual results.
@@ -208,7 +208,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				actualFailingSet.containsAll(expectedFailingSet));
 	}
 	
-	private void transformationHelper(CHOICES turnOff) throws Exception {
+	private void transformationHelper(Choices turnOff) throws Exception {
 		ICompilationUnit icu = createCUfromTestFile(getPackageP(), "A");
 
 		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring)this.getRefactoring(icu);
@@ -252,13 +252,13 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testSettingsMethodReturnOn() throws Exception {
 		this.propagationHelper(setOf(setOf("m")), 
-				setOf(), CHOICES.FIELDS, 
+				setOf(), Choices.FIELDS, 
 				new RefactoringStatus());
 	}
 
 	public void testSettingsMethodReturnOff() throws Exception {
 		this.propagationHelper(setOf(setOf("a")), 
-				setOf(), CHOICES.METHOD_RETURNS, 
+				setOf(), Choices.METHOD_RETURNS, 
 				new RefactoringStatus());
 	}
 
@@ -270,31 +270,31 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testSettingsParametersOff() throws Exception {
 		this.propagationHelper(setOf(setOf("o")), 
-				setOf(), CHOICES.METHOD_PARAMS, 
+				setOf(), Choices.METHOD_PARAMS, 
 				new RefactoringStatus());
 	}
 
 	public void testSettingsLocalVarsOn() throws Exception {
 		this.propagationHelper(setOf(setOf("x")), 
-				setOf(), CHOICES.METHOD_RETURNS, 
+				setOf(), Choices.METHOD_RETURNS, 
 				new RefactoringStatus());
 	}
 
 	public void testSettingsLocalVarsOff() throws Exception {
 		this.propagationHelper(setOf(setOf("m")), 
-				setOf(), CHOICES.LOCAL_VARS, 
+				setOf(), Choices.LOCAL_VARS, 
 				new RefactoringStatus());
 	}
 
 	public void testSettingsFieldsOn() throws Exception {
 		this.propagationHelper(setOf(setOf("x")), 
-				setOf(), CHOICES.METHOD_RETURNS, 
+				setOf(), Choices.METHOD_RETURNS, 
 				new RefactoringStatus());
 	}
 
 	public void testSettingsFieldsOff() throws Exception {
 		this.propagationHelper(setOf(), 
-				setOf(), CHOICES.FIELDS, 
+				setOf(), Choices.FIELDS, 
 				RefactoringStatus.createErrorStatus(""));
 	}
 
@@ -306,7 +306,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testSettingsImplicitOff() throws Exception {
 		this.propagationHelper(setOf(), 
-				setOf(), CHOICES.IMPLICIT_FIELDS, 
+				setOf(), Choices.IMPLICIT_FIELDS, 
 				RefactoringStatus.createErrorStatus(""));
 	}
 
