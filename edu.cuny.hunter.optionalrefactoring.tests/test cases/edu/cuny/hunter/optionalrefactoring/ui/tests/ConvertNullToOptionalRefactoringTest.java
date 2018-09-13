@@ -205,7 +205,19 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		Path absolutePath = this.getAbsolutionPath(fileName);
 		Files.write(absolutePath, contents.getBytes());
 	}
+	
+	public void testImplicitlyNullFieldConstructorInit() throws Exception {
+		this.transformationHelper(null);
+	}
 
+	public void testImplicitlyNullFieldNoConstructorInit() throws Exception {
+		this.transformationHelper(null);
+	}
+
+	public void testImplicitlyNullFieldSomeConstructorInit() throws Exception {
+		this.transformationHelper(null);
+	}
+	
 	public void testAnonymousClassDeclaration() throws Exception {
 		this.propagationHelper(setOf(setOf("o")), setOf(), null, new RefactoringStatus());
 	}
