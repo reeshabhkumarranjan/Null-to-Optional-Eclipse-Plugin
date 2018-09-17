@@ -28,6 +28,7 @@ import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
@@ -138,6 +139,9 @@ class NullSeeder {
 		case ASTNode.ASSIGNMENT:
 			this.process(((Assignment) node).getLeftHandSide());
 			break;
+		case ASTNode.INFIX_EXPRESSION:
+			this.process(((InfixExpression) node).getLeftOperand());
+			break;
 		case ASTNode.RETURN_STATEMENT:
 			this.process((ReturnStatement) node);
 			break;
@@ -173,8 +177,6 @@ class NullSeeder {
 			break;
 		case ASTNode.CAST_EXPRESSION:
 			this.process((CastExpression) node);
-			break;
-		case ASTNode.INFIX_EXPRESSION: /* This may appear in some edge cases, we do nothing */
 			break;
 		default:
 			throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
