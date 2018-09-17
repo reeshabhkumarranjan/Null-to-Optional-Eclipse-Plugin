@@ -359,6 +359,9 @@ public class Entity implements Iterable<IJavaElement> {
 						Expression wrapped = Entity.this.processRightHandSide(ast, action, expression);
 						if (wrapped != expression)
 							recovered.setInitializer(wrapped);
+					} else {	// if it is an uninitialized field decl
+						if (copy.getNodeType() == ASTNode.FIELD_DECLARATION)
+							recovered.setInitializer(Entity.this.emptyOptional(ast));
 					}
 				}
 				return super.visit(recovered);
