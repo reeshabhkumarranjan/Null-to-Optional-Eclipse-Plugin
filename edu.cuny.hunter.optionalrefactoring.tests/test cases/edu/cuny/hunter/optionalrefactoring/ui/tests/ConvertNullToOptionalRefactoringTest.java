@@ -205,7 +205,19 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		Path absolutePath = this.getAbsolutionPath(fileName);
 		Files.write(absolutePath, contents.getBytes());
 	}
+	
+	public void testImplicitlyNullFieldConstructorInit() throws Exception {
+		this.transformationHelper(null, RefactoringStatus.createErrorStatus("No nulls to refactor."));
+	}
 
+	public void testImplicitlyNullFieldNoConstructorInit() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
+	public void testImplicitlyNullFieldSomeConstructorInit() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+	
 	public void testAnonymousClassDeclaration() throws Exception {
 		this.propagationHelper(setOf(setOf("o")), setOf(), null, new RefactoringStatus());
 	}
@@ -369,26 +381,26 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testTransformationFieldAccessAssignment() throws Exception {
-		this.transformationHelper(null);
+		this.transformationHelper(null, new RefactoringStatus());
 	}
 
 	public void testTransformationFieldDeclLocal() throws Exception {
-		this.transformationHelper(null);
+		this.transformationHelper(null, new RefactoringStatus());
 	}
 
 	public void testTransformationLocalVarAssignment() throws Exception {
-		this.transformationHelper(null);
+		this.transformationHelper(null, new RefactoringStatus());
 	}
 
 	public void testTransformationLocalVarDeclLocal() throws Exception {
-		this.transformationHelper(null);
+		this.transformationHelper(null, new RefactoringStatus());
 	}
 
 	public void testTransformationMethDeclLocal() throws Exception {
-		this.transformationHelper(null);
+		this.transformationHelper(null, new RefactoringStatus());
 	}
 
-	private void transformationHelper(Choices turnOff) throws Exception {
+	private void transformationHelper(Choices turnOff, RefactoringStatus expectedStatus) throws Exception {
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 
 		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
@@ -401,7 +413,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		RefactoringStatus finalStatus = refactoring.checkFinalConditions(new NullProgressMonitor());
 		this.getLogger().info("Final status: " + finalStatus);
 
-		assertTrue("Precondition was supposed to pass.", finalStatus.isOK());
+		assertTrue("Precondition checking returned the expected RefactoringStatus: "+expectedStatus+".", finalStatus.getSeverity() == expectedStatus.getSeverity());
 		this.performChange(refactoring, false);
 
 		String outputTestFileName = this.getOutputTestFileName("A");

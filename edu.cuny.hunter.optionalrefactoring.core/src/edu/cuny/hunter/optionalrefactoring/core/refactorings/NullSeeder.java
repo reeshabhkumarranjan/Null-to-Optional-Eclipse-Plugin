@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -33,6 +34,7 @@ import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
@@ -465,14 +467,43 @@ class NullSeeder {
 						IVariableBinding binding = Util.resolveBinding(node);
 						IJavaElement element = Util.resolveElement(node);
 						if (element instanceof IField)
-							if (NullSeeder.this.settings.seedsImplicit())
-								if (node.getInitializer() == null)
+							if (NullSeeder.this.settings.seedsImplicit()) {
+								List<Boolean> fici = new LinkedList<>(); 
+								NullSeeder.this.refactoringRootNode.accept(new ASTVisitor() {
+									@Override
+									public boolean visit(MethodDeclaration node) {
+										if (node.isConstructor()) {
+											Set<Boolean> initialized = new LinkedHashSet<>();
+											node.accept(new ASTVisitor() {
+												@Override
+												public boolean visit(Assignment node) {
+													Expression expr = node.getLeftHandSide();
+													IVariableBinding targetField = null;
+													switch (expr.getNodeType()) {
+													case ASTNode.FIELD_ACCESS: targetField = ((FieldAccess)expr).resolveFieldBinding();
+													break;
+													case ASTNode.SIMPLE_NAME:
+													case ASTNode.QUALIFIED_NAME: targetField = (IVariableBinding) ((Name)expr).resolveBinding();
+													}
+													if (binding.isEqualTo(targetField)) initialized.add(Boolean.TRUE);
+													return super.visit(node);
+												}
+											});
+											if (initialized.contains(Boolean.TRUE)) fici.add(Boolean.TRUE);
+											else fici.add(Boolean.FALSE);
+										}
+										return super.visit(node);
+									}
+								});
+								boolean fieldIsConstructorInitialized = fici.isEmpty() ? false : fici.stream().reduce(Boolean.TRUE, Boolean::logicalAnd);
+								if (node.getInitializer() == null && !fieldIsConstructorInitialized)
 									/*
 									 * this element gets added to the Map candidates with boolean true indicating an
 									 * implicit null also, if the type of the declaration is primitive, we ignore it
 									 */
 									if (!binding.getVariableDeclaration().getType().isPrimitive())
 										NullSeeder.this.candidates.add(element);
+							}
 					} catch (HarvesterException e) {
 						Logger.getAnonymousLogger()
 								.warning(Messages.Harvester_NullLiteralFailed + "\n" + e.getMessage());
