@@ -495,7 +495,7 @@ class NullSeeder {
 										return super.visit(node);
 									}
 								});
-								boolean fieldIsConstructorInitialized = fici.stream().reduce(Boolean.TRUE, Boolean::logicalAnd);
+								boolean fieldIsConstructorInitialized = fici.isEmpty() ? false : fici.stream().reduce(Boolean.TRUE, Boolean::logicalAnd);
 								if (node.getInitializer() == null && !fieldIsConstructorInitialized)
 									/*
 									 * this element gets added to the Map candidates with boolean true indicating an
