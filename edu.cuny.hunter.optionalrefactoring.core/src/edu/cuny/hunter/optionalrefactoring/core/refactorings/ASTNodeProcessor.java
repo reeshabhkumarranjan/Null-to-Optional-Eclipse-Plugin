@@ -1,168 +1,147 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.*;
 
-import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
-import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
-
-public abstract class ASTProcessor {
-
-	private final ASTNode rootNode;
-	private final RefactoringSettings settings;
-	private final Set<IJavaElement> candidates = new LinkedHashSet<>();
+interface ASTNodeProcessor {	
 	
-	public ASTProcessor(ASTNode node, RefactoringSettings settings) {
-		this.rootNode = node;
-		this.settings = settings;
-	}
+	boolean process();
 	
-	public void process() {
-		if (!this.rootNode.getAST().hasResolvedBindings())
-			throw new HarvesterASTException(Messages.Harvester_MissingBinding, PreconditionFailure.MISSING_BINDING, rootNode);
-		this.process(this.rootNode);
+	default void process(AnonymousClassDeclaration node) { }
+	default void process(ArrayAccess node) { }
+	default void process(ArrayCreation node) { }
+	default void process(ArrayInitializer node) { }
+	default void process(ArrayType node) { }
+	default void process(AssertStatement node) { }
+	default void process(Assignment node) { }
+	default void process(Block node) { }
+	default void process(BooleanLiteral node) { }
+	default void process(BreakStatement node) { }
+	default void process(CastExpression node) { }
+	default void process(CatchClause node) { }
+	default void process(CharacterLiteral node) { }
+	default void process(ClassInstanceCreation node) { }
+	default void process(CompilationUnit node) { }
+	default void process(ConditionalExpression node) { }
+	default void process(ConstructorInvocation node) { }
+	default void process(ContinueStatement node) { }
+	default void process(DoStatement node) { }
+	default void process(EmptyStatement node) { }
+	default void process(Expression node) {
+		if (node instanceof Annotation) this.process((Annotation) node); else 
+		if (node instanceof ArrayAccess) this.process((ArrayAccess) node); else
+		if (node instanceof ArrayCreation) this.process((ArrayCreation) node); else
+		if (node instanceof ArrayInitializer) this.process((ArrayInitializer) node); else
+		if (node instanceof Assignment) this.process((Assignment) node); else
+		if (node instanceof BooleanLiteral) this.process((BooleanLiteral) node); else
+		if (node instanceof CastExpression) this.process((CastExpression) node); else
+		if (node instanceof CharacterLiteral) this.process((CharacterLiteral) node); else
+		if (node instanceof ClassInstanceCreation) this.process((ClassInstanceCreation) node); else
+		if (node instanceof ConditionalExpression) this.process((ConditionalExpression) node); else
+		if (node instanceof CreationReference) this.process((CreationReference) node); else
+		if (node instanceof ExpressionMethodReference) this.process((ExpressionMethodReference) node); else
+		if (node instanceof FieldAccess) this.process((FieldAccess) node); else
+		if (node instanceof InfixExpression) this.process((InfixExpression) node); else
+		if (node instanceof InstanceofExpression) this.process((InstanceofExpression) node); else
+		if (node instanceof LambdaExpression) this.process((LambdaExpression) node); else
+		if (node instanceof MethodInvocation) this.process((MethodInvocation) node); else
+		if (node instanceof MethodReference) this.process((MethodReference) node); else
+		if (node instanceof Name) this.process((Name) node); else
+		if (node instanceof NullLiteral) this.process((NullLiteral) node); else
+		if (node instanceof NumberLiteral) this.process((NumberLiteral) node); else
+		if (node instanceof ParenthesizedExpression) this.process((ParenthesizedExpression) node); else
+		if (node instanceof PostfixExpression) this.process((PostfixExpression) node); else
+		if (node instanceof PrefixExpression) this.process((PrefixExpression) node); else
+		if (node instanceof StringLiteral) this.process((StringLiteral) node); else
+		if (node instanceof SuperFieldAccess) this.process((SuperFieldAccess) node); else
+		if (node instanceof SuperMethodInvocation) this.process((SuperMethodInvocation) node); else
+		if (node instanceof SuperMethodReference) this.process((SuperMethodReference) node); else
+		if (node instanceof ThisExpression) this.process((ThisExpression) node); else
+		if (node instanceof TypeLiteral) this.process((TypeLiteral) node); else
+		if (node instanceof TypeMethodReference) this.process((TypeMethodReference) node); else
+		if (node instanceof VariableDeclarationExpression) this.process((VariableDeclarationExpression) node);
 	}
-	
-	private void process(AnonymousClassDeclaration node) { }
-	private void process(ArrayAccess node) { }
-	private void process(ArrayCreation node) { }
-	private void process(ArrayInitializer node) { }
-	private void process(ArrayType node) { }
-	private void process(AssertStatement node) { }
-	private void process(Assignment node) { }
-	private void process(Block node) { }
-	private void process(BooleanLiteral node) { }
-	private void process(BreakStatement node) { }
-	private void process(CastExpression node) { }
-	private void process(CatchClause node) { }
-	private void process(CharacterLiteral node) { }
-	private void process(ClassInstanceCreation node) { }
-	private void process(CompilationUnit node) { }
-	private void process(ConditionalExpression node) { }
-	private void process(ConstructorInvocation node) { }
-	private void process(ContinueStatement node) { }
-	private void process(DoStatement node) { }
-	private void process(EmptyStatement node) { }
-	private void process(ExpressionStatement node) {
-		switch (node.getNodeType()) {
-		Annotation:
-	    ArrayAccess,
-	    ArrayCreation,
-	    ArrayInitializer,
-	    Assignment,
-	    BooleanLiteral,
-	    CastExpression,
-	    CharacterLiteral,
-	    ClassInstanceCreation,
-	    ConditionalExpression,
-	    CreationReference,
-	    ExpressionMethodReference,
-	    FieldAccess,
-	    InfixExpression,
-	    InstanceofExpression,
-	    LambdaExpression,
-	    MethodInvocation,
-	    MethodReference,
-	    Name,
-	    NullLiteral,
-	    NumberLiteral,
-	    ParenthesizedExpression,
-	    PostfixExpression,
-	    PrefixExpression,
-	    StringLiteral,
-	    SuperFieldAccess,
-	    SuperMethodInvocation,
-	    SuperMethodReference,
-	    ThisExpression,
-	    TypeLiteral,
-	    TypeMethodReference,
-	    VariableDeclarationExpression
-		}
+	default void process(ExpressionStatement node) {
+		this.process(node.getExpression());
 	}
-	private void process(FieldAccess node) { }
-	private void process(FieldDeclaration node) { }
-	private void process(ForStatement node) { }
-	private void process(IfStatement node) { }
-	private void process(ImportDeclaration node) { }
-	private void process(InfixExpression node) { }
-	private void process(Initializer node) { }
-	private void process(Javadoc node) { }
-	private void process(LabeledStatement node) { }
-	private void process(MethodDeclaration node) { }
-	private void process(MethodInvocation node) { }
-	private void process(NullLiteral node) { }
-	private void process(NumberLiteral node) { }
-	private void process(PackageDeclaration node) { }
-	private void process(ParenthesizedExpression node) { }
-	private void process(PostfixExpression node) { }
-	private void process(PrefixExpression node) { }
-	private void process(PrimitiveType node) { }
-	private void process(QualifiedName node) { }
-	private void process(ReturnStatement node) { }
-	private void process(SimpleName node) { }
-	private void process(SimpleType node) { }
-	private void process(SingleVariableDeclaration node) { }
-	private void process(StringLiteral node) { }
-	private void process(SuperConstructorInvocation node) { }
-	private void process(SuperFieldAccess node) { }
-	private void process(SuperMethodInvocation node) { }
-	private void process(SwitchCase node) { }
-	private void process(SwitchStatement node) { }
-	private void process(SynchronizedStatement node) { }
-	private void process(ThisExpression node) { }
-	private void process(ThrowStatement node) { }
-	private void process(TryStatement node) { }
-	private void process(TypeDeclaration node) { }
-	private void process(TypeDeclarationStatement node) { }
-	private void process(TypeLiteral node) { }
-	private void process(VariableDeclarationExpression node) { }
-	private void process(VariableDeclarationFragment node) { }
-	private void process(VariableDeclarationStatement node) { }
-	private void process(WhileStatement node) { }
-	private void process(InstanceofExpression node) { }
-	private void process(LineComment node) { }
-	private void process(BlockComment node) { }
-	private void process(TagElement node) { }
-	private void process(TextElement node) { }
-	private void process(MemberRef node) { }
-	private void process(MethodRef node) { }
-	private void process(MethodRefParameter node) { }
-	private void process(EnhancedForStatement node) { }
-	private void process(EnumDeclaration node) { }
-	private void process(EnumConstantDeclaration node) { }
-	private void process(TypeParameter node) { }
-	private void process(ParameterizedType node) { }
-	private void process(QualifiedType node) { }
-	private void process(WildcardType node) { }
-	private void process(NormalAnnotation node) { }
-	private void process(MarkerAnnotation node) { }
-	private void process(SingleMemberAnnotation node) { }
-	private void process(MemberValuePair node) { }
-	private void process(AnnotationTypeDeclaration node) { }
-	private void process(Modifier node) { }
-	private void process(UnionType node) { }
-	private void process(Dimension node) { }
-	private void process(LambdaExpression node) { }
-	private void process(IntersectionType node) { }
-	private void process(NameQualifiedType node) { }
-	private void process(CreationReference node) { }
-	private void process(ExpressionMethodReference node) { }
-	private void process(SuperMethodReference node) { }
-	private void process(TypeMethodReference node) { }
-	private void process(ModuleDeclaration node) { }
-	private void process(RequiresDirective node) { }
-	private void process(ExportsDirective node) { }
-	private void process(OpensDirective node) { }
-	private void process(UsesDirective node) { }
-	private void process(ProvidesDirective node) { }
-	private void process(ModuleModifier node) { }
+	default void process(FieldAccess node) { }
+	default void process(FieldDeclaration node) { }
+	default void process(ForStatement node) { }
+	default void process(IfStatement node) { }
+	default void process(ImportDeclaration node) { }
+	default void process(InfixExpression node) { }
+	default void process(Initializer node) { }
+	default void process(Javadoc node) { }
+	default void process(LabeledStatement node) { }
+	default void process(MethodDeclaration node) { }
+	default void process(MethodInvocation node) { }
+	default void process(NullLiteral node) { }
+	default void process(NumberLiteral node) { }
+	default void process(PackageDeclaration node) { }
+	default void process(ParenthesizedExpression node) { }
+	default void process(PostfixExpression node) { }
+	default void process(PrefixExpression node) { }
+	default void process(PrimitiveType node) { }
+	default void process(QualifiedName node) { }
+	default void process(ReturnStatement node) { }
+	default void process(SimpleName node) { }
+	default void process(SimpleType node) { }
+	default void process(SingleVariableDeclaration node) { }
+	default void process(StringLiteral node) { }
+	default void process(SuperConstructorInvocation node) { }
+	default void process(SuperFieldAccess node) { }
+	default void process(SuperMethodInvocation node) { }
+	default void process(SwitchCase node) { }
+	default void process(SwitchStatement node) { }
+	default void process(SynchronizedStatement node) { }
+	default void process(ThisExpression node) { }
+	default void process(ThrowStatement node) { }
+	default void process(TryStatement node) { }
+	default void process(TypeDeclaration node) { }
+	default void process(TypeDeclarationStatement node) { }
+	default void process(TypeLiteral node) { }
+	default void process(VariableDeclarationExpression node) { }
+	default void process(VariableDeclarationFragment node) { }
+	default void process(VariableDeclarationStatement node) { }
+	default void process(WhileStatement node) { }
+	default void process(InstanceofExpression node) { }
+	default void process(LineComment node) { }
+	default void process(BlockComment node) { }
+	default void process(TagElement node) { }
+	default void process(TextElement node) { }
+	default void process(MemberRef node) { }
+	default void process(MethodRef node) { }
+	default void process(MethodRefParameter node) { }
+	default void process(EnhancedForStatement node) { }
+	default void process(EnumDeclaration node) { }
+	default void process(EnumConstantDeclaration node) { }
+	default void process(TypeParameter node) { }
+	default void process(ParameterizedType node) { }
+	default void process(QualifiedType node) { }
+	default void process(WildcardType node) { }
+	default void process(NormalAnnotation node) { }
+	default void process(MarkerAnnotation node) { }
+	default void process(SingleMemberAnnotation node) { }
+	default void process(MemberValuePair node) { }
+	default void process(AnnotationTypeDeclaration node) { }
+	default void process(Modifier node) { }
+	default void process(UnionType node) { }
+	default void process(Dimension node) { }
+	default void process(LambdaExpression node) { }
+	default void process(IntersectionType node) { }
+	default void process(NameQualifiedType node) { }
+	default void process(CreationReference node) { }
+	default void process(ExpressionMethodReference node) { }
+	default void process(SuperMethodReference node) { }
+	default void process(TypeMethodReference node) { }
+	default void process(ModuleDeclaration node) { }
+	default void process(RequiresDirective node) { }
+	default void process(ExportsDirective node) { }
+	default void process(OpensDirective node) { }
+	default void process(UsesDirective node) { }
+	default void process(ProvidesDirective node) { }
+	default void process(ModuleModifier node) { }
 
-	private void process(ASTNode node) {
+	default void process(ASTNode node) {
 		switch(node.getNodeType()) {
 		case ASTNode.ANONYMOUS_CLASS_DECLARATION:
 			this.process((AnonymousClassDeclaration) node);
