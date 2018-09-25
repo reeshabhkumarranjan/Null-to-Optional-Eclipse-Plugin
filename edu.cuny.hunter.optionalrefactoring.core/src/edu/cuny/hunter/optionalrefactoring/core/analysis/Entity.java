@@ -1,5 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,13 +17,17 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.ReturnStatement;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -242,6 +247,9 @@ public class Entity implements Iterable<IJavaElement> {
 		switch (expression.getNodeType()) {
 		case ASTNode.NULL_LITERAL:
 			return this.emptyOptional(ast);
+		case ASTNode.METHOD_INVOCATION:
+		case ASTNode.SUPER_METHOD_INVOCATION:
+		case ASTNode.FIELD_ACCESS:
 		case ASTNode.SIMPLE_NAME:
 		case ASTNode.QUALIFIED_NAME: {
 			switch (action) {
@@ -260,11 +268,46 @@ public class Entity implements Iterable<IJavaElement> {
 		case ASTNode.NUMBER_LITERAL:
 		case ASTNode.STRING_LITERAL:
 		case ASTNode.TYPE_LITERAL:
-		default:
+		case ASTNode.CLASS_INSTANCE_CREATION:
 			return this.ofOptional(ast, expression);
+		default:
+			return expression;
 		}
 	}
 
+/*case CHANGE_N2O_VAR_DECL:
+	Set<Boolean> includedInRefactoring = new HashSet<>();
+	expression.accept(new ASTVisitor() {
+		@Override
+		public boolean visit(MethodInvocation node) {
+			if (Entity.this.elements.contains(Util.resolveElement(node))) includedInRefactoring.add(Boolean.TRUE);
+			return super.visit(node);
+		}
+		@Override
+		public boolean visit(SuperMethodInvocation node) {
+			if (Entity.this.elements.contains(Util.resolveElement(node))) includedInRefactoring.add(Boolean.TRUE);
+			return super.visit(node);
+		}
+		@Override
+		public boolean visit(FieldAccess node) {
+			if (Entity.this.elements.contains(Util.resolveElement(node))) includedInRefactoring.add(Boolean.TRUE);
+			return super.visit(node);
+		}
+		@Override
+		public boolean visit(SimpleName node) {
+			if (Entity.this.elements.contains(Util.resolveElement(node))) includedInRefactoring.add(Boolean.TRUE);
+			return super.visit(node);
+		}
+		@Override
+		public boolean visit(QualifiedName node) {
+			if (Entity.this.elements.contains(Util.resolveElement(node))) includedInRefactoring.add(Boolean.TRUE);
+			return super.visit(node);
+		}
+	});
+	if (includedInRefactoring.isEmpty()) 
+		return this.ofNullableOptional(ast, expression);
+	else return expression;*/
+	
 	public RefactoringStatus status() {
 		return this.status;
 	}
