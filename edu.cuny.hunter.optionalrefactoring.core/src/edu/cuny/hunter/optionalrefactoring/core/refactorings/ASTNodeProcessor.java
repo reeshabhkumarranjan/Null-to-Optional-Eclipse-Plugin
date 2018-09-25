@@ -1,32 +1,56 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.*;
 
-interface ASTNodeProcessor {	
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
+
+abstract class ASTNodeProcessor {
 	
-	boolean process();
+	final ASTNode rootNode;
+	final RefactoringSettings settings;
+	final Set<IJavaElement> candidates = new LinkedHashSet<>();
 	
-	default void process(AnonymousClassDeclaration node) { }
-	default void process(ArrayAccess node) { }
-	default void process(ArrayCreation node) { }
-	default void process(ArrayInitializer node) { }
-	default void process(ArrayType node) { }
-	default void process(AssertStatement node) { }
-	default void process(Assignment node) { }
-	default void process(Block node) { }
-	default void process(BooleanLiteral node) { }
-	default void process(BreakStatement node) { }
-	default void process(CastExpression node) { }
-	default void process(CatchClause node) { }
-	default void process(CharacterLiteral node) { }
-	default void process(ClassInstanceCreation node) { }
-	default void process(CompilationUnit node) { }
-	default void process(ConditionalExpression node) { }
-	default void process(ConstructorInvocation node) { }
-	default void process(ContinueStatement node) { }
-	default void process(DoStatement node) { }
-	default void process(EmptyStatement node) { }
-	default void process(Expression node) {
+	ASTNodeProcessor(ASTNode node, RefactoringSettings settings) {
+		if (!node.getAST().hasResolvedBindings())
+			throw new HarvesterASTException(Messages.Harvester_MissingBinding, PreconditionFailure.MISSING_BINDING, node);
+		this.rootNode = node;
+		this.settings = settings;
+	}
+	
+	Set<IJavaElement> getElements() {
+		return this.candidates;
+	}
+	
+	abstract boolean process();
+	
+	void process(AnonymousClassDeclaration node) { }
+	void process(ArrayAccess node) { }
+	void process(ArrayCreation node) { }
+	void process(ArrayInitializer node) { }
+	void process(ArrayType node) { }
+	void process(AssertStatement node) { }
+	void process(Assignment node) { }
+	void process(Block node) { }
+	void process(BooleanLiteral node) { }
+	void process(BreakStatement node) { }
+	void process(CastExpression node) { }
+	void process(CatchClause node) { }
+	void process(CharacterLiteral node) { }
+	void process(ClassInstanceCreation node) { }
+	void process(CompilationUnit node) { }
+	void process(ConditionalExpression node) { }
+	void process(ConstructorInvocation node) { }
+	void process(ContinueStatement node) { }
+	void process(DoStatement node) { }
+	void process(EmptyStatement node) { }
+	void process(Expression node) {
 		if (node instanceof Annotation) this.process((Annotation) node); else 
 		if (node instanceof ArrayAccess) this.process((ArrayAccess) node); else
 		if (node instanceof ArrayCreation) this.process((ArrayCreation) node); else
@@ -60,88 +84,93 @@ interface ASTNodeProcessor {
 		if (node instanceof TypeMethodReference) this.process((TypeMethodReference) node); else
 		if (node instanceof VariableDeclarationExpression) this.process((VariableDeclarationExpression) node);
 	}
-	default void process(ExpressionStatement node) {
+	void process(ExpressionStatement node) {
 		this.process(node.getExpression());
 	}
-	default void process(FieldAccess node) { }
-	default void process(FieldDeclaration node) { }
-	default void process(ForStatement node) { }
-	default void process(IfStatement node) { }
-	default void process(ImportDeclaration node) { }
-	default void process(InfixExpression node) { }
-	default void process(Initializer node) { }
-	default void process(Javadoc node) { }
-	default void process(LabeledStatement node) { }
-	default void process(MethodDeclaration node) { }
-	default void process(MethodInvocation node) { }
-	default void process(NullLiteral node) { }
-	default void process(NumberLiteral node) { }
-	default void process(PackageDeclaration node) { }
-	default void process(ParenthesizedExpression node) { }
-	default void process(PostfixExpression node) { }
-	default void process(PrefixExpression node) { }
-	default void process(PrimitiveType node) { }
-	default void process(QualifiedName node) { }
-	default void process(ReturnStatement node) { }
-	default void process(SimpleName node) { }
-	default void process(SimpleType node) { }
-	default void process(SingleVariableDeclaration node) { }
-	default void process(StringLiteral node) { }
-	default void process(SuperConstructorInvocation node) { }
-	default void process(SuperFieldAccess node) { }
-	default void process(SuperMethodInvocation node) { }
-	default void process(SwitchCase node) { }
-	default void process(SwitchStatement node) { }
-	default void process(SynchronizedStatement node) { }
-	default void process(ThisExpression node) { }
-	default void process(ThrowStatement node) { }
-	default void process(TryStatement node) { }
-	default void process(TypeDeclaration node) { }
-	default void process(TypeDeclarationStatement node) { }
-	default void process(TypeLiteral node) { }
-	default void process(VariableDeclarationExpression node) { }
-	default void process(VariableDeclarationFragment node) { }
-	default void process(VariableDeclarationStatement node) { }
-	default void process(WhileStatement node) { }
-	default void process(InstanceofExpression node) { }
-	default void process(LineComment node) { }
-	default void process(BlockComment node) { }
-	default void process(TagElement node) { }
-	default void process(TextElement node) { }
-	default void process(MemberRef node) { }
-	default void process(MethodRef node) { }
-	default void process(MethodRefParameter node) { }
-	default void process(EnhancedForStatement node) { }
-	default void process(EnumDeclaration node) { }
-	default void process(EnumConstantDeclaration node) { }
-	default void process(TypeParameter node) { }
-	default void process(ParameterizedType node) { }
-	default void process(QualifiedType node) { }
-	default void process(WildcardType node) { }
-	default void process(NormalAnnotation node) { }
-	default void process(MarkerAnnotation node) { }
-	default void process(SingleMemberAnnotation node) { }
-	default void process(MemberValuePair node) { }
-	default void process(AnnotationTypeDeclaration node) { }
-	default void process(Modifier node) { }
-	default void process(UnionType node) { }
-	default void process(Dimension node) { }
-	default void process(LambdaExpression node) { }
-	default void process(IntersectionType node) { }
-	default void process(NameQualifiedType node) { }
-	default void process(CreationReference node) { }
-	default void process(ExpressionMethodReference node) { }
-	default void process(SuperMethodReference node) { }
-	default void process(TypeMethodReference node) { }
-	default void process(ModuleDeclaration node) { }
-	default void process(RequiresDirective node) { }
-	default void process(ExportsDirective node) { }
-	default void process(OpensDirective node) { }
-	default void process(UsesDirective node) { }
-	default void process(ProvidesDirective node) { }
-	default void process(ModuleModifier node) { }
+	void process(FieldAccess node) { }
+	void process(FieldDeclaration node) { }
+	void process(ForStatement node) { }
+	void process(IfStatement node) { }
+	void process(ImportDeclaration node) { }
+	void process(InfixExpression node) { }
+	void process(Initializer node) { }
+	void process(Javadoc node) { }
+	void process(LabeledStatement node) { }
+	void process(MethodDeclaration node) { }
+	void process(MethodInvocation node) { }
+	void process(NullLiteral node) { }
+	void process(NumberLiteral node) { }
+	void process(PackageDeclaration node) { }
+	void process(ParenthesizedExpression node) { 
+		this.process(node.getParent());
+	}
+	void process(PostfixExpression node) { }
+	void process(PrefixExpression node) { }
+	void process(PrimitiveType node) { }
+	void process(QualifiedName node) { }
+	void process(ReturnStatement node) { }
+	void process(SimpleName node) { }
+	void process(SimpleType node) { }
+	void process(SingleVariableDeclaration node) { }
+	void process(StringLiteral node) { }
+	void process(SuperConstructorInvocation node) { }
+	void process(SuperFieldAccess node) { }
+	void process(SuperMethodInvocation node) { }
+	void process(SwitchCase node) { }
+	void process(SwitchStatement node) { }
+	void process(SynchronizedStatement node) { }
+	void process(ThisExpression node) { }
+	void process(ThrowStatement node) { }
+	void process(TryStatement node) { }
+	void process(TypeDeclaration node) { }
+	void process(TypeDeclarationStatement node) { }
+	void process(TypeLiteral node) { }
+	void process(VariableDeclarationExpression node) { }
+	void process(VariableDeclarationFragment node) { }
+	void process(VariableDeclarationStatement node) { }
+	void process(WhileStatement node) { }
+	void process(InstanceofExpression node) { }
+	void process(LineComment node) { }
+	void process(BlockComment node) { }
+	void process(TagElement node) { }
+	void process(TextElement node) { }
+	void process(MemberRef node) { }
+	void process(MethodRef node) { }
+	void process(MethodRefParameter node) { }
+	void process(EnhancedForStatement node) { }
+	void process(EnumDeclaration node) { }
+	void process(EnumConstantDeclaration node) { }
+	void process(TypeParameter node) { }
+	void process(ParameterizedType node) { }
+	void process(QualifiedType node) { }
+	void process(WildcardType node) { }
+	void process(NormalAnnotation node) { }
+	void process(MarkerAnnotation node) { }
+	void process(SingleMemberAnnotation node) { }
+	void process(MemberValuePair node) { }
+	void process(AnnotationTypeDeclaration node) { }
+	void process(Modifier node) { }
+	void process(UnionType node) { }
+	void process(Dimension node) { }
+	void process(LambdaExpression node) { }
+	void process(IntersectionType node) { }
+	void process(NameQualifiedType node) { }
+	void process(CreationReference node) { }
+	void process(ExpressionMethodReference node) { }
+	void process(SuperMethodReference node) { }
+	void process(TypeMethodReference node) { }
 
-	default void process(ASTNode node) {
+	/*	
+	void process(ModuleDeclaration node) { }
+	void process(RequiresDirective node) { }
+	void process(ExportsDirective node) { }
+	void process(OpensDirective node) { }
+	void process(UsesDirective node) { }
+	void process(ProvidesDirective node) { }
+	void process(ModuleModifier node) { }
+	*/
+
+	void process(ASTNode node) {
 		switch(node.getNodeType()) {
 		case ASTNode.ANONYMOUS_CLASS_DECLARATION:
 			this.process((AnonymousClassDeclaration) node);
@@ -1003,70 +1032,70 @@ interface ASTNodeProcessor {
 		 * <code>ModuleDeclaration</code>.
 		 * @see ModuleDeclaration
 		 * @since 3.14
-		 */
+		 *//*
 		case ASTNode.MODULE_DECLARATION:
 			this.process((ModuleDeclaration) node);
 			break;
 
-		/**
+		*//**
 		 * Node type constant indicating a node of type
 		 * <code>RequiresDirective</code>.
 		 * @see RequiresDirective
 		 * @since 3.14
-		 */
+		 *//*
 		case ASTNode.REQUIRES_DIRECTIVE:
 			this.process((RequiresDirective) node);
 			break;
 		
-		/**
+		*//**
 		 * Node type constant indicating a node of type
 		 * <code>ExportsDirective</code>.
 		 * @see ExportsDirective
 		 * @since 3.14
-		 */
+		 *//*
 		case ASTNode.EXPORTS_DIRECTIVE:
 			this.process((ExportsDirective) node);
 			break;
 
-		/**
+		*//**
 		 * Node type constant indicating a node of type
 		 * <code>OpensDirective</code>.
 		 * @see OpensDirective
 		 * @since 3.14
-		 */
+		 *//*
 		case ASTNode.OPENS_DIRECTIVE:
 			this.process((OpensDirective) node);
 			break;
 		
-		/**
+		*//**
 		 * Node type constant indicating a node of type
 		 * <code>UsesDirective</code>.
 		 * @see UsesDirective
 		 * @since 3.14
-		 */
+		 *//*
 		case ASTNode.USES_DIRECTIVE:
 			this.process((UsesDirective) node);
 			break;
 
-		/**
+		*//**
 		 * Node type constant indicating a node of type
 		 * <code>ProvidesDirective</code>.
 		 * @see ProvidesDirective
 		 * @since 3.14
-		 */
+		 *//*
 		case ASTNode.PROVIDES_DIRECTIVE:
 			this.process((ProvidesDirective) node);
 			break;
 
-		/**
+		*//**
 		 * Node type constant indicating a node of type
 		 * <code>ModuleModifier</code>.
 		 * @see ModuleModifier
 		 * @since 3.14
-		 */
+		 *//*
 		case ASTNode.MODULE_MODIFIER:
 			this.process((ModuleModifier) node);
-			break;
+			break;*/
 		}
 	}
 }
