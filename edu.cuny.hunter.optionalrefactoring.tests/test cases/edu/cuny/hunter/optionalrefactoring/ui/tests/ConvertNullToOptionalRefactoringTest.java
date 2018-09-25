@@ -404,7 +404,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 	
-	public void testTransformationWithComment() throws Exception {
+	public void testTransformationWithLineComment() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 
