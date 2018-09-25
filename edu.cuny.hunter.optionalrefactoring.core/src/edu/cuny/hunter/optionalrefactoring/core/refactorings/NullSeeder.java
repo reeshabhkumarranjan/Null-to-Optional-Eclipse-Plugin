@@ -139,8 +139,7 @@ class NullSeeder {
 		case ASTNode.ASSIGNMENT:
 			this.process(((Assignment) node).getLeftHandSide());
 			break;
-		case ASTNode.INFIX_EXPRESSION:
-			this.process(((InfixExpression) node).getLeftOperand());
+		case ASTNode.INFIX_EXPRESSION: // In the seeding phase null comparisons are ignored
 			break;
 		case ASTNode.RETURN_STATEMENT:
 			this.process((ReturnStatement) node);
