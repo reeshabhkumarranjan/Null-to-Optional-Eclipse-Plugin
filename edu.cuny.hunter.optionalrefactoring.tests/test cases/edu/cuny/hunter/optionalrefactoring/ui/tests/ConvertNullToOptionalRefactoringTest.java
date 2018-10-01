@@ -412,6 +412,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 
+	public void testTransformationWithJavaDoc() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
 	private void transformationHelper(Choices turnOff, RefactoringStatus expectedStatus) throws Exception {
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 
