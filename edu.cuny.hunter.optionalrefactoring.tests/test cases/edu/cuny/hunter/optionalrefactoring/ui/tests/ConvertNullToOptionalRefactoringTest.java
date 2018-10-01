@@ -407,6 +407,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testTransformationWithLineComment() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
+	
+	public void testTransformationWithMultiLineComment() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
 
 	private void transformationHelper(Choices turnOff, RefactoringStatus expectedStatus) throws Exception {
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
