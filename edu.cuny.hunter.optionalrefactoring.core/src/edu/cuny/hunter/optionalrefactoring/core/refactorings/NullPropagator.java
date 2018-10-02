@@ -66,7 +66,7 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  *         Khatchadourian</a>
  * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>
  */
-class NullPropagator {
+class NullPropagator extends N2ONodeProcessor {
 
 	private static boolean containedIn(ASTNode node, Expression name) {
 		ASTNode curr = name;
@@ -112,16 +112,14 @@ class NullPropagator {
 
 	private final IJavaSearchScope scope;
 
-	private final RefactoringSettings settings;
-
 	private final Set<ISourceRange> sourceRangesToBridge = new LinkedHashSet<>();
 
 	public NullPropagator(ASTNode node, IJavaElement element, IJavaSearchScope scope, RefactoringSettings settings,
 			IProgressMonitor monitor) {
+		super(node, settings);
 		this.name = (Expression) node;
 		this.element = element;
 		this.scope = scope;
-		this.settings = settings;
 		this.monitor = monitor;
 	}
 
@@ -296,9 +294,13 @@ class NullPropagator {
 			return null;
 	}
 
-	public void process() throws CoreException {
-		if (this.name != null)
+	@Override
+	boolean process() throws CoreException {
+		if (this.name != null) {
 			this.process(this.name);
+			return true;
+		}
+		else return false;
 	}
 
 	private void process(ASTNode node) throws CoreException {

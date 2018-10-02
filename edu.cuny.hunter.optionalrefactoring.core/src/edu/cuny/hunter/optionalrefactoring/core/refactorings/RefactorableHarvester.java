@@ -133,7 +133,7 @@ public class RefactorableHarvester {
 		// expressions.
 		NullSeeder seeder = new NullSeeder(this.refactoringRootNode, this.settings);
 		// if no nulls pass the preconditions, return an Error status
-		if (!seeder.seedNulls())
+		if (!seeder.process())
 			return RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
 		// otherwise get the passing null type dependent entities
 		this.nullSeeds.addAll(seeder.getPassing());

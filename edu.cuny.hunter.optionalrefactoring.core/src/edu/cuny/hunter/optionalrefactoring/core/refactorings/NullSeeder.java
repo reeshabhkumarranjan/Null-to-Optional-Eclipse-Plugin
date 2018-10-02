@@ -26,7 +26,6 @@ import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -35,7 +34,6 @@ import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.ReturnStatement;
-import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
@@ -64,18 +62,13 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  *         refactored.
  *
  */
-class NullSeeder {
+class NullSeeder extends N2ONodeProcessor {
 
-	private final ASTNode refactoringRootNode;
-	private final Set<IJavaElement> candidates = new LinkedHashSet<>();
 	private final Map<IJavaElement, ISourceRange> sourceRangesToBridge = new LinkedHashMap<>();
-	private final RefactoringSettings settings;
-
 	private ASTNode currentNull;
 
 	public NullSeeder(ASTNode node, RefactoringSettings settings) {
-		this.refactoringRootNode = node;
-		this.settings = settings;
+		super(node, settings);
 	}
 
 	private <T extends ASTNode> ASTNode getContaining(Class<T> type, ASTNode node) {
@@ -86,10 +79,6 @@ class NullSeeder {
 			return curr;
 		throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
 				PreconditionFailure.AST_ERROR, node);
-	}
-
-	public Set<IJavaElement> getPassing() {
-		return this.candidates;
 	}
 
 	public Map<IJavaElement, ISourceRange> getsourceRangesToBridge() {
@@ -126,67 +115,6 @@ class NullSeeder {
 			throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
 					PreconditionFailure.AST_ERROR, node);
 		}
-	}
-
-	/**
-	 * @param node
-	 *            Any of the possible AST nodes where a null literal could appear as
-	 *            an immediate child
-	 * @throws JavaModelException
-	 */
-	private void process(ASTNode node) {
-		switch (node.getNodeType()) {
-		case ASTNode.ASSIGNMENT:
-			this.process(((Assignment) node).getLeftHandSide());
-			break;
-		case ASTNode.INFIX_EXPRESSION:
-			this.process(((InfixExpression) node).getLeftOperand());
-			break;
-		case ASTNode.RETURN_STATEMENT:
-			this.process((ReturnStatement) node);
-			break;
-		case ASTNode.METHOD_INVOCATION:
-			this.process((MethodInvocation) node);
-			break;
-		case ASTNode.SUPER_METHOD_INVOCATION:
-			this.process((SuperMethodInvocation) node);
-			break;
-		case ASTNode.CONSTRUCTOR_INVOCATION:
-			this.process((ConstructorInvocation) node);
-			break;
-		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION:
-			this.process((SuperConstructorInvocation) node);
-			break;
-		case ASTNode.CLASS_INSTANCE_CREATION:
-			this.process((ClassInstanceCreation) node);
-			break;
-		case ASTNode.VARIABLE_DECLARATION_FRAGMENT:
-			this.process((VariableDeclarationFragment) node);
-			break;
-		case ASTNode.ARRAY_INITIALIZER:
-			this.process((ArrayInitializer) node);
-			break;
-		case ASTNode.PARENTHESIZED_EXPRESSION:
-			this.process((ParenthesizedExpression) node);
-			break;
-		case ASTNode.CONDITIONAL_EXPRESSION:
-			this.process((ConditionalExpression) node);
-			break;
-		case ASTNode.SINGLE_VARIABLE_DECLARATION:
-			this.process((SingleVariableDeclaration) node);
-			break;
-		case ASTNode.CAST_EXPRESSION:
-			this.process((CastExpression) node);
-			break;
-		default:
-			throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
-					PreconditionFailure.AST_ERROR, node);
-		}
-	}
-
-	private void process(CastExpression node) {
-		// Cast expressions cannot be refactored as Optional
-		throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION, node);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -439,7 +367,8 @@ class NullSeeder {
 	/**
 	 * @return Whether or not any seeds passed the precondition checks
 	 */
-	boolean seedNulls() {
+	@Override
+	boolean process() {
 		ASTVisitor visitor = new ASTVisitor() {
 			@Override
 			public boolean visit(NullLiteral nl) {

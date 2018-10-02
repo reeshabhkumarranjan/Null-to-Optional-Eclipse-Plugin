@@ -1,34 +1,20 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.dom.*;
-
-import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
-import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 
 abstract class ASTNodeProcessor {
 	
+	/**
+	 * This is the <code>ASTNode</code> instance that is the root of our processing.
+	 */
 	final ASTNode rootNode;
-	final RefactoringSettings settings;
-	final Set<IJavaElement> candidates = new LinkedHashSet<>();
 	
-	ASTNodeProcessor(ASTNode node, RefactoringSettings settings) {
-		if (!node.getAST().hasResolvedBindings())
-			throw new HarvesterASTException(Messages.Harvester_MissingBinding, PreconditionFailure.MISSING_BINDING, node);
+	ASTNodeProcessor(ASTNode node) {
 		this.rootNode = node;
-		this.settings = settings;
 	}
 	
-	Set<IJavaElement> getElements() {
-		return this.candidates;
-	}
-	
-	abstract boolean process();
+	abstract boolean process() throws CoreException;
 	
 	void process(AnonymousClassDeclaration node) { }
 	void process(ArrayAccess node) { }
@@ -50,6 +36,11 @@ abstract class ASTNodeProcessor {
 	void process(ContinueStatement node) { }
 	void process(DoStatement node) { }
 	void process(EmptyStatement node) { }
+
+	/**
+	 * Processes the <code>Expression</code> node to determine the subclass instance to process.
+	 * @param node
+	 */
 	void process(Expression node) {
 		if (node instanceof Annotation) this.process((Annotation) node); else 
 		if (node instanceof ArrayAccess) this.process((ArrayAccess) node); else
@@ -69,7 +60,8 @@ abstract class ASTNodeProcessor {
 		if (node instanceof LambdaExpression) this.process((LambdaExpression) node); else
 		if (node instanceof MethodInvocation) this.process((MethodInvocation) node); else
 		if (node instanceof MethodReference) this.process((MethodReference) node); else
-		if (node instanceof Name) this.process((Name) node); else
+		if (node instanceof QualifiedName) this.process((QualifiedName) node); else
+		if (node instanceof SimpleName) this.process((SimpleName) node); else
 		if (node instanceof NullLiteral) this.process((NullLiteral) node); else
 		if (node instanceof NumberLiteral) this.process((NumberLiteral) node); else
 		if (node instanceof ParenthesizedExpression) this.process((ParenthesizedExpression) node); else
@@ -84,6 +76,11 @@ abstract class ASTNodeProcessor {
 		if (node instanceof TypeMethodReference) this.process((TypeMethodReference) node); else
 		if (node instanceof VariableDeclarationExpression) this.process((VariableDeclarationExpression) node);
 	}
+
+	/**
+	 * Processes the <code>Expression</code> node inside an <code>ExpressionStatement</code> node.
+	 * @param node
+	 */
 	void process(ExpressionStatement node) {
 		this.process(node.getExpression());
 	}
@@ -101,9 +98,15 @@ abstract class ASTNodeProcessor {
 	void process(NullLiteral node) { }
 	void process(NumberLiteral node) { }
 	void process(PackageDeclaration node) { }
+
+	/**
+	 * Processes the expression inside a <code>ParenthesizedExpression</code> node.
+	 * @param node
+	 */
 	void process(ParenthesizedExpression node) { 
 		this.process(node.getParent());
 	}
+
 	void process(PostfixExpression node) { }
 	void process(PrefixExpression node) { }
 	void process(PrimitiveType node) { }
