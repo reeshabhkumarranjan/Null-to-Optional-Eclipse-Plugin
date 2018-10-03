@@ -19,7 +19,6 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
-import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
@@ -27,13 +26,13 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
-import org.eclipse.jdt.core.dom.ParenthesizedExpression;
+import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.ReturnStatement;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
@@ -85,20 +84,18 @@ class NullSeeder extends N2ONodeProcessor {
 		return this.sourceRangesToBridge;
 	}
 
-	private void process(ArrayAccess node) throws HarvesterASTException {
-		switch (node.getNodeType()) {
-		case ASTNode.ARRAY_ACCESS: {
-			Expression e = node.getArray();
-			this.process(e);
-			break;
-		}
-		default:
-			throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
-					PreconditionFailure.AST_ERROR, node);
-		}
+	/* (non-Javadoc)
+	 * @see edu.cuny.hunter.optionalrefactoring.core.refactorings.N2ONodeProcessor#process(org.eclipse.jdt.core.dom.ArrayAccess)
+	 * Unlike in the propagation phase, we don't have to check if a null literal is inside an array access expression.
+	 */
+	@Override
+	void process(ArrayAccess node) {
+		Expression e = node.getArray();
+		this.process(e);
 	}
 
-	private void process(ArrayInitializer node) {
+	@Override
+	void process(ArrayInitializer node) {
 		ASTNode arrayCreationOrVariableDeclarationFragment = node.getParent();
 		switch (arrayCreationOrVariableDeclarationFragment.getNodeType()) {
 		case ASTNode.ARRAY_CREATION: {
@@ -118,7 +115,8 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void process(ClassInstanceCreation node) throws HarvesterASTException {
+	@Override
+	void process(ClassInstanceCreation node) throws HarvesterASTException {
 		if (this.settings.refactorsParameters()) {
 			int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
 			IMethod method = (IMethod) Util.resolveElement(node, argPos);
@@ -140,7 +138,8 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
-	private void process(ConditionalExpression node) {
+	@Override
+	void process(ConditionalExpression node) {
 		ASTNode parent = node.getParent();
 		if (parent != null)
 			this.process(parent);
@@ -150,7 +149,8 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void process(ConstructorInvocation node) throws HarvesterASTException {
+	@Override
+	void process(ConstructorInvocation node) throws HarvesterASTException {
 		if (this.settings.refactorsParameters()) {
 			int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
 			IMethod method = (IMethod) Util.resolveElement(node);
@@ -172,30 +172,8 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
-	private void process(Expression node) throws HarvesterASTException {
-		switch (node.getNodeType()) {
-		case ASTNode.QUALIFIED_NAME:
-			this.process((Name) node);
-			break;
-		case ASTNode.SIMPLE_NAME:
-			this.process((Name) node);
-			break;
-		case ASTNode.ARRAY_ACCESS:
-			this.process((ArrayAccess) node);
-			break;
-		case ASTNode.FIELD_ACCESS:
-			this.process((FieldAccess) node);
-			break;
-		case ASTNode.SUPER_FIELD_ACCESS:
-			this.process((SuperFieldAccess) node);
-			break;
-		default:
-			throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
-					PreconditionFailure.AST_ERROR, node);
-		}
-	}
-
-	private void process(FieldAccess node) throws HarvesterASTException {
+	@Override
+	void process(FieldAccess node) throws HarvesterASTException {
 		if (this.settings.refactorsFields()) {
 			IJavaElement element = Util.resolveElement(node);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
@@ -208,7 +186,8 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void process(MethodInvocation node) throws HarvesterASTException {
+	@Override
+	void process(MethodInvocation node) throws HarvesterASTException {
 		if (this.settings.refactorsParameters()) {
 			int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
 			IMethod method = (IMethod) Util.resolveElement(node);
@@ -230,21 +209,20 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
-	private void process(Name node) throws HarvesterASTException {
+	@Override
+	void process(SimpleName node) throws HarvesterASTException {
 		IJavaElement element = Util.resolveElement(node);
 		this.candidates.add(element);
 	}
 
-	private void process(ParenthesizedExpression node) {
-		ASTNode parent = node.getParent();
-		if (parent != null)
-			this.process(parent);
-		else
-			throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
-					PreconditionFailure.AST_ERROR, node);
+	@Override
+	void process(QualifiedName node) throws HarvesterASTException {
+		IJavaElement element = Util.resolveElement(node);
+		this.candidates.add(element);
 	}
-
-	private void process(ReturnStatement node) throws HarvesterASTException {
+	
+	@Override
+	void process(ReturnStatement node) throws HarvesterASTException {
 		if (this.settings.refactorsMethods()) {
 			ASTNode methodDecl = this.getContaining(MethodDeclaration.class, node);
 			if (methodDecl instanceof MethodDeclaration) {
@@ -256,7 +234,8 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
-	private void process(SingleVariableDeclaration node) throws HarvesterASTException {
+	@Override
+	void process(SingleVariableDeclaration node) throws HarvesterASTException {
 		/*
 		 * Single variable declaration nodes are used in a limited number of places,
 		 * including formal parameter lists and catch clauses. We don't have to worry
@@ -270,7 +249,8 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void process(SuperConstructorInvocation node) throws HarvesterASTException {
+	@Override
+	void process(SuperConstructorInvocation node) throws HarvesterASTException {
 		if (this.settings.refactorsParameters()) {
 			int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
 			IMethod method = (IMethod) Util.resolveElement(node);
@@ -292,7 +272,8 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
-	private void process(SuperFieldAccess node) throws HarvesterASTException {
+	@Override
+	void process(SuperFieldAccess node) throws HarvesterASTException {
 		if (this.settings.refactorsFields()) {
 			IJavaElement element = Util.resolveElement(node);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
@@ -305,7 +286,8 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void process(SuperMethodInvocation node) throws HarvesterASTException {
+	@Override
+	void process(SuperMethodInvocation node) throws HarvesterASTException {
 		if (this.settings.refactorsParameters()) {
 			int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
 			IMethod method = (IMethod) Util.resolveElement(node);
@@ -328,7 +310,8 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void process(VariableDeclarationFragment node) throws HarvesterASTException {
+	@Override
+	void process(VariableDeclarationFragment node) throws HarvesterASTException {
 		ASTNode parent = node.getParent();
 		List<VariableDeclarationFragment> fragments = new LinkedList<>();
 		switch (parent.getNodeType()) {
@@ -400,7 +383,7 @@ class NullSeeder extends N2ONodeProcessor {
 						if (element instanceof IField)
 							if (NullSeeder.this.settings.seedsImplicit()) {
 								List<Boolean> fici = new LinkedList<>(); 
-								NullSeeder.this.refactoringRootNode.accept(new ASTVisitor() {
+								NullSeeder.this.rootNode.accept(new ASTVisitor() {
 									@Override
 									public boolean visit(MethodDeclaration node) {
 										if (node.isConstructor()) {
@@ -443,7 +426,7 @@ class NullSeeder extends N2ONodeProcessor {
 				return super.visit(node);
 			}
 		};
-		this.refactoringRootNode.accept(visitor);
+		this.rootNode.accept(visitor);
 		return !this.candidates.isEmpty();
 	}
 }

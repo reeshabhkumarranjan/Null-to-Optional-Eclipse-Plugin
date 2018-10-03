@@ -32,11 +32,14 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
+import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.ParenthesizedExpression;
+import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.ReturnStatement;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
@@ -295,390 +298,362 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 
 	@Override
-	boolean process() throws CoreException {
+	boolean process() {
 		if (this.name != null) {
 			this.process(this.name);
 			return true;
 		}
 		else return false;
 	}
-
-	private void process(ASTNode node) throws CoreException {
-		switch (node.getNodeType()) {
-		case ASTNode.QUALIFIED_NAME:
-		case ASTNode.SIMPLE_NAME:
-		case ASTNode.FIELD_ACCESS:
-		case ASTNode.SUPER_FIELD_ACCESS:
-		case ASTNode.ARRAY_INITIALIZER: {
-			this.process(node.getParent());
-			break;
-		}
-
-		case ASTNode.ARRAY_CREATION: {
-			final ArrayCreation creation = (ArrayCreation) node;
-			boolean legal = true;
-			for (Object o : creation.dimensions()) {
-				Expression dimension = (Expression) o;
-				// if coming up from the index.
-				if (containedIn(dimension, this.name)) {
-					legal = false;
-					throw new HarvesterASTException(Messages.Harvester_ASTNodeError, PreconditionFailure.AST_ERROR,
-							node);
-				}
-			}
-
-			if (legal)
-				this.process(node.getParent());
-
-			break;
-		}
-
-		case ASTNode.ARRAY_ACCESS: {
-			final ArrayAccess access = (ArrayAccess) node;
+	
+	@Override
+	void process(ArrayAccess node) {
+		final ArrayAccess access = (ArrayAccess) node;
+		// if coming up from the index.
+		if (containedIn(access.getIndex(), this.name))
+			this.extractSourceRange(this.name);
+		else
+			super.process(node.getParent());
+	}
+	
+	@Override
+	void process(ArrayCreation node) {
+		// if previous node was in the index of the ArrayCreation, 
+		// we have to bridge it. Otherwise we continue processing.
+		boolean legal = true;
+		for (Object o : node.dimensions()) {
+			Expression dimension = (Expression) o;
 			// if coming up from the index.
-			if (containedIn(access.getIndex(), this.name))
-				throw new HarvesterASTException(Messages.Harvester_ASTNodeError, PreconditionFailure.AST_ERROR, node);
-			else
-				this.process(node.getParent());
-			break;
-		}
-
-		case ASTNode.ASSIGNMENT: {
-			final Assignment assignment = (Assignment) node;
-			this.processExpression(assignment.getLeftHandSide());
-			this.processExpression(assignment.getRightHandSide());
-			break;
-		}
-
-		case ASTNode.VARIABLE_DECLARATION_STATEMENT: {
-			final VariableDeclarationStatement vds = (VariableDeclarationStatement) node;
-			for (Object o : vds.fragments()) {
-				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
-				final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
-				if (!this.found.contains(element))
-					if (!this.settings.refactorsLocalVariables() || this.settings.bridgesLibraries()
-							&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
-						this.extractSourceRange(node);
-					else {
-						this.found.add(element);
-						this.processExpression(vdf.getInitializer());
-					}
+			if (containedIn(dimension, this.name)) {
+				legal = false;
+				this.extractSourceRange(this.name);
 			}
-			break;
-
 		}
+		if (legal)
+			super.process(node.getParent());
+	}
+	
+	@Override
+	void process(Assignment node) {
+		this.processExpression(node.getLeftHandSide());
+		this.processExpression(node.getRightHandSide());
+	}
 
-		case ASTNode.VARIABLE_DECLARATION_FRAGMENT: {
-			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) node;
+	@Override 
+	void process(QualifiedName node) {
+		this.process((Name) node);
+	}
+	
+	@Override 
+	void process(SimpleName node) {
+		this.process((Name) node);
+	}
+	
+	private void process(Name node) {
+		if (node.equals(this.name)) {	// we are at the rootNode still, so just walk up
+			super.process(node.getParent());
+		} else {
+			IJavaElement element = Util.resolveElement(node);
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgesLibraries())
+					this.extractSourceRange(name);
+				else
+					return;
+			else
+				this.found.add(element);
+		}
+	}
+	
+	@Override
+	void process(ConditionalExpression node) {
+		this.processExpression(node);
+	}
+	
+	@Override
+	void process(FieldAccess node) {
+		if (node.equals(this.name)) {	// we are at the rootNode still, so just walk up
+			super.process(node.getParent());
+		}
+		IJavaElement element = Util.resolveElement(node);
+		if (!this.settings.refactorsFields()) {
+			this.extractSourceRange(node);
+			return;
+		}
+		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+			if (this.settings.bridgesLibraries())
+				this.extractSourceRange(node);
+			else
+				return;
+		else
+			this.found.add(element);
+	}
+	
+	@Override
+	void process(FieldDeclaration node) {
+		for (Object o : node.fragments()) {
+			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 			final IJavaElement element = Util.resolveElement(vdf);
-			if (!this.found.contains(element)) { // we don't want to keep processing if it does
-				if (!this.settings.refactorsLocalVariables() && !vdf.resolveBinding().isField()
-						|| !this.settings.refactorsFields() && vdf.resolveBinding().isField()) {
+			if (!this.found.contains(element))
+				if (!this.settings.refactorsFields() || this.settings.bridgesLibraries()
+						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
 					this.extractSourceRange(node);
-					return;
-				}
-				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					if (this.settings.bridgesLibraries())
-						this.extractSourceRange(vdf);
-					else
-						return;
-				else
+				else {
 					this.found.add(element);
-				this.processExpression(vdf.getInitializer());
-			}
-			break;
-
-		}
-
-		case ASTNode.FIELD_DECLARATION: {
-			final FieldDeclaration fd = (FieldDeclaration) node;
-			for (Object o : fd.fragments()) {
-				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
-				final IJavaElement element = Util.resolveElement(vdf);
-				if (!this.found.contains(element))
-					if (!this.settings.refactorsFields() || this.settings.bridgesLibraries()
-							&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
-						this.extractSourceRange(node);
-					else {
-						this.found.add(element);
-						this.processExpression(vdf.getInitializer());
-					}
-			}
-			break;
-
-		}
-
-		case ASTNode.INFIX_EXPRESSION: {
-			final InfixExpression iexp = (InfixExpression) node;
-			this.processExpression(iexp.getLeftOperand());
-			this.processExpression(iexp.getRightOperand());
-			break;
-		}
-
-		case ASTNode.SWITCH_STATEMENT: {
-			final SwitchStatement sw = (SwitchStatement) node;
-			this.processExpression(sw.getExpression());
-			for (Object o : sw.statements())
-				if (o instanceof SwitchCase) {
-					final SwitchCase sc = (SwitchCase) o;
-					this.processExpression(sc.getExpression());
+					this.processExpression(vdf.getInitializer());
 				}
-			break;
 		}
-
-		case ASTNode.SWITCH_CASE: {
-			final SwitchCase sc = (SwitchCase) node;
-			this.processExpression(sc.getExpression());
-			this.process(sc.getParent());
-			break;
-		}
-
-		case ASTNode.RETURN_STATEMENT: {
-
-			final ReturnStatement rs = (ReturnStatement) node;
-
-			// process what is being returned.
-			this.processExpression(rs.getExpression());
-
-			// Get the corresponding method declaration.
-			final MethodDeclaration methDecl = Util.getMethodDeclaration(rs);
-
-			// Get the corresponding method.
-			final IMethod meth = (IMethod) Util.resolveElement(methDecl);
-
-			// Get the top most method
-			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
-
-			if (top == null)
-				throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-						PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-			else // Check the topmost method.
-			if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
+	}
+	
+	@Override
+	void process(InfixExpression node) {
+		this.processExpression(node.getLeftOperand());
+		this.processExpression(node.getRightOperand());
+	}
+	
+	@Override
+	void process(MethodDeclaration node) {
+		final ASTVisitor visitor = new ASTVisitor() {
+			@Override
+			public boolean visit(ReturnStatement node) {
+				try {
+					NullPropagator.this.processExpression(node.getExpression());
+				} catch (JavaModelException E) {
+					throw new RuntimeException(E);
+				} catch (CoreException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return true;
+			}
+		};
+		node.accept(visitor);
+	}
+	
+	@Override
+	void process(ClassInstanceCreation node) {
+		if (containedIn(node.arguments(), this.name)) {
+			final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
+			IJavaElement element = Util.resolveElement(node, paramNumber);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 				if (this.settings.bridgesLibraries())
-					this.extractSourceRange(methDecl);
+					this.extractSourceRange(node);
 				else
 					return;
 			else
-				this.found.add(top);
-			break;
-
+				// go find the formals.
+				this.findFormalsForVariable(node);
 		}
-
-		case ASTNode.CONDITIONAL_EXPRESSION: {
-			final ConditionalExpression ce = (ConditionalExpression) node;
-			this.processExpression(ce);
-			break;
-		}
-
-		case ASTNode.METHOD_DECLARATION: {
-			final ASTVisitor visitor = new ASTVisitor() {
-				@Override
-				public boolean visit(ReturnStatement node) {
-					try {
-						NullPropagator.this.processExpression(node.getExpression());
-					} catch (JavaModelException E) {
-						throw new RuntimeException(E);
-					} catch (CoreException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					return true;
-				}
-			};
-
-			node.accept(visitor);
-			break;
-
-		}
-
-		case ASTNode.CLASS_INSTANCE_CREATION: {
-			final ClassInstanceCreation ctorCall = (ClassInstanceCreation) node;
-			// if coming up from a argument.
-			if (containedIn(ctorCall.arguments(), this.name)) {
-				final int paramNumber = Util.getParamNumber(ctorCall.arguments(), this.name);
-				IJavaElement element = Util.resolveElement(ctorCall, paramNumber);
-				if (!this.settings.refactorsParameters()) {
-					this.extractSourceRange(ctorCall);
-					return;
-				}
-				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					if (this.settings.bridgesLibraries())
-						this.extractSourceRange(ctorCall);
-					else
-						return;
-				else
-					// go find the formals.
-					this.findFormalsForVariable(ctorCall);
+	}
+	
+	@Override
+	void process(ConstructorInvocation node) {
+		if (containedIn(node.arguments(), this.name)) {
+			IJavaElement element = Util.resolveElement(node);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
 			}
-			break;
-
-		}
-
-		case ASTNode.CONSTRUCTOR_INVOCATION: {
-			final ConstructorInvocation ctorCall = (ConstructorInvocation) node;
-			// if coming up from a argument.
-			if (containedIn(ctorCall.arguments(), this.name)) {
-				IJavaElement element = Util.resolveElement(ctorCall);
-				if (!this.settings.refactorsParameters()) {
-					this.extractSourceRange(ctorCall);
-					return;
-				}
-				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					if (this.settings.bridgesLibraries())
-						this.extractSourceRange(ctorCall);
-					else
-						return;
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgesLibraries())
+					this.extractSourceRange(node);
 				else
-					// go find the formals.
-					this.findFormalsForVariable(ctorCall);
+					return;
+			else
+				// go find the formals.
+				this.findFormalsForVariable(node);
+		}
+	}
+	
+	@Override
+	void process(SuperConstructorInvocation node) {
+		if (containedIn(node.arguments(), this.name)) {
+			IJavaElement element = Util.resolveElement(node);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
 			}
-			break;
-
-		}
-
-		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION: {
-			final SuperConstructorInvocation ctorCall = (SuperConstructorInvocation) node;
-			// if coming up from a argument.
-			if (containedIn(ctorCall.arguments(), this.name)) {
-				IJavaElement element = Util.resolveElement(ctorCall);
-				if (!this.settings.refactorsParameters()) {
-					this.extractSourceRange(ctorCall);
-					return;
-				}
-				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					if (this.settings.bridgesLibraries())
-						this.extractSourceRange(ctorCall);
-					else
-						return;
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgesLibraries())
+					this.extractSourceRange(node);
 				else
-					// go find the formals.
-					this.findFormalsForVariable(ctorCall);
+					return;
+			else
+				// go find the formals.
+				this.findFormalsForVariable(node);
+		}
+	}
+	
+	@Override
+	void process(SuperMethodInvocation node) {
+		if (containedIn(node.arguments(), this.name)) {
+			IJavaElement element = Util.resolveElement(node);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
 			}
-			break;
-
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgesLibraries())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				// go find the formals.
+				this.findFormalsForVariable(node);
 		}
 
-		case ASTNode.SUPER_METHOD_INVOCATION: {
-			final SuperMethodInvocation smi = (SuperMethodInvocation) node;
-			// if coming up from a argument.
-			if (containedIn(smi.arguments(), this.name)) {
-				IJavaElement element = Util.resolveElement(smi);
-				if (!this.settings.refactorsParameters()) {
-					this.extractSourceRange(smi);
-					return;
-				}
-				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					if (this.settings.bridgesLibraries())
-						this.extractSourceRange(smi);
-					else
-						return;
-				else
-					// go find the formals.
-					this.findFormalsForVariable(smi);
+	}
+	
+	@Override
+	void process(MethodInvocation node) {
+		if (containedIn(node.arguments(), this.name)) {
+			IJavaElement element = Util.resolveElement(node);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
 			}
-			break;
-
-		}
-
-		case ASTNode.METHOD_INVOCATION: {
-			final MethodInvocation mi = (MethodInvocation) node;
-			// if coming up from a argument.
-			if (containedIn(mi.arguments(), this.name)) {
-				IJavaElement element = Util.resolveElement(mi);
-				if (!this.settings.refactorsParameters()) {
-					this.extractSourceRange(mi);
-					return;
-				}
-				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					if (this.settings.bridgesLibraries())
-						this.extractSourceRange(mi);
-					else
-						return;
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgesLibraries())
+					this.extractSourceRange(node);
 				else
-					// go find the formals.
-					this.findFormalsForVariable(mi);
-			} else
-				this.process(node.getParent());
-
-			break;
-
-		}
-
-		case ASTNode.PARENTHESIZED_EXPRESSION: {
+					return;
+			else
+				// go find the formals.
+				this.findFormalsForVariable(node);
+		} else
 			this.process(node.getParent());
-			break;
+	}
+	
+	@Override
+	void process(SingleVariableDeclaration node) {
+		// take care of local usage.
+		IJavaElement element = Util.resolveElement(node);
+		if (!this.settings.refactorsParameters()) {
+			this.extractSourceRange(node);
+			return;
 		}
-
-		case ASTNode.SINGLE_VARIABLE_DECLARATION: {
-			// its a formal parameter.
-			final SingleVariableDeclaration svd = (SingleVariableDeclaration) node;
-			// take care of local usage.
-			IJavaElement element = Util.resolveElement(svd);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(svd);
+		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+			if (this.settings.bridgesLibraries())
+				this.extractSourceRange(node);
+			else
+				return;
+		else
+			this.found.add(element);
+		// take care of remote usage.
+		// go find variables on the corresponding calls.
+		this.findVariablesForFormal(node);
+	}
+	
+	@Override
+	void process(EnhancedForStatement node) {
+		IJavaElement element = Util.resolveElement(node);
+		if (!this.settings.refactorsParameters()) {
+			this.extractSourceRange(node);
+			return;
+		}
+		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+			if (this.settings.bridgesLibraries())
+				this.extractSourceRange(node);
+			else
+				return;
+		else
+			this.found.add(element);
+	}
+	
+	@Override
+	void process(ReturnStatement node) {
+		// process what is being returned.
+		this.processExpression(node.getExpression());
+		// Get the corresponding method declaration.
+		final MethodDeclaration methDecl = Util.getMethodDeclaration(node);
+		// Get the corresponding method.
+		final IMethod meth = (IMethod) Util.resolveElement(methDecl);
+		// Get the top most method
+		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
+		if (top == null)
+			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
+		else // Check the topmost method.
+		if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
+			if (this.settings.bridgesLibraries())
+				this.extractSourceRange(methDecl);
+			else
+				return;
+		else
+			this.found.add(top);
+	}
+	
+	@Override
+	void process(SwitchStatement node) {
+		this.processExpression(node.getExpression());
+		for (Object o : node.statements())
+			if (o instanceof SwitchCase) {
+				final SwitchCase sc = (SwitchCase) o;
+				this.processExpression(sc.getExpression());
+			}
+	}
+	
+	@Override
+	void process(SwitchCase node) {
+		this.processExpression(node.getExpression());
+		this.process(node.getParent());
+	}
+	
+	@Override
+	void process(SuperFieldAccess node) {
+		if (node.equals(this.name)) {	// we are at the rootNode still, so just walk up
+			super.process(node.getParent());
+		}
+		IJavaElement element = Util.resolveElement(node);
+		if (!this.settings.refactorsFields()) {
+			this.extractSourceRange(node);
+			return;
+		}
+		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+			if (this.settings.bridgesLibraries())
+				this.extractSourceRange(node);
+			else
+				return;
+		else
+			this.found.add(element);
+	}
+	
+	@Override
+	void process(VariableDeclarationStatement node) {
+		for (Object o : node.fragments()) {
+			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
+			final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
+			if (!this.found.contains(element))
+				if (!this.settings.refactorsLocalVariables() || this.settings.bridgesLibraries()
+						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
+					this.extractSourceRange(node);
+				else {
+					this.found.add(element);
+					this.processExpression(vdf.getInitializer());
+				}
+		}
+	}
+	
+	@Override
+	void process(VariableDeclarationFragment node) {
+		final IJavaElement element = Util.resolveElement(node);
+		if (!this.found.contains(element)) { // we don't want to keep processing if it does
+			if (!this.settings.refactorsLocalVariables() && !node.resolveBinding().isField()
+					|| !this.settings.refactorsFields() && node.resolveBinding().isField()) {
+				this.extractSourceRange(node);
 				return;
 			}
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 				if (this.settings.bridgesLibraries())
-					this.extractSourceRange(svd);
+					this.extractSourceRange(node);
 				else
 					return;
 			else
 				this.found.add(element);
-			// take care of remote usage.
-			// go find variables on the corresponding calls.
-			this.findVariablesForFormal(svd);
-			break;
-
-		}
-
-		case ASTNode.ENHANCED_FOR_STATEMENT: {
-			final SingleVariableDeclaration svd = ((EnhancedForStatement) node).getParameter();
-			IJavaElement element = Util.resolveElement(svd);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(svd);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
-					this.extractSourceRange(svd);
-				else
-					return;
-			else
-				this.found.add(element);
-			break;
-
-		}
-
-		case ASTNode.EXPRESSION_STATEMENT: {
-			// dead expression, it's valid just goes no where.
-			break;
-		}
-
-		case ASTNode.CAST_EXPRESSION: {
-			throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION,
-					node);
-		}
-
-		case ASTNode.SUPER_METHOD_REFERENCE:
-		case ASTNode.EXPRESSION_METHOD_REFERENCE:
-		case ASTNode.TYPE_METHOD_REFERENCE:
-			throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
-
-		case ASTNode.INSTANCEOF_EXPRESSION:
-		case ASTNode.ENUM_CONSTANT_DECLARATION:
-		case ASTNode.IF_STATEMENT:
-		case ASTNode.BOOLEAN_LITERAL:
-		case ASTNode.NUMBER_LITERAL:
-		case ASTNode.CHARACTER_LITERAL:
-		case ASTNode.POSTFIX_EXPRESSION:
-		case ASTNode.PREFIX_EXPRESSION:
-		case ASTNode.WHILE_STATEMENT:
-			break;
-
-		default: {
-			throw new HarvesterASTException(Messages.Harvester_ASTNodeError, PreconditionFailure.AST_ERROR, node);
-		}
+			this.processExpression(node.getInitializer());
 		}
 	}
 

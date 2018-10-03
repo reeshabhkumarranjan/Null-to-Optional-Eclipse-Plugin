@@ -5,9 +5,12 @@ import java.util.Set;
 
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CastExpression;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.InfixExpression;
+import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
@@ -44,13 +47,20 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		// Cast expressions cannot be refactored as Optional
 		throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION, node);
 	}
-
 	/**
-	 * For <code>InfixExpression</code> node comparison we will always need to get the left hand side.
+	 * When processing an <code>InfixExpression</code> node comparison we need to know whether we came from
+	 * the LHS or RHS, and call the other node the TARGET. We only care about equality / inequality with <code>null</code>.
 	 * @param node
 	 */
 	@Override
-	void process(InfixExpression node) { 
-		this.process(node.getLeftOperand());
+	void process(InfixExpression node) {
+		if (!(node.getOperator().equals(Operator.EQUALS) || node.getOperator().equals(Operator.NOT_EQUALS))) return;
+		Expression target = node.getLeftOperand().equals(node) ? node.getRightOperand() : node.getLeftOperand();
+		this.process(target);
+	}
+	
+	@Override
+	void process(ArrayInitializer node) {
+		this.process(node.getParent());
 	}
 }

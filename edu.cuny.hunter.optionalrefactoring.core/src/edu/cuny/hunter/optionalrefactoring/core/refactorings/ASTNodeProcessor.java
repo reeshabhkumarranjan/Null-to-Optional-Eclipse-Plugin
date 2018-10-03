@@ -1,6 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.dom.*;
 
 abstract class ASTNodeProcessor {
@@ -14,7 +13,7 @@ abstract class ASTNodeProcessor {
 		this.rootNode = node;
 	}
 	
-	abstract boolean process() throws CoreException;
+	abstract boolean process();
 	
 	void process(AnonymousClassDeclaration node) { }
 	void process(ArrayAccess node) { }
