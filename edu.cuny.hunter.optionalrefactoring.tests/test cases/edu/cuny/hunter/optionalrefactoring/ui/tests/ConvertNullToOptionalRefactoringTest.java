@@ -28,7 +28,7 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import edu.cuny.citytech.refactoring.common.tests.RefactoringTest;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.Choices;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.Choice;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
@@ -143,7 +143,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	private void propagationHelper(Set<Set<String>> expectedPassingSets, Set<Set<String>> expectedFailingSet,
-			Choices turnOff, RefactoringStatus expectedStatus) throws Exception {
+			Choice turnOff, RefactoringStatus expectedStatus) throws Exception {
 
 		System.out.println();
 		// compute the actual results.
@@ -341,15 +341,15 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testSettingsFieldsOff() throws Exception {
-		this.propagationHelper(setOf(), setOf(), Choices.FIELDS, RefactoringStatus.createErrorStatus(""));
+		this.propagationHelper(setOf(), setOf(), Choice.FIELDS, RefactoringStatus.createErrorStatus(""));
 	}
 
 	public void testSettingsFieldsOn() throws Exception {
-		this.propagationHelper(setOf(setOf("x")), setOf(), Choices.METHOD_RETURNS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.METHOD_RETURNS, new RefactoringStatus());
 	}
 
 	public void testSettingsImplicitOff() throws Exception {
-		this.propagationHelper(setOf(), setOf(), Choices.IMPLICIT_FIELDS, RefactoringStatus.createErrorStatus(""));
+		this.propagationHelper(setOf(), setOf(), Choice.IMPLICIT_FIELDS, RefactoringStatus.createErrorStatus(""));
 	}
 
 	public void testSettingsImplicitOn() throws Exception {
@@ -357,23 +357,23 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testSettingsLocalVarsOff() throws Exception {
-		this.propagationHelper(setOf(setOf("m")), setOf(), Choices.LOCAL_VARS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.LOCAL_VARS, new RefactoringStatus());
 	}
 
 	public void testSettingsLocalVarsOn() throws Exception {
-		this.propagationHelper(setOf(setOf("x")), setOf(), Choices.METHOD_RETURNS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.METHOD_RETURNS, new RefactoringStatus());
 	}
 
 	public void testSettingsMethodReturnOff() throws Exception {
-		this.propagationHelper(setOf(setOf("a")), setOf(), Choices.METHOD_RETURNS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a")), setOf(), Choice.METHOD_RETURNS, new RefactoringStatus());
 	}
 
 	public void testSettingsMethodReturnOn() throws Exception {
-		this.propagationHelper(setOf(setOf("m")), setOf(), Choices.FIELDS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.FIELDS, new RefactoringStatus());
 	}
 
 	public void testSettingsParametersOff() throws Exception {
-		this.propagationHelper(setOf(setOf("o")), setOf(), Choices.METHOD_PARAMS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("o")), setOf(), Choice.METHOD_PARAMS, new RefactoringStatus());
 	}
 
 	public void testSettingsParametersOn() throws Exception {
@@ -416,7 +416,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 
-	private void transformationHelper(Choices turnOff, RefactoringStatus expectedStatus) throws Exception {
+	private void transformationHelper(Choice turnOff, RefactoringStatus expectedStatus) throws Exception {
 		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 
 		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);

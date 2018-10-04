@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class RefactoringSettings {
 
-	public static enum Choices {
+	public static enum Choice {
 
 		BRIDGE_EXTERNAL,
 		FIELDS,
@@ -22,23 +22,23 @@ public class RefactoringSettings {
 	}
 
 	public static RefactoringSettings testDefaults() {
-		return new RefactoringSettings(EnumSet.of(Choices.FIELDS, Choices.IMPLICIT_FIELDS, Choices.BRIDGE_EXTERNAL,
-				Choices.LOCAL_VARS, Choices.METHOD_PARAMS, Choices.METHOD_RETURNS));
+		return new RefactoringSettings(EnumSet.of(Choice.FIELDS, Choice.IMPLICIT_FIELDS, Choice.BRIDGE_EXTERNAL,
+				Choice.LOCAL_VARS, Choice.METHOD_PARAMS, Choice.METHOD_RETURNS));
 	}
 
 	public static RefactoringSettings userDefaults() {
 		return new RefactoringSettings(
-				EnumSet.of(Choices.FIELDS, Choices.LOCAL_VARS, Choices.METHOD_PARAMS, Choices.METHOD_RETURNS));
+				EnumSet.of(Choice.FIELDS, Choice.LOCAL_VARS, Choice.METHOD_PARAMS, Choice.METHOD_RETURNS));
 	}
 
-	private final EnumSet<Choices> settings;
+	private final EnumSet<Choice> settings;
 
-	private RefactoringSettings(EnumSet<Choices> settings) {
+	private RefactoringSettings(EnumSet<Choice> settings) {
 		this.settings = settings;
 	}
 
 	public boolean bridgesLibraries() {
-		return this.settings.contains(Choices.BRIDGE_EXTERNAL);
+		return this.settings.contains(Choice.BRIDGE_EXTERNAL);
 	}
 
 	public void createFromEnv() {
@@ -46,51 +46,51 @@ public class RefactoringSettings {
 
 		for (String s : choices.keySet()) {
 			if (s.equalsIgnoreCase("fields"))
-				this.set(true, Choices.FIELDS);
+				this.set(true, Choice.FIELDS);
 			if (s.equalsIgnoreCase("implicitfields"))
-				this.set(true, Choices.IMPLICIT_FIELDS);
+				this.set(true, Choice.IMPLICIT_FIELDS);
 			if (s.equalsIgnoreCase("localvars"))
-				this.set(true, Choices.LOCAL_VARS);
+				this.set(true, Choice.LOCAL_VARS);
 			if (s.equalsIgnoreCase("methodparams"))
-				this.set(true, Choices.METHOD_PARAMS);
+				this.set(true, Choice.METHOD_PARAMS);
 			if (s.equalsIgnoreCase("methodreturns"))
-				this.set(true, Choices.METHOD_RETURNS);
+				this.set(true, Choice.METHOD_RETURNS);
 			if (s.equalsIgnoreCase("refactor"))
-				this.set(true, Choices.PERFORM_TRANSFORMATION);
+				this.set(true, Choice.PERFORM_TRANSFORMATION);
 			if (s.equalsIgnoreCase("bridge"))
-				this.set(true, Choices.BRIDGE_EXTERNAL);
+				this.set(true, Choice.BRIDGE_EXTERNAL);
 		}
 	}
 
 	public boolean doesTransformation() {
-		return this.settings.contains(Choices.PERFORM_TRANSFORMATION);
+		return this.settings.contains(Choice.PERFORM_TRANSFORMATION);
 	}
 
-	public boolean get(Choices setting) {
+	public boolean get(Choice setting) {
 		return this.settings.contains(setting);
 	}
 
 	public boolean refactorsFields() {
-		return this.settings.contains(Choices.FIELDS);
+		return this.settings.contains(Choice.FIELDS);
 	}
 
 	public boolean refactorsLocalVariables() {
-		return this.settings.contains(Choices.LOCAL_VARS);
+		return this.settings.contains(Choice.LOCAL_VARS);
 	}
 
 	public boolean refactorsMethods() {
-		return this.settings.contains(Choices.METHOD_RETURNS);
+		return this.settings.contains(Choice.METHOD_RETURNS);
 	}
 
 	public boolean refactorsParameters() {
-		return this.settings.contains(Choices.METHOD_PARAMS);
+		return this.settings.contains(Choice.METHOD_PARAMS);
 	}
 
 	public boolean seedsImplicit() {
-		return this.settings.contains(Choices.IMPLICIT_FIELDS);
+		return this.settings.contains(Choice.IMPLICIT_FIELDS);
 	}
 
-	public void set(boolean choice, Choices setting) {
+	public void set(boolean choice, Choice setting) {
 		if (choice)
 			this.settings.add(setting);
 		else

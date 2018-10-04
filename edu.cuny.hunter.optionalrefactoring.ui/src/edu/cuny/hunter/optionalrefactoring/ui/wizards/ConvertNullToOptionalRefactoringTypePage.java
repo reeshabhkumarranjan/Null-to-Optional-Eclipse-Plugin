@@ -19,7 +19,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.PlatformUI;
 
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.Choices;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.Choice;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 
@@ -40,7 +40,7 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 		this.setDescription(DESCRIPTION);
 	}
 
-	private void addBooleanButton(String text, Choices choice, BiConsumer<Boolean, Choices> valueConsumer,
+	private void addBooleanButton(String text, Choice choice, BiConsumer<Boolean, Choice> valueConsumer,
 			Composite result) {
 		Button button = new Button(result, SWT.CHECK);
 		button.setText(text);
@@ -79,7 +79,7 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 		result.setLayout(layout);
 
 		// set up buttons.
-		for (Choices choice : Choices.values())
+		for (Choice choice : Choice.values())
 			this.addBooleanButton("Refactor Fields", choice, this.processor.settings()::set, result);
 
 		this.updateStatus();
@@ -168,7 +168,7 @@ public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPag
 		this.settings = this.getDialogSettings().getSection(DIALOG_SETTING_SECTION);
 		if (this.settings == null) {
 			this.settings = this.getDialogSettings().addNewSection(DIALOG_SETTING_SECTION);
-			for (Choices choice : Choices.values())
+			for (Choice choice : Choice.values())
 				this.settings.put(choice.toString(), this.getProcessor().settings().get(choice));
 		}
 	}
