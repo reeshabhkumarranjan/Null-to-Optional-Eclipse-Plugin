@@ -14,8 +14,7 @@ Require-Bundle: org.eclipse.ui,
  edu.cuny.citytech.refactoring.common.core;bundle-version="1.1.0",
  edu.cuny.citytech.refactoring.common.eval;bundle-version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Bundle-ClassPath: .,
- lib/commons-csv-1.1.jar
+Bundle-ClassPath: .
 Export-Package: edu.cuny.hunter.optionalrefactoring.eval.handlers,
  edu.cuny.hunter.optionalrefactoring.eval.messages,
  edu.cuny.hunter.optionalrefactoring.eval.utils,
