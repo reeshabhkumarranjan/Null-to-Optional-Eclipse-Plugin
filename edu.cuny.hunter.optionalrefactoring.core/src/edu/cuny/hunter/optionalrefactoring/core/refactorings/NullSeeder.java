@@ -1,5 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -8,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ILocalVariable;
@@ -89,13 +91,13 @@ class NullSeeder extends N2ONodeProcessor {
 	 * Unlike in the propagation phase, we don't have to check if a null literal is inside an array access expression.
 	 */
 	@Override
-	void process(ArrayAccess node) {
+	void process(ArrayAccess node) throws CoreException {
 		Expression e = node.getArray();
 		this.process(e);
 	}
 
 	@Override
-	void process(ArrayInitializer node) {
+	void process(ArrayInitializer node) throws CoreException {
 		ASTNode arrayCreationOrVariableDeclarationFragment = node.getParent();
 		switch (arrayCreationOrVariableDeclarationFragment.getNodeType()) {
 		case ASTNode.ARRAY_CREATION: {
@@ -139,7 +141,7 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 
 	@Override
-	void process(ConditionalExpression node) {
+	void process(ConditionalExpression node) throws CoreException {
 		ASTNode parent = node.getParent();
 		if (parent != null)
 			this.process(parent);
@@ -349,9 +351,11 @@ class NullSeeder extends N2ONodeProcessor {
 
 	/**
 	 * @return Whether or not any seeds passed the precondition checks
+	 * @throws CoreException 
 	 */
 	@Override
-	boolean process() {
+	boolean process() throws CoreException {
+		ArrayList<CoreException> thrownInVisitor = new ArrayList<>();
 		ASTVisitor visitor = new ASTVisitor() {
 			@Override
 			public boolean visit(NullLiteral nl) {
@@ -361,6 +365,9 @@ class NullSeeder extends N2ONodeProcessor {
 					NullSeeder.this.process(nl.getParent());
 				} catch (HarvesterException e) { // catch any exceptions
 					Logger.getAnonymousLogger().warning(Messages.Harvester_NullLiteralFailed + "\n" + e.getMessage());
+				} catch (CoreException e) {
+					thrownInVisitor.add(e);
+					return false;
 				}
 				return super.visit(nl);
 			}
@@ -427,6 +434,7 @@ class NullSeeder extends N2ONodeProcessor {
 			}
 		};
 		this.rootNode.accept(visitor);
+		if (!thrownInVisitor.isEmpty()) throw thrownInVisitor.get(0);
 		return !this.candidates.isEmpty();
 	}
 }

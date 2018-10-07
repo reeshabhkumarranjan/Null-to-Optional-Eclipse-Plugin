@@ -3,6 +3,7 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
@@ -36,9 +37,10 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	/**
 	 * For type dependency tracking we will always need to get the left hand side from an <code>Assignment</code> node.
 	 * @param node
+	 * @throws CoreException 
 	 */
 	@Override
-	void process(Assignment node) { 
+	void process(Assignment node) throws CoreException { 
 		this.process(node.getLeftHandSide());
 	}
 
@@ -51,16 +53,17 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	 * When processing an <code>InfixExpression</code> node comparison we need to know whether we came from
 	 * the LHS or RHS, and call the other node the TARGET. We only care about equality / inequality with <code>null</code>.
 	 * @param node
+	 * @throws CoreException 
 	 */
 	@Override
-	void process(InfixExpression node) {
+	void process(InfixExpression node) throws CoreException {
 		if (!(node.getOperator().equals(Operator.EQUALS) || node.getOperator().equals(Operator.NOT_EQUALS))) return;
 		Expression target = node.getLeftOperand().equals(node) ? node.getRightOperand() : node.getLeftOperand();
 		this.process(target);
 	}
 	
 	@Override
-	void process(ArrayInitializer node) {
+	void process(ArrayInitializer node) throws CoreException {
 		this.process(node.getParent());
 	}
 }

@@ -565,12 +565,4 @@ public interface Util {
 	static <T> Set<T> setOf(T... o) {
 		return Stream.of(o).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
-
-	public static ASTNode stripParenthesizedExpressions(ASTNode node) {
-		if (node != null && node.getNodeType() == ASTNode.PARENTHESIZED_EXPRESSION) {
-			ParenthesizedExpression parenthesizedExpression = (ParenthesizedExpression) node;
-			return stripParenthesizedExpressions(parenthesizedExpression.getExpression());
-		} else
-			return node;
-	}
 }

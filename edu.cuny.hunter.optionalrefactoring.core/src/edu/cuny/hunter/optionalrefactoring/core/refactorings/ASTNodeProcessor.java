@@ -1,5 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.dom.*;
 
 abstract class ASTNodeProcessor {
@@ -13,34 +14,35 @@ abstract class ASTNodeProcessor {
 		this.rootNode = node;
 	}
 	
-	abstract boolean process();
+	abstract boolean process() throws CoreException;
 	
-	void process(AnonymousClassDeclaration node) { }
-	void process(ArrayAccess node) { }
-	void process(ArrayCreation node) { }
-	void process(ArrayInitializer node) { }
-	void process(ArrayType node) { }
-	void process(AssertStatement node) { }
-	void process(Assignment node) { }
-	void process(Block node) { }
-	void process(BooleanLiteral node) { }
-	void process(BreakStatement node) { }
-	void process(CastExpression node) { }
-	void process(CatchClause node) { }
-	void process(CharacterLiteral node) { }
-	void process(ClassInstanceCreation node) { }
-	void process(CompilationUnit node) { }
-	void process(ConditionalExpression node) { }
-	void process(ConstructorInvocation node) { }
-	void process(ContinueStatement node) { }
-	void process(DoStatement node) { }
-	void process(EmptyStatement node) { }
+	void process(AnonymousClassDeclaration node) throws CoreException {}
+	void process(ArrayAccess node) throws CoreException {}
+	void process(ArrayCreation node) throws CoreException {}
+	void process(ArrayInitializer node) throws CoreException {}
+	void process(ArrayType node) throws CoreException {}
+	void process(AssertStatement node) throws CoreException {}
+	void process(Assignment node) throws CoreException { }
+	void process(Block node) throws CoreException {}
+	void process(BooleanLiteral node) throws CoreException {}
+	void process(BreakStatement node) throws CoreException {}
+	void process(CastExpression node) throws CoreException {}
+	void process(CatchClause node) throws CoreException {}
+	void process(CharacterLiteral node) throws CoreException {}
+	void process(ClassInstanceCreation node) throws CoreException { }
+	void process(CompilationUnit node) throws CoreException {}
+	void process(ConditionalExpression node) throws CoreException { }
+	void process(ConstructorInvocation node) throws CoreException { }
+	void process(ContinueStatement node) throws CoreException {}
+	void process(DoStatement node) throws CoreException {}
+	void process(EmptyStatement node) throws CoreException {}
 
 	/**
 	 * Processes the <code>Expression</code> node to determine the subclass instance to process.
 	 * @param node
+	 * @throws CoreException 
 	 */
-	void process(Expression node) {
+	void process(Expression node) throws CoreException {
 		if (node instanceof Annotation) this.process((Annotation) node); else 
 		if (node instanceof ArrayAccess) this.process((ArrayAccess) node); else
 		if (node instanceof ArrayCreation) this.process((ArrayCreation) node); else
@@ -79,88 +81,90 @@ abstract class ASTNodeProcessor {
 	/**
 	 * Processes the <code>Expression</code> node inside an <code>ExpressionStatement</code> node.
 	 * @param node
+	 * @throws CoreException 
 	 */
-	void process(ExpressionStatement node) {
+	void process(ExpressionStatement node) throws CoreException {
 		this.process(node.getExpression());
 	}
-	void process(FieldAccess node) { }
-	void process(FieldDeclaration node) { }
-	void process(ForStatement node) { }
-	void process(IfStatement node) { }
-	void process(ImportDeclaration node) { }
-	void process(InfixExpression node) { }
-	void process(Initializer node) { }
-	void process(Javadoc node) { }
-	void process(LabeledStatement node) { }
-	void process(MethodDeclaration node) { }
-	void process(MethodInvocation node) { }
-	void process(NullLiteral node) { }
-	void process(NumberLiteral node) { }
-	void process(PackageDeclaration node) { }
+	void process(FieldAccess node) throws CoreException {}
+	void process(FieldDeclaration node) throws CoreException { }
+	void process(ForStatement node) throws CoreException {}
+	void process(IfStatement node) throws CoreException {}
+	void process(ImportDeclaration node) throws CoreException {}
+	void process(InfixExpression node) throws CoreException { }
+	void process(Initializer node) throws CoreException {}
+	void process(Javadoc node) throws CoreException {}
+	void process(LabeledStatement node) throws CoreException {}
+	void process(MethodDeclaration node) throws CoreException {}
+	void process(MethodInvocation node) throws CoreException { }
+	void process(NullLiteral node) throws CoreException {}
+	void process(NumberLiteral node) throws CoreException {}
+	void process(PackageDeclaration node) throws CoreException {}
 
 	/**
 	 * Processes the expression inside a <code>ParenthesizedExpression</code> node.
 	 * @param node
+	 * @throws CoreException 
 	 */
-	void process(ParenthesizedExpression node) { 
+	void process(ParenthesizedExpression node) throws CoreException { 
 		this.process(node.getParent());
 	}
 
-	void process(PostfixExpression node) { }
-	void process(PrefixExpression node) { }
-	void process(PrimitiveType node) { }
-	void process(QualifiedName node) { }
-	void process(ReturnStatement node) { }
-	void process(SimpleName node) { }
-	void process(SimpleType node) { }
-	void process(SingleVariableDeclaration node) { }
-	void process(StringLiteral node) { }
-	void process(SuperConstructorInvocation node) { }
-	void process(SuperFieldAccess node) { }
-	void process(SuperMethodInvocation node) { }
-	void process(SwitchCase node) { }
-	void process(SwitchStatement node) { }
-	void process(SynchronizedStatement node) { }
-	void process(ThisExpression node) { }
-	void process(ThrowStatement node) { }
-	void process(TryStatement node) { }
-	void process(TypeDeclaration node) { }
-	void process(TypeDeclarationStatement node) { }
-	void process(TypeLiteral node) { }
-	void process(VariableDeclarationExpression node) { }
-	void process(VariableDeclarationFragment node) { }
-	void process(VariableDeclarationStatement node) { }
-	void process(WhileStatement node) { }
-	void process(InstanceofExpression node) { }
-	void process(LineComment node) { }
-	void process(BlockComment node) { }
-	void process(TagElement node) { }
-	void process(TextElement node) { }
-	void process(MemberRef node) { }
-	void process(MethodRef node) { }
-	void process(MethodRefParameter node) { }
-	void process(EnhancedForStatement node) { }
-	void process(EnumDeclaration node) { }
-	void process(EnumConstantDeclaration node) { }
-	void process(TypeParameter node) { }
-	void process(ParameterizedType node) { }
-	void process(QualifiedType node) { }
-	void process(WildcardType node) { }
-	void process(NormalAnnotation node) { }
-	void process(MarkerAnnotation node) { }
-	void process(SingleMemberAnnotation node) { }
-	void process(MemberValuePair node) { }
-	void process(AnnotationTypeDeclaration node) { }
-	void process(Modifier node) { }
-	void process(UnionType node) { }
-	void process(Dimension node) { }
-	void process(LambdaExpression node) { }
-	void process(IntersectionType node) { }
-	void process(NameQualifiedType node) { }
-	void process(CreationReference node) { }
-	void process(ExpressionMethodReference node) { }
-	void process(SuperMethodReference node) { }
-	void process(TypeMethodReference node) { }
+	void process(PostfixExpression node) throws CoreException {}
+	void process(PrefixExpression node) throws CoreException {}
+	void process(PrimitiveType node) throws CoreException {}
+	void process(QualifiedName node) throws CoreException {}
+	void process(ReturnStatement node) throws CoreException { }
+	void process(SimpleName node) throws CoreException {}
+	void process(SimpleType node) throws CoreException {}
+	void process(SingleVariableDeclaration node) throws CoreException { }
+	void process(StringLiteral node) throws CoreException {}
+	void process(SuperConstructorInvocation node) throws CoreException { }
+	void process(SuperFieldAccess node) throws CoreException {}
+	void process(SuperMethodInvocation node) throws CoreException { }
+	void process(SwitchCase node) throws CoreException { }
+	void process(SwitchStatement node) throws CoreException { }
+	void process(SynchronizedStatement node) throws CoreException {}
+	void process(ThisExpression node) throws CoreException {}
+	void process(ThrowStatement node) throws CoreException {}
+	void process(TryStatement node) throws CoreException {}
+	void process(TypeDeclaration node) throws CoreException {}
+	void process(TypeDeclarationStatement node) throws CoreException {}
+	void process(TypeLiteral node) throws CoreException {}
+	void process(VariableDeclarationExpression node) throws CoreException {}
+	void process(VariableDeclarationFragment node) throws CoreException { }
+	void process(VariableDeclarationStatement node) throws CoreException { }
+	void process(WhileStatement node) throws CoreException {}
+	void process(InstanceofExpression node) throws CoreException {}
+	void process(LineComment node) throws CoreException {}
+	void process(BlockComment node) throws CoreException {}
+	void process(TagElement node) throws CoreException {}
+	void process(TextElement node) throws CoreException {}
+	void process(MemberRef node) throws CoreException {}
+	void process(MethodRef node) throws CoreException {}
+	void process(MethodRefParameter node) throws CoreException {}
+	void process(EnhancedForStatement node) throws CoreException {}
+	void process(EnumDeclaration node) throws CoreException {}
+	void process(EnumConstantDeclaration node) throws CoreException {}
+	void process(TypeParameter node) throws CoreException {}
+	void process(ParameterizedType node) throws CoreException {}
+	void process(QualifiedType node) throws CoreException {}
+	void process(WildcardType node) throws CoreException {}
+	void process(NormalAnnotation node) throws CoreException {}
+	void process(MarkerAnnotation node) throws CoreException {}
+	void process(SingleMemberAnnotation node) throws CoreException {}
+	void process(MemberValuePair node) throws CoreException {}
+	void process(AnnotationTypeDeclaration node) throws CoreException {}
+	void process(Modifier node) throws CoreException {}
+	void process(UnionType node) throws CoreException {}
+	void process(Dimension node) throws CoreException {}
+	void process(LambdaExpression node) throws CoreException {}
+	void process(IntersectionType node) throws CoreException {}
+	void process(NameQualifiedType node) throws CoreException {}
+	void process(CreationReference node) throws CoreException {}
+	void process(ExpressionMethodReference node) throws CoreException {}
+	void process(SuperMethodReference node) throws CoreException {}
+	void process(TypeMethodReference node) throws CoreException {}
 
 	/*	
 	void process(ModuleDeclaration node) { }
@@ -172,7 +176,7 @@ abstract class ASTNodeProcessor {
 	void process(ModuleModifier node) { }
 	*/
 
-	void process(ASTNode node) {
+	void process(ASTNode node) throws CoreException {
 		switch(node.getNodeType()) {
 		case ASTNode.ANONYMOUS_CLASS_DECLARATION:
 			this.process((AnonymousClassDeclaration) node);
