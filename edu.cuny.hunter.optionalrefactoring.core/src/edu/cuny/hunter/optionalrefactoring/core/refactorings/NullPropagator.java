@@ -300,24 +300,24 @@ class NullPropagator extends N2ONodeProcessor {
 	@Override
 	boolean process() throws CoreException {
 		if (this.name != null) {
-			this.process(this.name);
+			this.process(this.rootNode);
 			return true;
 		}
 		else return false;
 	}
 	
 	@Override
-	void process(ArrayAccess node) throws CoreException {
+	void ascend(ArrayAccess node) throws CoreException {
 		final ArrayAccess access = (ArrayAccess) node;
 		// if coming up from the index.
 		if (containedIn(access.getIndex(), this.name))
 			this.extractSourceRange(this.name);
 		else
-			this.process(node.getParent());
+			super.process(node.getParent());
 	}
 	
 	@Override
-	void process(ArrayCreation node) throws CoreException {
+	void ascend(ArrayCreation node) throws CoreException {
 		// if previous node was in the index of the ArrayCreation, 
 		// we have to bridge it. Otherwise we continue processing.
 		boolean legal = true;
@@ -334,38 +334,43 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(ArrayInitializer node) throws CoreException {
-		this.process(node.getParent());
-	}
-	
-	@Override
-	void process(Assignment node) throws CoreException {
+	void descend(Assignment node) throws CoreException {
 		this.processExpression(node.getLeftHandSide());
 		this.processExpression(node.getRightHandSide());
 	}
 
 	@Override 
-	void process(QualifiedName node) throws CoreException {
-		this.process(node.getParent());
+	void descend(QualifiedName node) throws CoreException {
+		this.process((Name) node);
 	}
 	
 	@Override 
-	void process(SimpleName node) throws CoreException {
-		this.process(node.getParent());
+	void descend(SimpleName node) throws CoreException {
+		this.process((Name) node);
+	}
+	
+	private void process(Name node) throws CoreException {
+		if (node.equals(this.name)) {	// we are at the rootNode still, so just walk up
+			super.process(node.getParent());
+		} else {
+			IJavaElement element = Util.resolveElement(node);
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgesLibraries())
+					this.extractSourceRange(name);
+				else
+					return;
+			else
+				this.found.add(element);
+		}
 	}
 	
 	@Override
-	void process(ConditionalExpression node) throws CoreException {
+	void descend(ConditionalExpression node) throws CoreException {
 		this.processExpression(node);
 	}
 	
 	@Override
-	void process(FieldAccess node) throws CoreException {
-		this.process(node.getParent());
-	}
-	
-	@Override
-	void process(FieldDeclaration node) throws CoreException {
+	void descend(FieldDeclaration node) throws CoreException {
 		for (Object o : node.fragments()) {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 			final IJavaElement element = Util.resolveElement(vdf);
@@ -381,13 +386,13 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(InfixExpression node) throws CoreException {
+	void descend(InfixExpression node) throws CoreException {
 		this.processExpression(node.getLeftOperand());
 		this.processExpression(node.getRightOperand());
 	}
 	
 	@Override
-	void process(MethodDeclaration node) {
+	void descend(MethodDeclaration node) {
 		final ASTVisitor visitor = new ASTVisitor() {
 			@Override
 			public boolean visit(ReturnStatement node) {
@@ -406,7 +411,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(ClassInstanceCreation node) throws CoreException {
+	void ascend(ClassInstanceCreation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
 			final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
 			IJavaElement element = Util.resolveElement(node, paramNumber);
@@ -426,7 +431,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(ConstructorInvocation node) throws CoreException {
+	void ascend(ConstructorInvocation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
 			IJavaElement element = Util.resolveElement(node);
 			if (!this.settings.refactorsParameters()) {
@@ -445,7 +450,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(SuperConstructorInvocation node) throws CoreException {
+	void ascend(SuperConstructorInvocation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
 			IJavaElement element = Util.resolveElement(node);
 			if (!this.settings.refactorsParameters()) {
@@ -464,7 +469,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(SuperMethodInvocation node) throws CoreException {
+	void ascend(SuperMethodInvocation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
 			IJavaElement element = Util.resolveElement(node);
 			if (!this.settings.refactorsParameters()) {
@@ -484,7 +489,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(MethodInvocation node) throws CoreException {
+	void ascend(MethodInvocation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
 			IJavaElement element = Util.resolveElement(node);
 			if (!this.settings.refactorsParameters()) {
@@ -504,7 +509,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(SingleVariableDeclaration node) throws CoreException {
+	void descend(SingleVariableDeclaration node) throws CoreException {
 		// take care of local usage.
 		IJavaElement element = Util.resolveElement(node);
 		if (!this.settings.refactorsParameters()) {
@@ -524,7 +529,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(EnhancedForStatement node) {
+	void descend(EnhancedForStatement node) {
 		final SingleVariableDeclaration svd = ((EnhancedForStatement) node).getParameter();
 		IJavaElement element = Util.resolveElement(svd);
 		if (!this.settings.refactorsParameters()) {
@@ -541,7 +546,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(ReturnStatement node) throws CoreException {
+	void ascend(ReturnStatement node) throws CoreException {
 		// process what is being returned.
 		this.processExpression(node.getExpression());
 		// Get the corresponding method declaration.
@@ -564,7 +569,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(SwitchStatement node) throws CoreException {
+	void descend(SwitchStatement node) throws CoreException {
 		this.processExpression(node.getExpression());
 		for (Object o : node.statements())
 			if (o instanceof SwitchCase) {
@@ -574,18 +579,32 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(SwitchCase node) throws CoreException {
+	void ascend(SwitchCase node) throws CoreException {
 		this.processExpression(node.getExpression());
 		this.process(node.getParent());
 	}
 	
 	@Override
-	void process(SuperFieldAccess node) throws CoreException {
-		this.process(node.getParent());
+	void descend(SuperFieldAccess node) throws CoreException {
+		if (node.equals(this.name)) {	// we are at the rootNode still, so just walk up
+			super.process(node.getParent());
+		}
+		IJavaElement element = Util.resolveElement(node);
+		if (!this.settings.refactorsFields()) {
+			this.extractSourceRange(node);
+			return;
+		}
+		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+			if (this.settings.bridgesLibraries())
+				this.extractSourceRange(node);
+			else
+				return;
+		else
+			this.found.add(element);
 	}
 	
 	@Override
-	void process(VariableDeclarationStatement node) throws CoreException {
+	void descend(VariableDeclarationStatement node) throws CoreException {
 		for (Object o : node.fragments()) {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 			final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
@@ -601,7 +620,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 	
 	@Override
-	void process(VariableDeclarationFragment node) throws CoreException {
+	void descend(VariableDeclarationFragment node) throws CoreException {
 		final IJavaElement element = Util.resolveElement(node);
 		if (!this.found.contains(element)) { // we don't want to keep processing if it does
 			if (!this.settings.refactorsLocalVariables() && !node.resolveBinding().isField()

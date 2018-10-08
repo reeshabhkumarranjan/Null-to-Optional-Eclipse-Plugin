@@ -16,26 +16,124 @@ abstract class ASTNodeProcessor {
 	
 	abstract boolean process() throws CoreException;
 	
-	void process(AnonymousClassDeclaration node) throws CoreException {}
-	void process(ArrayAccess node) throws CoreException {}
-	void process(ArrayCreation node) throws CoreException {}
-	void process(ArrayInitializer node) throws CoreException {}
-	void process(ArrayType node) throws CoreException {}
-	void process(AssertStatement node) throws CoreException {}
-	void process(Assignment node) throws CoreException { }
-	void process(Block node) throws CoreException {}
-	void process(BooleanLiteral node) throws CoreException {}
-	void process(BreakStatement node) throws CoreException {}
-	void process(CastExpression node) throws CoreException {}
-	void process(CatchClause node) throws CoreException {}
-	void process(CharacterLiteral node) throws CoreException {}
-	void process(ClassInstanceCreation node) throws CoreException { }
-	void process(CompilationUnit node) throws CoreException {}
-	void process(ConditionalExpression node) throws CoreException { }
-	void process(ConstructorInvocation node) throws CoreException { }
-	void process(ContinueStatement node) throws CoreException {}
-	void process(DoStatement node) throws CoreException {}
-	void process(EmptyStatement node) throws CoreException {}
+	void descend(AnonymousClassDeclaration node) throws CoreException {}
+	void descend(ArrayAccess node) throws CoreException {}
+	void descend(ArrayCreation node) throws CoreException {}
+	void descend(ArrayInitializer node) throws CoreException {}
+	void descend(ArrayType node) throws CoreException {}
+	void descend(AssertStatement node) throws CoreException {}
+	void descend(Assignment node) throws CoreException { }
+	void descend(Block node) throws CoreException {}
+	void descend(BooleanLiteral node) throws CoreException {}
+	void descend(BreakStatement node) throws CoreException {}
+	void descend(CastExpression node) throws CoreException {}
+	void descend(CatchClause node) throws CoreException {}
+	void descend(CharacterLiteral node) throws CoreException {}
+	void descend(ClassInstanceCreation node) throws CoreException { }
+	void descend(CompilationUnit node) throws CoreException {}
+	void descend(ConditionalExpression node) throws CoreException { }
+	void descend(ConstructorInvocation node) throws CoreException { }
+	void descend(ContinueStatement node) throws CoreException {}
+	void descend(DoStatement node) throws CoreException {}
+	void descend(EmptyStatement node) throws CoreException {}
+
+	/**
+	 * Processes the <code>Expression</code> node inside an <code>ExpressionStatement</code> node.
+	 * @param node
+	 * @throws CoreException 
+	 */
+	void descend(ExpressionStatement node) throws CoreException {
+		this.process(node.getExpression());
+	}
+	void descend(FieldAccess node) throws CoreException {}
+	void descend(FieldDeclaration node) throws CoreException { }
+	void descend(ForStatement node) throws CoreException {}
+	void descend(IfStatement node) throws CoreException {}
+	void descend(ImportDeclaration node) throws CoreException {}
+	void descend(InfixExpression node) throws CoreException { }
+	void descend(Initializer node) throws CoreException {}
+	void descend(Javadoc node) throws CoreException {}
+	void descend(LabeledStatement node) throws CoreException {}
+	void descend(MethodDeclaration node) throws CoreException {}
+	void descend(MethodInvocation node) throws CoreException { }
+	void descend(NullLiteral node) throws CoreException {}
+	void descend(NumberLiteral node) throws CoreException {}
+	void descend(PackageDeclaration node) throws CoreException {}
+
+	/**
+	 * Processes the expression inside a <code>ParenthesizedExpression</code> node.
+	 * @param node
+	 * @throws CoreException 
+	 */
+	void descend(ParenthesizedExpression node) throws CoreException { 
+		this.process(node.getExpression());
+	}
+
+	void descend(PostfixExpression node) throws CoreException {}
+	void descend(PrefixExpression node) throws CoreException {}
+	void descend(PrimitiveType node) throws CoreException {}
+	void descend(QualifiedName node) throws CoreException {}
+	void descend(ReturnStatement node) throws CoreException { }
+	void descend(SimpleName node) throws CoreException {}
+	void descend(SimpleType node) throws CoreException {}
+	void descend(SingleVariableDeclaration node) throws CoreException { }
+	void descend(StringLiteral node) throws CoreException {}
+	void descend(SuperConstructorInvocation node) throws CoreException { }
+	void descend(SuperFieldAccess node) throws CoreException {}
+	void descend(SuperMethodInvocation node) throws CoreException { }
+	void descend(SwitchCase node) throws CoreException { }
+	void descend(SwitchStatement node) throws CoreException { }
+	void descend(SynchronizedStatement node) throws CoreException {}
+	void descend(ThisExpression node) throws CoreException {}
+	void descend(ThrowStatement node) throws CoreException {}
+	void descend(TryStatement node) throws CoreException {}
+	void descend(TypeDeclaration node) throws CoreException {}
+	void descend(TypeDeclarationStatement node) throws CoreException {}
+	void descend(TypeLiteral node) throws CoreException {}
+	void descend(VariableDeclarationExpression node) throws CoreException {}
+	void descend(VariableDeclarationFragment node) throws CoreException { }
+	void descend(VariableDeclarationStatement node) throws CoreException { }
+	void descend(WhileStatement node) throws CoreException {}
+	void descend(InstanceofExpression node) throws CoreException {}
+	void descend(LineComment node) throws CoreException {}
+	void descend(BlockComment node) throws CoreException {}
+	void descend(TagElement node) throws CoreException {}
+	void descend(TextElement node) throws CoreException {}
+	void descend(MemberRef node) throws CoreException {}
+	void descend(MethodRef node) throws CoreException {}
+	void descend(MethodRefParameter node) throws CoreException {}
+	void descend(EnhancedForStatement node) throws CoreException {}
+	void descend(EnumDeclaration node) throws CoreException {}
+	void descend(EnumConstantDeclaration node) throws CoreException {}
+	void descend(TypeParameter node) throws CoreException {}
+	void descend(ParameterizedType node) throws CoreException {}
+	void descend(QualifiedType node) throws CoreException {}
+	void descend(WildcardType node) throws CoreException {}
+	void descend(NormalAnnotation node) throws CoreException {}
+	void descend(MarkerAnnotation node) throws CoreException {}
+	void descend(SingleMemberAnnotation node) throws CoreException {}
+	void descend(MemberValuePair node) throws CoreException {}
+	void descend(AnnotationTypeDeclaration node) throws CoreException {}
+	void descend(Modifier node) throws CoreException {}
+	void descend(UnionType node) throws CoreException {}
+	void descend(Dimension node) throws CoreException {}
+	void descend(LambdaExpression node) throws CoreException {}
+	void descend(IntersectionType node) throws CoreException {}
+	void descend(NameQualifiedType node) throws CoreException {}
+	void descend(CreationReference node) throws CoreException {}
+	void descend(ExpressionMethodReference node) throws CoreException {}
+	void descend(SuperMethodReference node) throws CoreException {}
+	void descend(TypeMethodReference node) throws CoreException {}
+
+	/*	
+	void descend(ModuleDeclaration node) { }
+	void descend(RequiresDirective node) { }
+	void descend(ExportsDirective node) { }
+	void descend(OpensDirective node) { }
+	void descend(UsesDirective node) { }
+	void descend(ProvidesDirective node) { }
+	void descend(ModuleModifier node) { }
+	*/
 
 	/**
 	 * Processes the <code>Expression</code> node to determine the subclass instance to process.
@@ -43,143 +141,164 @@ abstract class ASTNodeProcessor {
 	 * @throws CoreException 
 	 */
 	void process(Expression node) throws CoreException {
-		if (node instanceof Annotation) this.process((Annotation) node); else 
-		if (node instanceof ArrayAccess) this.process((ArrayAccess) node); else
-		if (node instanceof ArrayCreation) this.process((ArrayCreation) node); else
-		if (node instanceof ArrayInitializer) this.process((ArrayInitializer) node); else
-		if (node instanceof Assignment) this.process((Assignment) node); else
-		if (node instanceof BooleanLiteral) this.process((BooleanLiteral) node); else
-		if (node instanceof CastExpression) this.process((CastExpression) node); else
-		if (node instanceof CharacterLiteral) this.process((CharacterLiteral) node); else
-		if (node instanceof ClassInstanceCreation) this.process((ClassInstanceCreation) node); else
-		if (node instanceof ConditionalExpression) this.process((ConditionalExpression) node); else
-		if (node instanceof CreationReference) this.process((CreationReference) node); else
-		if (node instanceof ExpressionMethodReference) this.process((ExpressionMethodReference) node); else
-		if (node instanceof FieldAccess) this.process((FieldAccess) node); else
-		if (node instanceof InfixExpression) this.process((InfixExpression) node); else
-		if (node instanceof InstanceofExpression) this.process((InstanceofExpression) node); else
-		if (node instanceof LambdaExpression) this.process((LambdaExpression) node); else
-		if (node instanceof MethodInvocation) this.process((MethodInvocation) node); else
-		if (node instanceof MethodReference) this.process((MethodReference) node); else
-		if (node instanceof QualifiedName) this.process((QualifiedName) node); else
-		if (node instanceof SimpleName) this.process((SimpleName) node); else
-		if (node instanceof NullLiteral) this.process((NullLiteral) node); else
-		if (node instanceof NumberLiteral) this.process((NumberLiteral) node); else
-		if (node instanceof ParenthesizedExpression) this.process((ParenthesizedExpression) node); else
-		if (node instanceof PostfixExpression) this.process((PostfixExpression) node); else
-		if (node instanceof PrefixExpression) this.process((PrefixExpression) node); else
-		if (node instanceof StringLiteral) this.process((StringLiteral) node); else
-		if (node instanceof SuperFieldAccess) this.process((SuperFieldAccess) node); else
-		if (node instanceof SuperMethodInvocation) this.process((SuperMethodInvocation) node); else
-		if (node instanceof SuperMethodReference) this.process((SuperMethodReference) node); else
-		if (node instanceof ThisExpression) this.process((ThisExpression) node); else
-		if (node instanceof TypeLiteral) this.process((TypeLiteral) node); else
-		if (node instanceof TypeMethodReference) this.process((TypeMethodReference) node); else
-		if (node instanceof VariableDeclarationExpression) this.process((VariableDeclarationExpression) node);
+		if (node instanceof NormalAnnotation) this.descend((NormalAnnotation) node); else
+		if (node instanceof MarkerAnnotation) this.descend((MarkerAnnotation) node); else
+		if (node instanceof SingleMemberAnnotation) this.descend((SingleMemberAnnotation) node); else
+		if (node instanceof ArrayAccess) this.descend((ArrayAccess) node); else
+		if (node instanceof ArrayCreation) this.descend((ArrayCreation) node); else
+		if (node instanceof ArrayInitializer) this.descend((ArrayInitializer) node); else
+		if (node instanceof Assignment) this.descend((Assignment) node); else
+		if (node instanceof BooleanLiteral) this.descend((BooleanLiteral) node); else
+		if (node instanceof CastExpression) this.descend((CastExpression) node); else
+		if (node instanceof CharacterLiteral) this.descend((CharacterLiteral) node); else
+		if (node instanceof ClassInstanceCreation) this.descend((ClassInstanceCreation) node); else
+		if (node instanceof ConditionalExpression) this.descend((ConditionalExpression) node); else
+		if (node instanceof FieldAccess) this.descend((FieldAccess) node); else
+		if (node instanceof InfixExpression) this.descend((InfixExpression) node); else
+		if (node instanceof InstanceofExpression) this.descend((InstanceofExpression) node); else
+		if (node instanceof LambdaExpression) this.descend((LambdaExpression) node); else
+		if (node instanceof MethodInvocation) this.descend((MethodInvocation) node); else
+		if (node instanceof TypeMethodReference) this.descend((TypeMethodReference) node); else
+		if (node instanceof CreationReference) this.descend((CreationReference) node); else
+		if (node instanceof ExpressionMethodReference) this.descend((ExpressionMethodReference) node); else
+		if (node instanceof SuperMethodReference) this.descend((SuperMethodReference) node); else
+		if (node instanceof QualifiedName) this.descend((QualifiedName) node); else
+		if (node instanceof SimpleName) this.descend((SimpleName) node); else
+		if (node instanceof NullLiteral) this.descend((NullLiteral) node); else
+		if (node instanceof NumberLiteral) this.descend((NumberLiteral) node); else
+		if (node instanceof ParenthesizedExpression) this.descend((ParenthesizedExpression) node); else
+		if (node instanceof PostfixExpression) this.descend((PostfixExpression) node); else
+		if (node instanceof PrefixExpression) this.descend((PrefixExpression) node); else
+		if (node instanceof StringLiteral) this.descend((StringLiteral) node); else
+		if (node instanceof SuperFieldAccess) this.descend((SuperFieldAccess) node); else
+		if (node instanceof SuperMethodInvocation) this.descend((SuperMethodInvocation) node); else
+		if (node instanceof ThisExpression) this.descend((ThisExpression) node); else
+		if (node instanceof TypeLiteral) this.descend((TypeLiteral) node); else
+		if (node instanceof VariableDeclarationExpression) this.descend((VariableDeclarationExpression) node);
 	}
+	
+	void ascend(AnnotationTypeMemberDeclaration node) throws CoreException { }
+	void ascend(AnonymousClassDeclaration node) throws CoreException {}
+	void ascend(ArrayAccess node) throws CoreException {}
+	void ascend(ArrayCreation node) throws CoreException {}
+	void ascend(ArrayInitializer node) throws CoreException {}
+	void ascend(ArrayType node) throws CoreException {}
+	void ascend(AssertStatement node) throws CoreException {}
+	void ascend(Assignment node) throws CoreException { }
+	void ascend(Block node) throws CoreException {}
+	void ascend(BooleanLiteral node) throws CoreException {}
+	void ascend(BreakStatement node) throws CoreException {}
+	void ascend(CastExpression node) throws CoreException {}
+	void ascend(CatchClause node) throws CoreException {}
+	void ascend(CharacterLiteral node) throws CoreException {}
+	void ascend(ClassInstanceCreation node) throws CoreException { }
+	void ascend(CompilationUnit node) throws CoreException {}
+	void ascend(ConditionalExpression node) throws CoreException { }
+	void ascend(ConstructorInvocation node) throws CoreException { }
+	void ascend(ContinueStatement node) throws CoreException {}
+	void ascend(DoStatement node) throws CoreException {}
+	void ascend(EmptyStatement node) throws CoreException {}
 
 	/**
 	 * Processes the <code>Expression</code> node inside an <code>ExpressionStatement</code> node.
 	 * @param node
 	 * @throws CoreException 
 	 */
-	void process(ExpressionStatement node) throws CoreException {
-		this.process(node.getExpression());
-	}
-	void process(FieldAccess node) throws CoreException {}
-	void process(FieldDeclaration node) throws CoreException { }
-	void process(ForStatement node) throws CoreException {}
-	void process(IfStatement node) throws CoreException {}
-	void process(ImportDeclaration node) throws CoreException {}
-	void process(InfixExpression node) throws CoreException { }
-	void process(Initializer node) throws CoreException {}
-	void process(Javadoc node) throws CoreException {}
-	void process(LabeledStatement node) throws CoreException {}
-	void process(MethodDeclaration node) throws CoreException {}
-	void process(MethodInvocation node) throws CoreException { }
-	void process(NullLiteral node) throws CoreException {}
-	void process(NumberLiteral node) throws CoreException {}
-	void process(PackageDeclaration node) throws CoreException {}
+	void ascend(ExpressionStatement node) throws CoreException { }
+	void ascend(FieldAccess node) throws CoreException {}
+	void ascend(FieldDeclaration node) throws CoreException { }
+	void ascend(ForStatement node) throws CoreException {}
+	void ascend(IfStatement node) throws CoreException {}
+	void ascend(ImportDeclaration node) throws CoreException {}
+	void ascend(InfixExpression node) throws CoreException { }
+	void ascend(Initializer node) throws CoreException {}
+	void ascend(Javadoc node) throws CoreException {}
+	void ascend(LabeledStatement node) throws CoreException {}
+	void ascend(MethodDeclaration node) throws CoreException {}
+	void ascend(MethodInvocation node) throws CoreException { }
+	void ascend(NullLiteral node) throws CoreException {}
+	void ascend(NumberLiteral node) throws CoreException {}
+	void ascend(PackageDeclaration node) throws CoreException {}
 
 	/**
 	 * Processes the expression inside a <code>ParenthesizedExpression</code> node.
 	 * @param node
 	 * @throws CoreException 
 	 */
-	void process(ParenthesizedExpression node) throws CoreException { 
+	void ascend(ParenthesizedExpression node) throws CoreException { 
 		this.process(node.getParent());
 	}
 
-	void process(PostfixExpression node) throws CoreException {}
-	void process(PrefixExpression node) throws CoreException {}
-	void process(PrimitiveType node) throws CoreException {}
-	void process(QualifiedName node) throws CoreException {}
-	void process(ReturnStatement node) throws CoreException { }
-	void process(SimpleName node) throws CoreException {}
-	void process(SimpleType node) throws CoreException {}
-	void process(SingleVariableDeclaration node) throws CoreException { }
-	void process(StringLiteral node) throws CoreException {}
-	void process(SuperConstructorInvocation node) throws CoreException { }
-	void process(SuperFieldAccess node) throws CoreException {}
-	void process(SuperMethodInvocation node) throws CoreException { }
-	void process(SwitchCase node) throws CoreException { }
-	void process(SwitchStatement node) throws CoreException { }
-	void process(SynchronizedStatement node) throws CoreException {}
-	void process(ThisExpression node) throws CoreException {}
-	void process(ThrowStatement node) throws CoreException {}
-	void process(TryStatement node) throws CoreException {}
-	void process(TypeDeclaration node) throws CoreException {}
-	void process(TypeDeclarationStatement node) throws CoreException {}
-	void process(TypeLiteral node) throws CoreException {}
-	void process(VariableDeclarationExpression node) throws CoreException {}
-	void process(VariableDeclarationFragment node) throws CoreException { }
-	void process(VariableDeclarationStatement node) throws CoreException { }
-	void process(WhileStatement node) throws CoreException {}
-	void process(InstanceofExpression node) throws CoreException {}
-	void process(LineComment node) throws CoreException {}
-	void process(BlockComment node) throws CoreException {}
-	void process(TagElement node) throws CoreException {}
-	void process(TextElement node) throws CoreException {}
-	void process(MemberRef node) throws CoreException {}
-	void process(MethodRef node) throws CoreException {}
-	void process(MethodRefParameter node) throws CoreException {}
-	void process(EnhancedForStatement node) throws CoreException {}
-	void process(EnumDeclaration node) throws CoreException {}
-	void process(EnumConstantDeclaration node) throws CoreException {}
-	void process(TypeParameter node) throws CoreException {}
-	void process(ParameterizedType node) throws CoreException {}
-	void process(QualifiedType node) throws CoreException {}
-	void process(WildcardType node) throws CoreException {}
-	void process(NormalAnnotation node) throws CoreException {}
-	void process(MarkerAnnotation node) throws CoreException {}
-	void process(SingleMemberAnnotation node) throws CoreException {}
-	void process(MemberValuePair node) throws CoreException {}
-	void process(AnnotationTypeDeclaration node) throws CoreException {}
-	void process(Modifier node) throws CoreException {}
-	void process(UnionType node) throws CoreException {}
-	void process(Dimension node) throws CoreException {}
-	void process(LambdaExpression node) throws CoreException {}
-	void process(IntersectionType node) throws CoreException {}
-	void process(NameQualifiedType node) throws CoreException {}
-	void process(CreationReference node) throws CoreException {}
-	void process(ExpressionMethodReference node) throws CoreException {}
-	void process(SuperMethodReference node) throws CoreException {}
-	void process(TypeMethodReference node) throws CoreException {}
+	void ascend(PostfixExpression node) throws CoreException {}
+	void ascend(PrefixExpression node) throws CoreException {}
+	void ascend(PrimitiveType node) throws CoreException {}
+	void ascend(QualifiedName node) throws CoreException {}
+	void ascend(ReturnStatement node) throws CoreException { }
+	void ascend(SimpleName node) throws CoreException {}
+	void ascend(SimpleType node) throws CoreException {}
+	void ascend(SingleVariableDeclaration node) throws CoreException { }
+	void ascend(StringLiteral node) throws CoreException {}
+	void ascend(SuperConstructorInvocation node) throws CoreException { }
+	void ascend(SuperFieldAccess node) throws CoreException {}
+	void ascend(SuperMethodInvocation node) throws CoreException { }
+	void ascend(SwitchCase node) throws CoreException { }
+	void ascend(SwitchStatement node) throws CoreException { }
+	void ascend(SynchronizedStatement node) throws CoreException {}
+	void ascend(ThisExpression node) throws CoreException {}
+	void ascend(ThrowStatement node) throws CoreException {}
+	void ascend(TryStatement node) throws CoreException {}
+	void ascend(TypeDeclaration node) throws CoreException {}
+	void ascend(TypeDeclarationStatement node) throws CoreException {}
+	void ascend(TypeLiteral node) throws CoreException {}
+	void ascend(VariableDeclarationExpression node) throws CoreException {}
+	void ascend(VariableDeclarationFragment node) throws CoreException { }
+	void ascend(VariableDeclarationStatement node) throws CoreException { }
+	void ascend(WhileStatement node) throws CoreException {}
+	void ascend(InstanceofExpression node) throws CoreException {}
+	void ascend(LineComment node) throws CoreException {}
+	void ascend(BlockComment node) throws CoreException {}
+	void ascend(TagElement node) throws CoreException {}
+	void ascend(TextElement node) throws CoreException {}
+	void ascend(MemberRef node) throws CoreException {}
+	void ascend(MethodRef node) throws CoreException {}
+	void ascend(MethodRefParameter node) throws CoreException {}
+	void ascend(EnhancedForStatement node) throws CoreException {}
+	void ascend(EnumDeclaration node) throws CoreException {}
+	void ascend(EnumConstantDeclaration node) throws CoreException {}
+	void ascend(TypeParameter node) throws CoreException {}
+	void ascend(ParameterizedType node) throws CoreException {}
+	void ascend(QualifiedType node) throws CoreException {}
+	void ascend(WildcardType node) throws CoreException {}
+	void ascend(NormalAnnotation node) throws CoreException {}
+	void ascend(MarkerAnnotation node) throws CoreException {}
+	void ascend(SingleMemberAnnotation node) throws CoreException {}
+	void ascend(MemberValuePair node) throws CoreException {}
+	void ascend(AnnotationTypeDeclaration node) throws CoreException {}
+	void ascend(Modifier node) throws CoreException {}
+	void ascend(UnionType node) throws CoreException {}
+	void ascend(Dimension node) throws CoreException {}
+	void ascend(LambdaExpression node) throws CoreException {}
+	void ascend(IntersectionType node) throws CoreException {}
+	void ascend(NameQualifiedType node) throws CoreException {}
+	void ascend(CreationReference node) throws CoreException {}
+	void ascend(ExpressionMethodReference node) throws CoreException {}
+	void ascend(SuperMethodReference node) throws CoreException {}
+	void ascend(TypeMethodReference node) throws CoreException {}
 
 	/*	
-	void process(ModuleDeclaration node) { }
-	void process(RequiresDirective node) { }
-	void process(ExportsDirective node) { }
-	void process(OpensDirective node) { }
-	void process(UsesDirective node) { }
-	void process(ProvidesDirective node) { }
-	void process(ModuleModifier node) { }
+	void ascend(ModuleDeclaration node) { }
+	void ascend(RequiresDirective node) { }
+	void ascend(ExportsDirective node) { }
+	void ascend(OpensDirective node) { }
+	void ascend(UsesDirective node) { }
+	void ascend(ProvidesDirective node) { }
+	void ascend(ModuleModifier node) { }
 	*/
 
 	void process(ASTNode node) throws CoreException {
 		switch(node.getNodeType()) {
 		case ASTNode.ANONYMOUS_CLASS_DECLARATION:
-			this.process((AnonymousClassDeclaration) node);
+			this.ascend((AnonymousClassDeclaration) node);
 			break;
 
 		/**
@@ -188,7 +307,7 @@ abstract class ASTNodeProcessor {
 		 * @see ArrayAccess
 		 */
 		case ASTNode.ARRAY_ACCESS:
-			this.process((ArrayAccess) node);
+			this.ascend((ArrayAccess) node);
 			break;
 
 		/**
@@ -197,7 +316,7 @@ abstract class ASTNodeProcessor {
 		 * @see ArrayCreation
 		 */
 		case ASTNode.ARRAY_CREATION:
-			this.process((ArrayCreation) node);
+			this.ascend((ArrayCreation) node);
 			break;
 
 		/**
@@ -206,7 +325,7 @@ abstract class ASTNodeProcessor {
 		 * @see ArrayInitializer
 		 */
 		case ASTNode.ARRAY_INITIALIZER:
-			this.process((ArrayInitializer) node);
+			this.ascend((ArrayInitializer) node);
 			break;
 
 		/**
@@ -215,7 +334,7 @@ abstract class ASTNodeProcessor {
 		 * @see ArrayType
 		 */
 		case ASTNode.ARRAY_TYPE:
-			this.process((ArrayType) node);
+			this.ascend((ArrayType) node);
 			break;
 
 		/**
@@ -224,7 +343,7 @@ abstract class ASTNodeProcessor {
 		 * @see AssertStatement
 		 */
 		case ASTNode.ASSERT_STATEMENT:
-			this.process((AssertStatement) node);
+			this.ascend((AssertStatement) node);
 			break;
 
 		/**
@@ -233,7 +352,7 @@ abstract class ASTNodeProcessor {
 		 * @see Assignment
 		 */
 		case ASTNode.ASSIGNMENT:
-			this.process((Assignment) node);
+			this.ascend((Assignment) node);
 			break;
 
 		/**
@@ -242,7 +361,7 @@ abstract class ASTNodeProcessor {
 		 * @see Block
 		 */
 		case ASTNode.BLOCK:
-			this.process((Block) node);
+			this.ascend((Block) node);
 			break;
 
 		/**
@@ -251,7 +370,7 @@ abstract class ASTNodeProcessor {
 		 * @see BooleanLiteral
 		 */
 		case ASTNode.BOOLEAN_LITERAL:
-			this.process((BooleanLiteral) node);
+			this.ascend((BooleanLiteral) node);
 			break;
 
 		/**
@@ -260,7 +379,7 @@ abstract class ASTNodeProcessor {
 		 * @see BreakStatement
 		 */
 		case ASTNode.BREAK_STATEMENT:
-			this.process((BreakStatement) node);
+			this.ascend((BreakStatement) node);
 			break;
 
 		/**
@@ -269,7 +388,7 @@ abstract class ASTNodeProcessor {
 		 * @see CastExpression
 		 */
 		case ASTNode.CAST_EXPRESSION:
-			this.process((CastExpression) node);
+			this.ascend((CastExpression) node);
 			break;
 
 		/**
@@ -278,7 +397,7 @@ abstract class ASTNodeProcessor {
 		 * @see CatchClause
 		 */
 		case ASTNode.CATCH_CLAUSE:
-			this.process((CatchClause) node);
+			this.ascend((CatchClause) node);
 			break;
 
 		/**
@@ -287,7 +406,7 @@ abstract class ASTNodeProcessor {
 		 * @see CharacterLiteral
 		 */
 		case ASTNode.CHARACTER_LITERAL:
-			this.process((CharacterLiteral) node);
+			this.ascend((CharacterLiteral) node);
 			break;
 
 		/**
@@ -296,7 +415,7 @@ abstract class ASTNodeProcessor {
 		 * @see ClassInstanceCreation
 		 */
 		case ASTNode.CLASS_INSTANCE_CREATION:
-			this.process((ClassInstanceCreation) node);
+			this.ascend((ClassInstanceCreation) node);
 			break;
 
 		/**
@@ -305,7 +424,7 @@ abstract class ASTNodeProcessor {
 		 * @see CompilationUnit
 		 */
 		case ASTNode.COMPILATION_UNIT:
-			this.process((CompilationUnit) node);
+			this.ascend((CompilationUnit) node);
 			break;
 
 		/**
@@ -314,7 +433,7 @@ abstract class ASTNodeProcessor {
 		 * @see ConditionalExpression
 		 */
 		case ASTNode.CONDITIONAL_EXPRESSION:
-			this.process((ConditionalExpression) node);
+			this.ascend((ConditionalExpression) node);
 			break;
 
 		/**
@@ -323,7 +442,7 @@ abstract class ASTNodeProcessor {
 		 * @see ConstructorInvocation
 		 */
 		case ASTNode.CONSTRUCTOR_INVOCATION:
-			this.process((ConstructorInvocation) node);
+			this.ascend((ConstructorInvocation) node);
 			break;
 
 		/**
@@ -332,7 +451,7 @@ abstract class ASTNodeProcessor {
 		 * @see ContinueStatement
 		 */
 		case ASTNode.CONTINUE_STATEMENT:
-			this.process((ContinueStatement) node);
+			this.ascend((ContinueStatement) node);
 			break;
 
 		/**
@@ -341,7 +460,7 @@ abstract class ASTNodeProcessor {
 		 * @see DoStatement
 		 */
 		case ASTNode.DO_STATEMENT:
-			this.process((DoStatement) node);
+			this.ascend((DoStatement) node);
 			break;
 
 		/**
@@ -350,7 +469,7 @@ abstract class ASTNodeProcessor {
 		 * @see EmptyStatement
 		 */
 		case ASTNode.EMPTY_STATEMENT:
-			this.process((EmptyStatement) node);
+			this.ascend((EmptyStatement) node);
 			break;
 
 		/**
@@ -359,7 +478,7 @@ abstract class ASTNodeProcessor {
 		 * @see ExpressionStatement
 		 */
 		case ASTNode.EXPRESSION_STATEMENT:
-			this.process((ExpressionStatement) node);
+			this.ascend((ExpressionStatement) node);
 			break;
 
 		/**
@@ -368,7 +487,7 @@ abstract class ASTNodeProcessor {
 		 * @see FieldAccess
 		 */
 		case ASTNode.FIELD_ACCESS:
-			this.process((FieldAccess) node);
+			this.ascend((FieldAccess) node);
 			break;
 
 		/**
@@ -377,7 +496,7 @@ abstract class ASTNodeProcessor {
 		 * @see FieldDeclaration
 		 */
 		case ASTNode.FIELD_DECLARATION:
-			this.process((FieldDeclaration) node);
+			this.ascend((FieldDeclaration) node);
 			break;
 
 		/**
@@ -386,7 +505,7 @@ abstract class ASTNodeProcessor {
 		 * @see ForStatement
 		 */
 		case ASTNode.FOR_STATEMENT:
-			this.process((ForStatement) node);
+			this.ascend((ForStatement) node);
 			break;
 
 		/**
@@ -395,7 +514,7 @@ abstract class ASTNodeProcessor {
 		 * @see IfStatement
 		 */
 		case ASTNode.IF_STATEMENT:
-			this.process((IfStatement) node);
+			this.ascend((IfStatement) node);
 			break;
 
 		/**
@@ -404,7 +523,7 @@ abstract class ASTNodeProcessor {
 		 * @see ImportDeclaration
 		 */
 		case ASTNode.IMPORT_DECLARATION:
-			this.process((ImportDeclaration) node);
+			this.ascend((ImportDeclaration) node);
 			break;
 
 		/**
@@ -413,7 +532,7 @@ abstract class ASTNodeProcessor {
 		 * @see InfixExpression
 		 */
 		case ASTNode.INFIX_EXPRESSION:
-			this.process((InfixExpression) node);
+			this.ascend((InfixExpression) node);
 			break;
 
 		/**
@@ -422,7 +541,7 @@ abstract class ASTNodeProcessor {
 		 * @see Initializer
 		 */
 		case ASTNode.INITIALIZER:
-			this.process((Initializer) node);
+			this.ascend((Initializer) node);
 			break;
 
 		/**
@@ -431,7 +550,7 @@ abstract class ASTNodeProcessor {
 		 * @see Javadoc
 		 */
 		case ASTNode.JAVADOC:
-			this.process((Javadoc) node);
+			this.ascend((Javadoc) node);
 			break;
 
 		/**
@@ -440,7 +559,7 @@ abstract class ASTNodeProcessor {
 		 * @see LabeledStatement
 		 */
 		case ASTNode.LABELED_STATEMENT:
-			this.process((LabeledStatement) node);
+			this.ascend((LabeledStatement) node);
 			break;
 
 		/**
@@ -449,7 +568,7 @@ abstract class ASTNodeProcessor {
 		 * @see MethodDeclaration
 		 */
 		case ASTNode.METHOD_DECLARATION:
-			this.process((MethodDeclaration) node);
+			this.ascend((MethodDeclaration) node);
 			break;
 
 		/**
@@ -458,7 +577,7 @@ abstract class ASTNodeProcessor {
 		 * @see MethodInvocation
 		 */
 		case ASTNode.METHOD_INVOCATION:
-			this.process((MethodInvocation) node);
+			this.ascend((MethodInvocation) node);
 			break;
 
 		/**
@@ -467,7 +586,7 @@ abstract class ASTNodeProcessor {
 		 * @see NullLiteral
 		 */
 		case ASTNode.NULL_LITERAL:
-			this.process((NullLiteral) node);
+			this.ascend((NullLiteral) node);
 			break;
 
 		/**
@@ -476,7 +595,7 @@ abstract class ASTNodeProcessor {
 		 * @see NumberLiteral
 		 */
 		case ASTNode.NUMBER_LITERAL:
-			this.process((NumberLiteral) node);
+			this.ascend((NumberLiteral) node);
 			break;
 
 		/**
@@ -485,7 +604,7 @@ abstract class ASTNodeProcessor {
 		 * @see PackageDeclaration
 		 */
 		case ASTNode.PACKAGE_DECLARATION:
-			this.process((PackageDeclaration) node);
+			this.ascend((PackageDeclaration) node);
 			break;
 
 		/**
@@ -494,7 +613,7 @@ abstract class ASTNodeProcessor {
 		 * @see ParenthesizedExpression
 		 */
 		case ASTNode.PARENTHESIZED_EXPRESSION:
-			this.process((ParenthesizedExpression) node);
+			this.ascend((ParenthesizedExpression) node);
 			break;
 
 		/**
@@ -503,7 +622,7 @@ abstract class ASTNodeProcessor {
 		 * @see PostfixExpression
 		 */
 		case ASTNode.POSTFIX_EXPRESSION:
-			this.process((PostfixExpression) node);
+			this.ascend((PostfixExpression) node);
 			break;
 
 		/**
@@ -512,7 +631,7 @@ abstract class ASTNodeProcessor {
 		 * @see PrefixExpression
 		 */
 		case ASTNode.PREFIX_EXPRESSION:
-			this.process((PrefixExpression) node);
+			this.ascend((PrefixExpression) node);
 			break;
 
 		/**
@@ -521,7 +640,7 @@ abstract class ASTNodeProcessor {
 		 * @see PrimitiveType
 		 */
 		case ASTNode.PRIMITIVE_TYPE:
-			this.process((PrimitiveType) node);
+			this.ascend((PrimitiveType) node);
 			break;
 
 		/**
@@ -530,7 +649,7 @@ abstract class ASTNodeProcessor {
 		 * @see QualifiedName
 		 */
 		case ASTNode.QUALIFIED_NAME:
-			this.process((QualifiedName) node);
+			this.ascend((QualifiedName) node);
 			break;
 
 		/**
@@ -539,7 +658,7 @@ abstract class ASTNodeProcessor {
 		 * @see ReturnStatement
 		 */
 		case ASTNode.RETURN_STATEMENT:
-			this.process((ReturnStatement) node);
+			this.ascend((ReturnStatement) node);
 			break;
 
 		/**
@@ -548,7 +667,7 @@ abstract class ASTNodeProcessor {
 		 * @see SimpleName
 		 */
 		case ASTNode.SIMPLE_NAME:
-			this.process((SimpleName) node);
+			this.ascend((SimpleName) node);
 			break;
 
 		/**
@@ -557,7 +676,7 @@ abstract class ASTNodeProcessor {
 		 * @see SimpleType
 		 */
 		case ASTNode.SIMPLE_TYPE:
-			this.process((SimpleType) node);
+			this.ascend((SimpleType) node);
 			break;
 
 		/**
@@ -566,7 +685,7 @@ abstract class ASTNodeProcessor {
 		 * @see SingleVariableDeclaration
 		 */
 		case ASTNode.SINGLE_VARIABLE_DECLARATION:
-			this.process((SingleVariableDeclaration) node);
+			this.ascend((SingleVariableDeclaration) node);
 			break;
 
 		/**
@@ -575,7 +694,7 @@ abstract class ASTNodeProcessor {
 		 * @see StringLiteral
 		 */
 		case ASTNode.STRING_LITERAL:
-			this.process((StringLiteral) node);
+			this.ascend((StringLiteral) node);
 			break;
 
 		/**
@@ -584,7 +703,7 @@ abstract class ASTNodeProcessor {
 		 * @see SuperConstructorInvocation
 		 */
 		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION:
-			this.process((SuperConstructorInvocation) node);
+			this.ascend((SuperConstructorInvocation) node);
 			break;
 
 		/**
@@ -593,7 +712,7 @@ abstract class ASTNodeProcessor {
 		 * @see SuperFieldAccess
 		 */
 		case ASTNode.SUPER_FIELD_ACCESS:
-			this.process((SuperFieldAccess) node);
+			this.ascend((SuperFieldAccess) node);
 			break;
 
 		/**
@@ -602,7 +721,7 @@ abstract class ASTNodeProcessor {
 		 * @see SuperMethodInvocation
 		 */
 		case ASTNode.SUPER_METHOD_INVOCATION:
-			this.process((SuperMethodInvocation) node);
+			this.ascend((SuperMethodInvocation) node);
 			break;
 
 		/**
@@ -611,7 +730,7 @@ abstract class ASTNodeProcessor {
 		 * @see SwitchCase
 		 */
 		case ASTNode.SWITCH_CASE:
-			this.process((SwitchCase) node);
+			this.ascend((SwitchCase) node);
 			break;
 
 		/**
@@ -620,7 +739,7 @@ abstract class ASTNodeProcessor {
 		 * @see SwitchStatement
 		 */
 		case ASTNode.SWITCH_STATEMENT:
-			this.process((SwitchStatement) node);
+			this.ascend((SwitchStatement) node);
 			break;
 
 		/**
@@ -629,7 +748,7 @@ abstract class ASTNodeProcessor {
 		 * @see SynchronizedStatement
 		 */
 		case ASTNode.SYNCHRONIZED_STATEMENT:
-			this.process((SynchronizedStatement) node);
+			this.ascend((SynchronizedStatement) node);
 			break;
 
 		/**
@@ -638,7 +757,7 @@ abstract class ASTNodeProcessor {
 		 * @see ThisExpression
 		 */
 		case ASTNode.THIS_EXPRESSION:
-			this.process((ThisExpression) node);
+			this.ascend((ThisExpression) node);
 			break;
 
 		/**
@@ -647,7 +766,7 @@ abstract class ASTNodeProcessor {
 		 * @see ThrowStatement
 		 */
 		case ASTNode.THROW_STATEMENT:
-			this.process((ThrowStatement) node);
+			this.ascend((ThrowStatement) node);
 			break;
 
 		/**
@@ -656,7 +775,7 @@ abstract class ASTNodeProcessor {
 		 * @see TryStatement
 		 */
 		case ASTNode.TRY_STATEMENT:
-			this.process((TryStatement) node);
+			this.ascend((TryStatement) node);
 			break;
 
 		/**
@@ -665,7 +784,7 @@ abstract class ASTNodeProcessor {
 		 * @see TypeDeclaration
 		 */
 		case ASTNode.TYPE_DECLARATION:
-			this.process((TypeDeclaration) node);
+			this.ascend((TypeDeclaration) node);
 			break;
 
 		/**
@@ -674,7 +793,7 @@ abstract class ASTNodeProcessor {
 		 * @see TypeDeclarationStatement
 		 */
 		case ASTNode.TYPE_DECLARATION_STATEMENT:
-			this.process((TypeDeclarationStatement) node);
+			this.ascend((TypeDeclarationStatement) node);
 			break;
 
 		/**
@@ -683,7 +802,7 @@ abstract class ASTNodeProcessor {
 		 * @see TypeLiteral
 		 */
 		case ASTNode.TYPE_LITERAL:
-			this.process((TypeLiteral) node);
+			this.ascend((TypeLiteral) node);
 			break;
 
 		/**
@@ -692,7 +811,7 @@ abstract class ASTNodeProcessor {
 		 * @see VariableDeclarationExpression
 		 */
 		case ASTNode.VARIABLE_DECLARATION_EXPRESSION:
-			this.process((VariableDeclarationExpression) node);
+			this.ascend((VariableDeclarationExpression) node);
 			break;
 
 		/**
@@ -701,7 +820,7 @@ abstract class ASTNodeProcessor {
 		 * @see VariableDeclarationFragment
 		 */
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT:
-			this.process((VariableDeclarationFragment) node);
+			this.ascend((VariableDeclarationFragment) node);
 			break;
 
 		/**
@@ -710,7 +829,7 @@ abstract class ASTNodeProcessor {
 		 * @see VariableDeclarationStatement
 		 */
 		case ASTNode.VARIABLE_DECLARATION_STATEMENT:
-			this.process((VariableDeclarationStatement) node);
+			this.ascend((VariableDeclarationStatement) node);
 			break;
 
 		/**
@@ -719,7 +838,7 @@ abstract class ASTNodeProcessor {
 		 * @see WhileStatement
 		 */
 		case ASTNode.WHILE_STATEMENT:
-			this.process((WhileStatement) node);
+			this.ascend((WhileStatement) node);
 			break;
 
 		/**
@@ -728,7 +847,7 @@ abstract class ASTNodeProcessor {
 		 * @see InstanceofExpression
 		 */
 		case ASTNode.INSTANCEOF_EXPRESSION:
-			this.process((InstanceofExpression) node);
+			this.ascend((InstanceofExpression) node);
 			break;
 
 		/**
@@ -738,7 +857,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.0
 		 */
 		case ASTNode.LINE_COMMENT:
-			this.process((LineComment) node);
+			this.ascend((LineComment) node);
 			break;
 
 		/**
@@ -748,7 +867,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.0
 		 */
 		case ASTNode.BLOCK_COMMENT:
-			this.process((BlockComment) node);
+			this.ascend((BlockComment) node);
 			break;
 
 		/**
@@ -758,7 +877,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.0
 		 */
 		case ASTNode.TAG_ELEMENT:
-			this.process((TagElement) node);
+			this.ascend((TagElement) node);
 			break;
 
 		/**
@@ -768,7 +887,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.0
 		 */
 		case ASTNode.TEXT_ELEMENT:
-			this.process((TextElement) node);
+			this.ascend((TextElement) node);
 			break;
 
 		/**
@@ -778,7 +897,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.0
 		 */
 		case ASTNode.MEMBER_REF:
-			this.process((MemberRef) node);
+			this.ascend((MemberRef) node);
 			break;
 
 		/**
@@ -788,7 +907,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.0
 		 */
 		case ASTNode.METHOD_REF:
-			this.process((MethodRef) node);
+			this.ascend((MethodRef) node);
 			break;
 
 		/**
@@ -798,7 +917,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.0
 		 */
 		case ASTNode.METHOD_REF_PARAMETER:
-			this.process((MethodRefParameter) node);
+			this.ascend((MethodRefParameter) node);
 			break;
 
 		/**
@@ -808,7 +927,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.ENHANCED_FOR_STATEMENT:
-			this.process((EnhancedForStatement) node);
+			this.ascend((EnhancedForStatement) node);
 			break;
 
 		/**
@@ -818,7 +937,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.ENUM_DECLARATION:
-			this.process((EnumDeclaration) node);
+			this.ascend((EnumDeclaration) node);
 			break;
 
 		/**
@@ -828,7 +947,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.ENUM_CONSTANT_DECLARATION:
-			this.process((EnumConstantDeclaration) node);
+			this.ascend((EnumConstantDeclaration) node);
 			break;
 
 		/**
@@ -838,7 +957,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.TYPE_PARAMETER:
-			this.process((TypeParameter) node);
+			this.ascend((TypeParameter) node);
 			break;
 
 		/**
@@ -848,7 +967,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.PARAMETERIZED_TYPE:
-			this.process((ParameterizedType) node);
+			this.ascend((ParameterizedType) node);
 			break;
 
 		/**
@@ -858,7 +977,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.QUALIFIED_TYPE:
-			this.process((QualifiedType) node);
+			this.ascend((QualifiedType) node);
 			break;
 
 		/**
@@ -868,7 +987,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.WILDCARD_TYPE:
-			this.process((WildcardType) node);
+			this.ascend((WildcardType) node);
 			break;
 
 		/**
@@ -878,7 +997,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.NORMAL_ANNOTATION:
-			this.process((NormalAnnotation) node);
+			this.ascend((NormalAnnotation) node);
 			break;
 
 		/**
@@ -888,7 +1007,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.MARKER_ANNOTATION:
-			this.process((MarkerAnnotation) node);
+			this.ascend((MarkerAnnotation) node);
 			break;
 
 		/**
@@ -898,7 +1017,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.SINGLE_MEMBER_ANNOTATION:
-			this.process((SingleMemberAnnotation) node);
+			this.ascend((SingleMemberAnnotation) node);
 			break;
 
 		/**
@@ -908,7 +1027,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.MEMBER_VALUE_PAIR:
-			this.process((MemberValuePair) node);
+			this.ascend((MemberValuePair) node);
 			break;
 
 		/**
@@ -918,7 +1037,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.ANNOTATION_TYPE_DECLARATION:
-			this.process((AnnotationTypeDeclaration) node);
+			this.ascend((AnnotationTypeDeclaration) node);
 			break;
 
 		/**
@@ -928,7 +1047,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.ANNOTATION_TYPE_MEMBER_DECLARATION:
-			this.process((AnnotationTypeMemberDeclaration) node);
+			this.ascend((AnnotationTypeMemberDeclaration) node);
 			break;
 
 		/**
@@ -938,7 +1057,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.1
 		 */
 		case ASTNode.MODIFIER:
-			this.process((Modifier) node);
+			this.ascend((Modifier) node);
 			break;
 
 		/**
@@ -948,7 +1067,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.7.1
 		 */
 		case ASTNode.UNION_TYPE:
-			this.process((UnionType) node);
+			this.ascend((UnionType) node);
 			break;
 
 		/**
@@ -959,7 +1078,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.10
 		 */
 		case ASTNode.DIMENSION:
-			this.process((Dimension) node);
+			this.ascend((Dimension) node);
 			break;
 
 		/**
@@ -969,7 +1088,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.10
 		 */
 		case ASTNode.LAMBDA_EXPRESSION:
-			this.process((LambdaExpression) node);
+			this.ascend((LambdaExpression) node);
 			break;
 
 		/**
@@ -980,7 +1099,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.10
 		 */
 		case ASTNode.INTERSECTION_TYPE:
-			this.process((IntersectionType) node);
+			this.ascend((IntersectionType) node);
 			break;
 
 		/**
@@ -990,7 +1109,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.10
 		 */
 		case ASTNode.NAME_QUALIFIED_TYPE:
-			this.process((NameQualifiedType) node);
+			this.ascend((NameQualifiedType) node);
 			break;
 
 		/**
@@ -1000,7 +1119,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.10
 		 */
 		case ASTNode.CREATION_REFERENCE:
-			this.process((CreationReference) node);
+			this.ascend((CreationReference) node);
 			break;
 
 		/**
@@ -1010,7 +1129,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.10
 		 */
 		case ASTNode.EXPRESSION_METHOD_REFERENCE:
-			this.process((ExpressionMethodReference) node);
+			this.ascend((ExpressionMethodReference) node);
 			break;
 
 		/**
@@ -1020,7 +1139,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.10
 		 */
 		case ASTNode.SUPER_METHOD_REFERENCE:
-			this.process((SuperMethodReference) node);
+			this.ascend((SuperMethodReference) node);
 			break;
 
 		/**
@@ -1030,7 +1149,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.10
 		 */
 		case ASTNode.TYPE_METHOD_REFERENCE:
-			this.process((TypeMethodReference) node);
+			this.ascend((TypeMethodReference) node);
 			break;
 
 		/**
@@ -1040,7 +1159,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.14
 		 *//*
 		case ASTNode.MODULE_DECLARATION:
-			this.process((ModuleDeclaration) node);
+			this.ascend((ModuleDeclaration) node);
 			break;
 
 		*//**
@@ -1050,7 +1169,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.14
 		 *//*
 		case ASTNode.REQUIRES_DIRECTIVE:
-			this.process((RequiresDirective) node);
+			this.ascend((RequiresDirective) node);
 			break;
 		
 		*//**
@@ -1060,7 +1179,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.14
 		 *//*
 		case ASTNode.EXPORTS_DIRECTIVE:
-			this.process((ExportsDirective) node);
+			this.ascend((ExportsDirective) node);
 			break;
 
 		*//**
@@ -1070,7 +1189,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.14
 		 *//*
 		case ASTNode.OPENS_DIRECTIVE:
-			this.process((OpensDirective) node);
+			this.ascend((OpensDirective) node);
 			break;
 		
 		*//**
@@ -1080,7 +1199,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.14
 		 *//*
 		case ASTNode.USES_DIRECTIVE:
-			this.process((UsesDirective) node);
+			this.ascend((UsesDirective) node);
 			break;
 
 		*//**
@@ -1090,7 +1209,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.14
 		 *//*
 		case ASTNode.PROVIDES_DIRECTIVE:
-			this.process((ProvidesDirective) node);
+			this.ascend((ProvidesDirective) node);
 			break;
 
 		*//**
@@ -1100,7 +1219,7 @@ abstract class ASTNodeProcessor {
 		 * @since 3.14
 		 *//*
 		case ASTNode.MODULE_MODIFIER:
-			this.process((ModuleModifier) node);
+			this.ascend((ModuleModifier) node);
 			break;*/
 		}
 	}

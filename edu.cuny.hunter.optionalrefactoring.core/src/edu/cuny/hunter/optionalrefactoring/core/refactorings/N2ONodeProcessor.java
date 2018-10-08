@@ -10,8 +10,13 @@ import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.InfixExpression;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.InfixExpression.Operator;
+import org.eclipse.jdt.core.dom.QualifiedName;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
@@ -34,21 +39,43 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		return this.candidates;
 	}
 
+	@Override
+	void ascend(Assignment node) throws CoreException {
+		this.descend(node);
+	}
+	
 	/**
 	 * For type dependency tracking we will always need to get the left hand side from an <code>Assignment</code> node.
 	 * @param node
 	 * @throws CoreException 
 	 */
 	@Override
-	void process(Assignment node) throws CoreException { 
+	void descend(Assignment node) throws CoreException { 
 		this.process(node.getLeftHandSide());
 	}
-
+	
 	@Override
-	void process(CastExpression node) {
+	void ascend(VariableDeclarationFragment node) throws CoreException {
+		this.descend(node);
+	}
+	
+	@Override
+	void ascend(CastExpression node) {
 		// Cast expressions cannot be refactored as Optional
 		throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION, node);
 	}
+	
+	@Override
+	void descend(CastExpression node) {
+		// Cast expressions cannot be refactored as Optional
+		throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION, node);
+	}
+	
+	@Override
+	void ascend(InfixExpression node) throws CoreException {
+		this.descend(node);
+	}
+	
 	/**
 	 * When processing an <code>InfixExpression</code> node comparison we need to know whether we came from
 	 * the LHS or RHS, and call the other node the TARGET. We only care about equality / inequality with <code>null</code>.
@@ -56,14 +83,34 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	 * @throws CoreException 
 	 */
 	@Override
-	void process(InfixExpression node) throws CoreException {
+	void descend(InfixExpression node) throws CoreException {
 		if (!(node.getOperator().equals(Operator.EQUALS) || node.getOperator().equals(Operator.NOT_EQUALS))) return;
 		Expression target = node.getLeftOperand().equals(node) ? node.getRightOperand() : node.getLeftOperand();
 		this.process(target);
 	}
 	
 	@Override
-	void process(ArrayInitializer node) throws CoreException {
+	void ascend(ArrayInitializer node) throws CoreException {
+		this.process(node.getParent());
+	}
+	
+	@Override
+	void ascend(SimpleName node) throws CoreException {
+		this.process(node.getParent());
+	}
+	
+	@Override
+	void ascend(QualifiedName node) throws CoreException {
+		this.process(node.getParent());
+	}
+	
+	@Override
+	void ascend(FieldAccess node) throws CoreException {
+		this.process(node.getParent());
+	}
+	
+	@Override
+	void ascend(SuperFieldAccess node) throws CoreException {
 		this.process(node.getParent());
 	}
 }
