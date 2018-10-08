@@ -38,7 +38,7 @@ public class RefactoringSettings {
 	}
 
 	public boolean bridgeExternalCode() {
-		return this.settings.contains(Choices.BRIDGE_EXTERNAL);
+		return this.settings.contains(Choice.BRIDGE_EXTERNAL);
 	}
 
 	public void createFromEnv() {
