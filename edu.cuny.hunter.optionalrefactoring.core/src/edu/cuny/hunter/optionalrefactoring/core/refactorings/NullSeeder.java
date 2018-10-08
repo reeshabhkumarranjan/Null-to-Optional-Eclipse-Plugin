@@ -89,12 +89,7 @@ class NullSeeder extends N2ONodeProcessor {
 
 	@Override
 	void ascend(ArrayCreation node) throws CoreException {
-		this.process(node.getParent());
-	}
-	
-	@Override
-	void ascend(ArrayInitializer node) throws CoreException {
-		this.process(node.getParent());
+		this.processAscent(node.getParent());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -144,29 +139,6 @@ class NullSeeder extends N2ONodeProcessor {
 			}
 		}
 	}
-	
-	/**
-	 * For type dependency tracking we will always need to get the left hand side from an <code>Assignment</code> node.
-	 * @param node
-	 * @throws CoreException 
-	 */
-	@Override
-	void descend(Assignment node) throws CoreException { 
-		this.process(node.getLeftHandSide());
-	}
-
-	@Override
-	void descend(FieldAccess node) throws HarvesterASTException {
-		if (this.settings.refactorsFields()) {
-			IJavaElement element = Util.resolveElement(node);
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.sourceRangesToBridge.put(element, Util.getBridgeableExpressionSourceRange(this.currentNull));
-				else
-					return;
-			this.candidates.add(element);
-		}
-	}
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -210,8 +182,9 @@ class NullSeeder extends N2ONodeProcessor {
 		/*
 		 * Single variable declaration nodes are used in a limited number of places,
 		 * including formal parameter lists and catch clauses. We don't have to worry
-		 * about formal parameters here. They are not used for field declarations and
-		 * regular variable declaration statements.
+		 * about formal parameters here, since that work is done in the 
+		 * ascend(*Invocation) class of methods. They are not used for field 
+		 * declarations and regular variable declaration statements.
 		 */
 		if (this.settings.refactorsLocalVariables()) {
 			IJavaElement element = Util.resolveElement(node);
@@ -243,19 +216,6 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
-	@Override
-	void descend(SuperFieldAccess node) throws HarvesterASTException {
-		if (this.settings.refactorsFields()) {
-			IJavaElement element = Util.resolveElement(node);
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.sourceRangesToBridge.put(element, Util.getBridgeableExpressionSourceRange(this.currentNull));
-				else
-					return;
-			this.candidates.add(element);
-		}
-	}
-
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(SuperMethodInvocation node) throws HarvesterASTException {
@@ -280,42 +240,23 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	void descend(VariableDeclarationFragment node) throws HarvesterASTException {
-		ASTNode parent = node.getParent();
-		List<VariableDeclarationFragment> fragments = new LinkedList<>();
-		switch (parent.getNodeType()) {
-		case ASTNode.FIELD_DECLARATION: {
-			if (this.settings.refactorsFields())
-				fragments = ((FieldDeclaration) parent).fragments();
-			break;
+		final IJavaElement element = Util.resolveElement(node);
+		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
+			if (!this.settings.refactorsLocalVariables() && !node.resolveBinding().isField()
+					|| !this.settings.refactorsFields() && node.resolveBinding().isField()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				this.candidates.add(element);
 		}
-		case ASTNode.VARIABLE_DECLARATION_EXPRESSION: {
-			List<VariableDeclarationFragment> _fragments = ((VariableDeclarationExpression) parent).fragments();
-			if (this.settings.refactorsLocalVariables()
-					&& _fragments.stream().anyMatch(fragment -> !fragment.resolveBinding().isField())
-					|| this.settings.refactorsFields()
-							&& _fragments.stream().anyMatch(fragment -> fragment.resolveBinding().isField()))
-				fragments = _fragments;
-			break;
-		}
-		case ASTNode.VARIABLE_DECLARATION_STATEMENT: {
-			if (this.settings.refactorsLocalVariables())
-				fragments = ((VariableDeclarationStatement) parent).fragments();
-			break;
-		}
-		default:
-			throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
-					PreconditionFailure.AST_ERROR, parent);
-		}
-		Set<IJavaElement> elements = new LinkedHashSet<>();
-		for (Object o : fragments) {
-			VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
-			IJavaElement element = Util.resolveElement(vdf);
-			elements.add(element);
-		}
-		this.candidates.addAll(elements);
 	}
 
 	/**
@@ -331,7 +272,7 @@ class NullSeeder extends N2ONodeProcessor {
 				// set the currently-being-traversed node for this object
 				NullSeeder.this.currentNull = nl;
 				try { // try to process the node
-					NullSeeder.this.process(nl.getParent());
+					NullSeeder.this.processAscent(nl.getParent());
 				} catch (HarvesterException e) { // catch any exceptions
 					Logger.getAnonymousLogger().warning(Messages.Harvester_NullLiteralFailed + "\n" + e.getMessage());
 				} catch (CoreException e) {

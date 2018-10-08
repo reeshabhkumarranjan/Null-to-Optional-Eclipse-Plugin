@@ -3,6 +3,18 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.dom.*;
 
+/**
+ * @author oren
+ * {@link ASTNodeProcessor} provides the prototype for all {@link org.eclipse.jdt.core.dom.ASTNode} processing 
+ * activities we would want to perform. 
+ * The N2O Project extends this base class for the purpose of tracking transitive type dependencies across 
+ * field and variable bindings and method signatures (collectively referred to as "program entities").
+ * This class provides two main driver methods which accept instances of {@link org.eclipse.jdt.core.dom.ASTNode},
+ * {@link #processAscent(ASTNode)} and {@link #processDescent(ASTNode)}. These methods determine the correct hook 
+ * {@code descend(ASTNode)} or {@code ascend(ASTNode)} methods to call on the argument. Some of these methods are
+ * not hooks, such as {@link #descend(ParenthesizedExpression)}, which provide sensible default behavior.
+ * Subclasses of {@link ASTNodeProcessor} will override the hook methods as required for their purpose.
+ */
 abstract class ASTNodeProcessor {
 	
 	/**
@@ -43,7 +55,7 @@ abstract class ASTNodeProcessor {
 	 * @throws CoreException 
 	 */
 	void descend(ExpressionStatement node) throws CoreException {
-		this.process(node.getExpression());
+		this.processDescent(node.getExpression());
 	}
 	void descend(FieldAccess node) throws CoreException {}
 	void descend(FieldDeclaration node) throws CoreException { }
@@ -61,12 +73,12 @@ abstract class ASTNodeProcessor {
 	void descend(PackageDeclaration node) throws CoreException {}
 
 	/**
-	 * Processes the expression inside a <code>ParenthesizedExpression</code> node.
+	 * Processes the expression inside a {@link org.eclipse.jdt.core.dom.ParenthesizedExpression} node.
 	 * @param node
 	 * @throws CoreException 
 	 */
 	void descend(ParenthesizedExpression node) throws CoreException { 
-		this.process(node.getExpression());
+		this.processDescent(node.getExpression());
 	}
 
 	void descend(PostfixExpression node) throws CoreException {}
@@ -136,11 +148,12 @@ abstract class ASTNodeProcessor {
 	*/
 
 	/**
-	 * Processes the <code>Expression</code> node to determine the subclass instance to process.
+	 * Processes the {@link org.eclipse.jdt.core.dom.ASTNode} to determine the descent method 
+	 * with the correct signature to call.
 	 * @param node
 	 * @throws CoreException 
 	 */
-	void process(Expression node) throws CoreException {
+	void processDescent(ASTNode node) throws CoreException {
 		if (node instanceof NormalAnnotation) this.descend((NormalAnnotation) node); else
 		if (node instanceof MarkerAnnotation) this.descend((MarkerAnnotation) node); else
 		if (node instanceof SingleMemberAnnotation) this.descend((SingleMemberAnnotation) node); else
@@ -221,12 +234,12 @@ abstract class ASTNodeProcessor {
 	void ascend(PackageDeclaration node) throws CoreException {}
 
 	/**
-	 * Processes the expression inside a <code>ParenthesizedExpression</code> node.
+	 * Processes the part of a {@link org.eclipse.jdt.core.dom.ParenthesizedExpression} node.
 	 * @param node
 	 * @throws CoreException 
 	 */
 	void ascend(ParenthesizedExpression node) throws CoreException { 
-		this.process(node.getParent());
+		this.processAscent(node.getParent());
 	}
 
 	void ascend(PostfixExpression node) throws CoreException {}
@@ -295,7 +308,13 @@ abstract class ASTNodeProcessor {
 	void ascend(ModuleModifier node) { }
 	*/
 
-	void process(ASTNode node) throws CoreException {
+	/**
+	 * Processes the {@link org.eclipse.jdt.core.dom.ASTNode} to determine the descent method 
+	 * with the correct signature to call.
+	 * @param node
+	 * @throws CoreException
+	 */
+	void processAscent(ASTNode node) throws CoreException {
 		switch(node.getNodeType()) {
 		case ASTNode.ANONYMOUS_CLASS_DECLARATION:
 			this.ascend((AnonymousClassDeclaration) node);

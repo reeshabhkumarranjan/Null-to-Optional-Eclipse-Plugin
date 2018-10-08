@@ -252,7 +252,7 @@ class NullPropagator extends N2ONodeProcessor {
 					NullPropagator.this.sourceRangesToBridge.addAll(visitor.getSourceRangesToBridge());
 					for (Object element2 : visitor.getExpressions()) {
 						Expression exp = (Expression) element2;
-						NullPropagator.this.process(exp);
+						NullPropagator.this.processDescent(exp);
 					}
 				}
 			}
@@ -289,7 +289,7 @@ class NullPropagator extends N2ONodeProcessor {
 	@Override
 	boolean process() throws CoreException {
 		if (this.rootNode != null) {
-			this.process(this.rootNode);
+			this.processAscent(this.rootNode);
 			return true;
 		}
 		else return false;
@@ -302,7 +302,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (containedIn(access.getIndex(), this.name))
 			this.extractSourceRange(this.name);
 		else
-			super.process(node.getParent());
+			super.processAscent(node.getParent());
 	}
 	
 	@Override
@@ -319,19 +319,13 @@ class NullPropagator extends N2ONodeProcessor {
 			}
 		}
 		if (legal)
-			super.process(node.getParent());
+			super.processAscent(node.getParent());
 	}
-	
-	@Override
-	void descend(Assignment node) throws CoreException {
-		this.process(node.getLeftHandSide());
-		this.process(node.getRightHandSide());
-	}
-	
+
 	@Override
 	void descend(ConditionalExpression node) throws CoreException {
-		this.process(node.getThenExpression());
-		this.process(node.getElseExpression());
+		this.processDescent(node.getThenExpression());
+		this.processDescent(node.getElseExpression());
 	}
 	
 	@Override
@@ -345,15 +339,9 @@ class NullPropagator extends N2ONodeProcessor {
 					this.extractSourceRange(node);
 				else {
 					this.candidates.add(element);
-					this.process(vdf.getInitializer());
+					this.processDescent(vdf.getInitializer());
 				}
 		}
-	}
-	
-	@Override
-	void descend(InfixExpression node) throws CoreException {
-		this.process(node.getLeftOperand());
-		this.process(node.getRightOperand());
 	}
 	
 	@Override
@@ -362,7 +350,7 @@ class NullPropagator extends N2ONodeProcessor {
 			@Override
 			public boolean visit(ReturnStatement node) {
 				try {
-					NullPropagator.this.process(node.getExpression());
+					NullPropagator.this.processDescent(node.getExpression());
 				} catch (JavaModelException E) {
 					throw new RuntimeException(E);
 				} catch (CoreException e) {
@@ -470,7 +458,7 @@ class NullPropagator extends N2ONodeProcessor {
 				// go find the formals.
 				this.findFormalsForVariable(node);
 		} else
-			this.process(node.getParent());
+			this.processAscent(node.getParent());
 	}
 	
 	@Override
@@ -513,7 +501,7 @@ class NullPropagator extends N2ONodeProcessor {
 	@Override
 	void ascend(ReturnStatement node) throws CoreException {
 		// process what is being returned.
-		this.process(node.getExpression());
+		this.processDescent(node.getExpression());
 		// Get the corresponding method declaration.
 		final MethodDeclaration methDecl = Util.getMethodDeclaration(node);
 		// Get the corresponding method.
@@ -535,37 +523,18 @@ class NullPropagator extends N2ONodeProcessor {
 	
 	@Override
 	void descend(SwitchStatement node) throws CoreException {
-		this.process(node.getExpression());
+		this.processDescent(node.getExpression());
 		for (Object o : node.statements())
 			if (o instanceof SwitchCase) {
 				final SwitchCase sc = (SwitchCase) o;
-				this.process(sc.getExpression());
+				this.processDescent(sc.getExpression());
 			}
 	}
 	
 	@Override
 	void ascend(SwitchCase node) throws CoreException {
-		this.process(node.getExpression());
-		this.process(node.getParent());
-	}
-	
-	@Override
-	void descend(SuperFieldAccess node) throws CoreException {
-		if (node.equals(this.name)) {	// we are at the rootNode still, so just walk up
-			super.process(node.getParent());
-		}
-		IJavaElement element = Util.resolveElement(node);
-		if (!this.settings.refactorsFields()) {
-			this.extractSourceRange(node);
-			return;
-		}
-		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-			if (this.settings.bridgeExternalCode())
-				this.extractSourceRange(node);
-			else
-				return;
-		else
-			this.candidates.add(element);
+		this.processDescent(node.getExpression());
+		this.processAscent(node.getParent());
 	}
 	
 	@Override
@@ -579,7 +548,7 @@ class NullPropagator extends N2ONodeProcessor {
 					this.extractSourceRange(node);
 				else {
 					this.candidates.add(element);
-					this.process(vdf.getInitializer());
+					this.processDescent(vdf.getInitializer());
 				}
 		}
 	}
@@ -600,19 +569,19 @@ class NullPropagator extends N2ONodeProcessor {
 					return;
 			else
 				this.candidates.add(element);
-			this.process(node.getInitializer());
+			this.processDescent(node.getInitializer());
 		}
 	}
 	
 	@Override
 	void descend(ArrayCreation node) throws CoreException {
-		this.process(node.getInitializer());
+		this.processDescent(node.getInitializer());
 	}
 	
 	@Override
 	void descend(ArrayInitializer node) throws CoreException {
 		for (Object exp : node.expressions())
-			this.process((Expression) exp);
+			this.processDescent((Expression) exp);
 	}
 	
 	@Override
