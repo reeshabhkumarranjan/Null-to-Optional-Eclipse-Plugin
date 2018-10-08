@@ -61,16 +61,6 @@ class NullSeeder extends N2ONodeProcessor {
 		super(node, settings);
 	}
 
-	private <T extends ASTNode> ASTNode getContaining(Class<T> type, ASTNode node) {
-		ASTNode curr = node;
-		while (curr != null && curr.getClass() != type)
-			curr = curr.getParent();
-		if (curr != null)
-			return curr;
-		throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
-				PreconditionFailure.AST_ERROR, node);
-	}
-
 	public Map<IJavaElement, ISourceRange> getsourceRangesToBridge() {
 		return this.sourceRangesToBridge;
 	}
@@ -151,11 +141,11 @@ class NullSeeder extends N2ONodeProcessor {
 			}
 		}
 	}
-	
+
 	@Override
 	void ascend(ReturnStatement node) throws HarvesterASTException {
 		if (this.settings.refactorsMethods()) {
-			ASTNode methodDecl = this.getContaining(MethodDeclaration.class, node);
+			ASTNode methodDecl = Util.getMethodDeclaration(node);
 			if (methodDecl instanceof MethodDeclaration) {
 				IJavaElement im = Util.resolveElement((MethodDeclaration) methodDecl);
 				this.candidates.add(im);

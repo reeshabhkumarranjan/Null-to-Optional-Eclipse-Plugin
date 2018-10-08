@@ -60,34 +60,33 @@ public class RefactorableHarvester {
 
 	public static RefactorableHarvester of(ICompilationUnit i, CompilationUnit c, IJavaSearchScope scope,
 			RefactoringSettings settings, IProgressMonitor monitor) {
-		return new RefactorableHarvester(i, c, scope, settings, monitor);
+		return new RefactorableHarvester(c, scope, settings, monitor);
 	}
 
 	public static RefactorableHarvester of(IField f, CompilationUnit c, IJavaSearchScope scope,
 			RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
 		FieldDeclaration fieldDecl = Util.findASTNode(f, c);
-		return new RefactorableHarvester(f, fieldDecl, scope, settings, monitor);
+		return new RefactorableHarvester(fieldDecl, scope, settings, monitor);
 	}
 
 	public static RefactorableHarvester of(IInitializer i, CompilationUnit c, IJavaSearchScope scope,
 			RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
 		Initializer initializer = Util.findASTNode(i, c);
-		return new RefactorableHarvester(i, initializer, scope, settings, monitor);
+		return new RefactorableHarvester(initializer, scope, settings, monitor);
 	}
 
 	public static RefactorableHarvester of(IMethod m, CompilationUnit c, IJavaSearchScope scope,
 			RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
 		MethodDeclaration methodDecl = Util.findASTNode(m, c);
-		return new RefactorableHarvester(m, methodDecl, scope, settings, monitor);
+		return new RefactorableHarvester(methodDecl, scope, settings, monitor);
 	}
 
 	public static RefactorableHarvester of(IType t, CompilationUnit c, IJavaSearchScope scope,
 			RefactoringSettings settings, IProgressMonitor monitor) throws JavaModelException {
 		TypeDeclaration typeDecl = Util.findASTNode(t, c);
-		return new RefactorableHarvester(t, typeDecl, scope, settings, monitor);
+		return new RefactorableHarvester(typeDecl, scope, settings, monitor);
 	}
 
-	private final IJavaElement refactoringRootElement;
 	private final ASTNode refactoringRootNode;
 	private final IJavaSearchScope scopeRoot;
 	private final RefactoringSettings settings;
@@ -105,9 +104,8 @@ public class RefactorableHarvester {
 
 	private final Set<Entity> failing = new LinkedHashSet<>();
 
-	private RefactorableHarvester(IJavaElement rootElement, ASTNode rootNode, IJavaSearchScope scope,
+	private RefactorableHarvester(ASTNode rootNode, IJavaSearchScope scope,
 			RefactoringSettings settings, IProgressMonitor m) {
-		this.refactoringRootElement = rootElement;
 		this.refactoringRootNode = rootNode;
 		this.monitor = m;
 		this.scopeRoot = scope;
