@@ -87,16 +87,6 @@ class NullSeeder extends N2ONodeProcessor {
 		return this.sourceRangesToBridge;
 	}
 
-	/* (non-Javadoc)
-	 * @see edu.cuny.hunter.optionalrefactoring.core.refactorings.N2ONodeProcessor#process(org.eclipse.jdt.core.dom.ArrayAccess)
-	 * Unlike in the propagation phase, we don't have to check if a null literal is inside an array access expression.
-	 */
-	@Override
-	void descend(ArrayAccess node) throws CoreException {
-		Expression e = node.getArray();
-		this.process(e);
-	}
-
 	@Override
 	void ascend(ArrayCreation node) throws CoreException {
 		this.process(node.getParent());
@@ -131,16 +121,6 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
-	@Override
-	void ascend(ConditionalExpression node) throws CoreException {
-		ASTNode parent = node.getParent();
-		if (parent != null)
-			this.process(parent);
-		else
-			throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
-					PreconditionFailure.AST_ERROR, node);
-	}
-
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(ConstructorInvocation node) throws HarvesterASTException {
@@ -163,6 +143,16 @@ class NullSeeder extends N2ONodeProcessor {
 						PreconditionFailure.MISSING_JAVA_ELEMENT, method);
 			}
 		}
+	}
+	
+	/**
+	 * For type dependency tracking we will always need to get the left hand side from an <code>Assignment</code> node.
+	 * @param node
+	 * @throws CoreException 
+	 */
+	@Override
+	void descend(Assignment node) throws CoreException { 
+		this.process(node.getLeftHandSide());
 	}
 
 	@Override

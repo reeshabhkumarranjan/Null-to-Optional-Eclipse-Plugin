@@ -6,9 +6,11 @@ import java.util.Set;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CastExpression;
+import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.InfixExpression;
@@ -37,23 +39,13 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		this.settings = settings;
 	}
 	
-	public Set<IJavaElement> getPassing() {
+	public Set<IJavaElement> getCandidates() {
 		return this.candidates;
 	}
 
 	@Override
 	void ascend(Assignment node) throws CoreException {
 		this.descend(node);
-	}
-	
-	/**
-	 * For type dependency tracking we will always need to get the left hand side from an <code>Assignment</code> node.
-	 * @param node
-	 * @throws CoreException 
-	 */
-	@Override
-	void descend(Assignment node) throws CoreException { 
-		this.process(node.getLeftHandSide());
 	}
 	
 	@Override
@@ -71,6 +63,16 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	void descend(CastExpression node) {
 		// Cast expressions cannot be refactored as Optional
 		throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION, node);
+	}
+
+	@Override
+	void ascend(ConditionalExpression node) throws CoreException {
+		ASTNode parent = node.getParent();
+		if (parent != null)
+			this.process(parent);
+		else
+			throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
+					PreconditionFailure.AST_ERROR, node);
 	}
 	
 	@Override
@@ -94,6 +96,15 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	@Override
 	void ascend(ArrayInitializer node) throws CoreException {
 		this.process(node.getParent());
+	}
+
+	/**
+	 *  
+	 */
+	@Override
+	void descend(ArrayAccess node) throws CoreException {
+		Expression e = node.getArray();
+		this.process(e);
 	}
 	
 	@Override
@@ -134,6 +145,22 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	}
 	
 	@Override
+	void descend(FieldAccess node) throws CoreException {
+		IJavaElement element = Util.resolveElement(node);
+		if (!this.settings.refactorsFields()) {
+			this.extractSourceRange(node);
+			return;
+		}
+		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+			if (this.settings.bridgeExternalCode())
+				this.extractSourceRange(node);
+			else
+				return;
+		else
+			this.candidates.add(element);
+	}
+	
+	@Override
 	void ascend(SuperFieldAccess node) throws CoreException {
 		this.process(node.getParent());
 	}
@@ -145,5 +172,21 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 					Util.isGeneratedCode(element))
 				return true;
 		} return false;
+	}
+	
+	@Override
+	void descend(SuperFieldAccess node) throws CoreException {
+		IJavaElement element = Util.resolveElement(node);
+		if (!this.settings.refactorsFields()) {
+			this.extractSourceRange(node);
+			return;
+		}
+		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+			if (this.settings.bridgeExternalCode())
+				this.extractSourceRange(node);
+			else
+				return;
+		else
+			this.candidates.add(element);
 	}
 }

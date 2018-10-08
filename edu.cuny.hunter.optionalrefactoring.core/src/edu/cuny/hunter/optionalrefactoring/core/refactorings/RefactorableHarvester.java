@@ -136,7 +136,7 @@ public class RefactorableHarvester {
 		if (!seeder.process())
 			return RefactoringStatus.createErrorStatus(Messages.NoNullsHavePassedThePreconditions);
 		// otherwise get the passing null type dependent entities
-		this.nullSeeds.addAll(seeder.getPassing());
+		this.nullSeeds.addAll(seeder.getCandidates());
 		// and put just the IJavaElements into the workList
 		this.workList.addAll(this.nullSeeds);
 
@@ -169,7 +169,7 @@ public class RefactorableHarvester {
 						processor.process();
 
 						// add to the workList all of the type-dependent stuff we found.
-						RefactorableHarvester.this.workList.addAll(processor.getFound());
+						RefactorableHarvester.this.workList.addAll(processor.getCandidates());
 						// add to the bridgeableSourceRangeMap all the source ranges that can be bridged
 						SimpleEntry<IJavaElement, Set<ISourceRange>> entry = processor.getSourceRangesToBridge();
 						if (entry != null)
@@ -211,7 +211,7 @@ public class RefactorableHarvester {
 
 		// keep in the notRefactorable list only anything that was in the originally
 		// seeded elements
-		this.notRefactorable.retainAll(seeder.getPassing());
+		this.notRefactorable.retainAll(seeder.getCandidates());
 		// turn the not refactorable list into a set of singleton TDES for consistency
 		this.failing.addAll(this.notRefactorable.stream()
 				.map(element -> Entity.fail(element, this.elementToBridgeableSourceRangeMap))

@@ -26,7 +26,6 @@ import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -34,11 +33,7 @@ import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.ParenthesizedExpression;
-import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.ReturnStatement;
-import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
@@ -103,8 +98,6 @@ class NullPropagator extends N2ONodeProcessor {
 		final MethodDeclaration decl = (MethodDeclaration) svd.getParent();
 		return decl.parameters().indexOf(svd);
 	}
-
-	private final Set<IJavaElement> found = new LinkedHashSet<>();
 
 	private final IProgressMonitor monitor;
 
@@ -255,11 +248,11 @@ class NullPropagator extends N2ONodeProcessor {
 					ASTNode node = Util.getASTNode(elem, NullPropagator.this.monitor);
 					ParameterProcessingVisitor visitor = new ParameterProcessingVisitor(paramNumber, match.getOffset());
 					node.accept(visitor);
-					NullPropagator.this.found.addAll(visitor.getElements());
+					NullPropagator.this.candidates.addAll(visitor.getElements());
 					NullPropagator.this.sourceRangesToBridge.addAll(visitor.getSourceRangesToBridge());
 					for (Object element2 : visitor.getExpressions()) {
 						Expression exp = (Expression) element2;
-						NullPropagator.this.processExpression(exp);
+						NullPropagator.this.process(exp);
 					}
 				}
 			}
@@ -284,10 +277,6 @@ class NullPropagator extends N2ONodeProcessor {
 				SearchPattern.R_EXACT_MATCH);
 
 		this.findParameters(getFormalParameterNumber(node), pattern);
-	}
-
-	public Set<IJavaElement> getFound() {
-		return this.found;
 	}
 
 	public SimpleEntry<IJavaElement, Set<ISourceRange>> getSourceRangesToBridge() {
@@ -335,13 +324,14 @@ class NullPropagator extends N2ONodeProcessor {
 	
 	@Override
 	void descend(Assignment node) throws CoreException {
-		this.processExpression(node.getLeftHandSide());
-		this.processExpression(node.getRightHandSide());
+		this.process(node.getLeftHandSide());
+		this.process(node.getRightHandSide());
 	}
 	
 	@Override
 	void descend(ConditionalExpression node) throws CoreException {
-		this.processExpression(node);
+		this.process(node.getThenExpression());
+		this.process(node.getElseExpression());
 	}
 	
 	@Override
@@ -349,21 +339,21 @@ class NullPropagator extends N2ONodeProcessor {
 		for (Object o : node.fragments()) {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 			final IJavaElement element = Util.resolveElement(vdf);
-			if (!this.found.contains(element))
+			if (!this.candidates.contains(element))
 				if (!this.settings.refactorsFields() || this.settings.bridgeExternalCode()
 						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
 					this.extractSourceRange(node);
 				else {
-					this.found.add(element);
-					this.processExpression(vdf.getInitializer());
+					this.candidates.add(element);
+					this.process(vdf.getInitializer());
 				}
 		}
 	}
 	
 	@Override
 	void descend(InfixExpression node) throws CoreException {
-		this.processExpression(node.getLeftOperand());
-		this.processExpression(node.getRightOperand());
+		this.process(node.getLeftOperand());
+		this.process(node.getRightOperand());
 	}
 	
 	@Override
@@ -372,7 +362,7 @@ class NullPropagator extends N2ONodeProcessor {
 			@Override
 			public boolean visit(ReturnStatement node) {
 				try {
-					NullPropagator.this.processExpression(node.getExpression());
+					NullPropagator.this.process(node.getExpression());
 				} catch (JavaModelException E) {
 					throw new RuntimeException(E);
 				} catch (CoreException e) {
@@ -497,7 +487,7 @@ class NullPropagator extends N2ONodeProcessor {
 			else
 				return;
 		else
-			this.found.add(element);
+			this.candidates.add(element);
 		// take care of remote usage.
 		// go find variables on the corresponding calls.
 		this.findVariablesForFormal(node);
@@ -517,13 +507,13 @@ class NullPropagator extends N2ONodeProcessor {
 			else
 				return;
 		else
-			this.found.add(element);
+			this.candidates.add(element);
 	}
 	
 	@Override
 	void ascend(ReturnStatement node) throws CoreException {
 		// process what is being returned.
-		this.processExpression(node.getExpression());
+		this.process(node.getExpression());
 		// Get the corresponding method declaration.
 		final MethodDeclaration methDecl = Util.getMethodDeclaration(node);
 		// Get the corresponding method.
@@ -540,22 +530,22 @@ class NullPropagator extends N2ONodeProcessor {
 			else
 				return;
 		else
-			this.found.add(top);
+			this.candidates.add(top);
 	}
 	
 	@Override
 	void descend(SwitchStatement node) throws CoreException {
-		this.processExpression(node.getExpression());
+		this.process(node.getExpression());
 		for (Object o : node.statements())
 			if (o instanceof SwitchCase) {
 				final SwitchCase sc = (SwitchCase) o;
-				this.processExpression(sc.getExpression());
+				this.process(sc.getExpression());
 			}
 	}
 	
 	@Override
 	void ascend(SwitchCase node) throws CoreException {
-		this.processExpression(node.getExpression());
+		this.process(node.getExpression());
 		this.process(node.getParent());
 	}
 	
@@ -575,7 +565,7 @@ class NullPropagator extends N2ONodeProcessor {
 			else
 				return;
 		else
-			this.found.add(element);
+			this.candidates.add(element);
 	}
 	
 	@Override
@@ -583,13 +573,13 @@ class NullPropagator extends N2ONodeProcessor {
 		for (Object o : node.fragments()) {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 			final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
-			if (!this.found.contains(element))
+			if (!this.candidates.contains(element))
 				if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
 						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
 					this.extractSourceRange(node);
 				else {
-					this.found.add(element);
-					this.processExpression(vdf.getInitializer());
+					this.candidates.add(element);
+					this.process(vdf.getInitializer());
 				}
 		}
 	}
@@ -597,7 +587,7 @@ class NullPropagator extends N2ONodeProcessor {
 	@Override
 	void descend(VariableDeclarationFragment node) throws CoreException {
 		final IJavaElement element = Util.resolveElement(node);
-		if (!this.found.contains(element)) { // we don't want to keep processing if it does
+		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
 			if (!this.settings.refactorsLocalVariables() && !node.resolveBinding().isField()
 					|| !this.settings.refactorsFields() && node.resolveBinding().isField()) {
 				this.extractSourceRange(node);
@@ -609,220 +599,103 @@ class NullPropagator extends N2ONodeProcessor {
 				else
 					return;
 			else
-				this.found.add(element);
-			this.processExpression(node.getInitializer());
+				this.candidates.add(element);
+			this.process(node.getInitializer());
 		}
 	}
-
-	protected void processExpression(Expression node) throws CoreException {
-		if (node == null)
-			return;
-
-		switch (node.getNodeType()) {
-		case ASTNode.SIMPLE_NAME:
-		case ASTNode.QUALIFIED_NAME: {
-			final Name name = (Name) node;
-			IJavaElement element = Util.resolveElement(name);
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(name);
-				else
-					return;
-			else
-				this.found.add(element);
-			break;
-		}
-
-		case ASTNode.ARRAY_ACCESS: {
-			final ArrayAccess access = (ArrayAccess) node;
-			this.processExpression(access.getArray());
-			break;
-		}
-
-		case ASTNode.ARRAY_CREATION: {
-			final ArrayCreation creation = (ArrayCreation) node;
-			this.processExpression(creation.getInitializer());
-			break;
-		}
-
-		case ASTNode.ARRAY_INITIALIZER: {
-			final ArrayInitializer init = (ArrayInitializer) node;
-			for (Object exp : init.expressions())
-				this.processExpression((Expression) exp);
-			break;
-		}
-
-		case ASTNode.ASSIGNMENT: {
-			final Assignment assignment = (Assignment) node;
-			this.processExpression(assignment.getLeftHandSide());
-			this.processExpression(assignment.getRightHandSide());
-			break;
-		}
-
-		case ASTNode.CLASS_INSTANCE_CREATION: {
-			final ClassInstanceCreation ctorCall = (ClassInstanceCreation) node;
-			// if coming up from a argument.
-			if (containedIn(ctorCall.arguments(), this.name)) {
-				final int paramNumber = Util.getParamNumber(ctorCall.arguments(), this.name);
-				IJavaElement element = Util.resolveElement(ctorCall, paramNumber);
-				if (!this.settings.refactorsParameters()) {
-					this.extractSourceRange(ctorCall);
-					return;
-				}
-				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					if (this.settings.bridgeExternalCode())
-						this.extractSourceRange(ctorCall);
-					else
-						return;
-				else
-					// go find the formals.
-					this.findFormalsForVariable(ctorCall);
-			}
-			break;
-
-		}
-
-		case ASTNode.CONDITIONAL_EXPRESSION: {
-			final ConditionalExpression ce = (ConditionalExpression) node;
-			this.processExpression(ce.getThenExpression());
-			this.processExpression(ce.getElseExpression());
-			break;
-		}
-
-		case ASTNode.FIELD_ACCESS: {
-			final FieldAccess fieldAccess = (FieldAccess) node;
-			IJavaElement element = Util.resolveElement(fieldAccess);
-			if (!this.settings.refactorsFields()) {
-				this.extractSourceRange(fieldAccess);
+	
+	@Override
+	void descend(ArrayCreation node) throws CoreException {
+		this.process(node.getInitializer());
+	}
+	
+	@Override
+	void descend(ArrayInitializer node) throws CoreException {
+		for (Object exp : node.expressions())
+			this.process((Expression) exp);
+	}
+	
+	@Override
+	void descend(ClassInstanceCreation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name)) {
+			final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
+			IJavaElement element = Util.resolveElement(node, paramNumber);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
 				return;
 			}
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
 				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(fieldAccess);
+					this.extractSourceRange(node);
 				else
 					return;
 			else
-				this.found.add(element);
-			break;
-
-		}
-
-		case ASTNode.METHOD_INVOCATION: {
-			final MethodInvocation m = (MethodInvocation) node;
-			final IMethod meth = (IMethod) Util.resolveElement(m);
-			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
-
-			if (top == null)
-				throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-						PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-			else {
-				// Check the topmost method.
-				if (!this.settings.refactorsParameters()) {
-					this.extractSourceRange(m);
-					return;
-				}
-				if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-					if (this.settings.bridgeExternalCode())
-						this.extractSourceRange(m);
-					else
-						return;
-				else
-					this.found.add(top);
-			}
-			break;
-
-		}
-
-		case ASTNode.PARENTHESIZED_EXPRESSION: {
-			final ParenthesizedExpression pe = (ParenthesizedExpression) node;
-			this.processExpression(pe.getExpression());
-			break;
-		}
-
-		case ASTNode.SUPER_FIELD_ACCESS: {
-			final SuperFieldAccess superFieldAccess = (SuperFieldAccess) node;
-			IJavaElement element = Util.resolveElement(superFieldAccess);
-			if (!this.settings.refactorsFields()) {
-				this.extractSourceRange(superFieldAccess);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(superFieldAccess);
-				else
-					return;
-			else
-				this.found.add(element);
-			break;
-		}
-
-		case ASTNode.SUPER_METHOD_INVOCATION: {
-			final SuperMethodInvocation sm = (SuperMethodInvocation) node;
-			final IMethod meth = (IMethod) Util.resolveElement(sm);
-			final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
-
-			if (top == null)
-				throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-						PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-			else {
-				// Check the topmost method.
-				if (!this.settings.refactorsParameters()) {
-					this.extractSourceRange(sm);
-					return;
-				}
-				if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-					if (this.settings.bridgeExternalCode())
-						this.extractSourceRange(sm);
-					else
-						return;
-				else
-					this.found.add(top);
-			}
-			break;
-
-		}
-
-		case ASTNode.VARIABLE_DECLARATION_EXPRESSION: {
-			final VariableDeclarationExpression varDec = (VariableDeclarationExpression) node;
-			List<VariableDeclarationFragment> _fragments = varDec.fragments();
-			for (Object o : varDec.fragments()) {
-				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
-				final IJavaElement element = Util.resolveElement(vdf);
-				if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
-						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
-					this.extractSourceRange(vdf);
-				else
-					this.found.add(element);
-			}
-			break;
-
-		}
-
-		case ASTNode.SUPER_METHOD_REFERENCE:
-		case ASTNode.EXPRESSION_METHOD_REFERENCE:
-		case ASTNode.TYPE_METHOD_REFERENCE:
-			throw new HarvesterASTException(Messages.Excluded_by_Settings, PreconditionFailure.EXCLUDED_SETTING, node);
-
-		case ASTNode.CAST_EXPRESSION: {
-			throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION,
-					node);
-		}
-		case ASTNode.NULL_LITERAL:
-		case ASTNode.ENUM_CONSTANT_DECLARATION:
-		case ASTNode.IF_STATEMENT:
-		case ASTNode.BOOLEAN_LITERAL:
-		case ASTNode.NUMBER_LITERAL:
-		case ASTNode.CHARACTER_LITERAL:
-		case ASTNode.STRING_LITERAL:
-		case ASTNode.POSTFIX_EXPRESSION:
-		case ASTNode.INFIX_EXPRESSION:
-		case ASTNode.PREFIX_EXPRESSION:
-		case ASTNode.THIS_EXPRESSION:
-			break;
-
-		default: {
-			throw new HarvesterASTException(Messages.Harvester_ASTNodeError, PreconditionFailure.AST_ERROR, node);
-		}
+				// go find the formals.
+				this.findFormalsForVariable(node);
 		}
 	}
+	
+	@Override
+	void descend(MethodInvocation node) throws CoreException {
+		final IMethod meth = (IMethod) Util.resolveElement(node);
+		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
+
+		if (top == null)
+			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
+		else {
+			// Check the topmost method.
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				this.candidates.add(top);
+		}
+	}
+	
+	@Override
+	void descend(SuperMethodInvocation node) throws CoreException {
+		final IMethod meth = (IMethod) Util.resolveElement(node);
+		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
+
+		if (top == null)
+			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
+		else {
+			// Check the topmost method.
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				this.candidates.add(top);
+		}
+	}
+	
+	@Override
+	void descend(VariableDeclarationExpression node) throws CoreException {
+		final VariableDeclarationExpression varDec = (VariableDeclarationExpression) node;
+		List<VariableDeclarationFragment> fragments = varDec.fragments();
+		for (VariableDeclarationFragment frag : fragments) {
+			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) frag;
+			final IJavaElement element = Util.resolveElement(vdf);
+			if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
+					&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
+				this.extractSourceRange(vdf);
+			else
+				this.candidates.add(element);
+		}
+	}
+
 }
