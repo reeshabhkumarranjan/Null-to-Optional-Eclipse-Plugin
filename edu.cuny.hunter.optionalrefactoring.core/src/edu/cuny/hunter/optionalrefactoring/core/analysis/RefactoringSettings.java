@@ -37,7 +37,7 @@ public class RefactoringSettings {
 		this.settings = settings;
 	}
 
-	public boolean bridgesLibraries() {
+	public boolean bridgeExternalCode() {
 		return this.settings.contains(Choices.BRIDGE_EXTERNAL);
 	}
 

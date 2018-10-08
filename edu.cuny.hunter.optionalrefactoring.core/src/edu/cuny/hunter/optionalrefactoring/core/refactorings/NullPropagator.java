@@ -32,7 +32,6 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
-import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
@@ -126,7 +125,8 @@ class NullPropagator extends N2ONodeProcessor {
 		this.monitor = monitor;
 	}
 
-	private void extractSourceRange(ASTNode node) {
+	@Override
+	void extractSourceRange(ASTNode node) {
 		this.sourceRangesToBridge.add(Util.getBridgeableExpressionSourceRange(node));
 	}
 
@@ -299,7 +299,7 @@ class NullPropagator extends N2ONodeProcessor {
 
 	@Override
 	boolean process() throws CoreException {
-		if (this.name != null) {
+		if (this.rootNode != null) {
 			this.process(this.rootNode);
 			return true;
 		}
@@ -338,31 +338,6 @@ class NullPropagator extends N2ONodeProcessor {
 		this.processExpression(node.getLeftHandSide());
 		this.processExpression(node.getRightHandSide());
 	}
-
-	@Override 
-	void descend(QualifiedName node) throws CoreException {
-		this.process((Name) node);
-	}
-	
-	@Override 
-	void descend(SimpleName node) throws CoreException {
-		this.process((Name) node);
-	}
-	
-	private void process(Name node) throws CoreException {
-		if (node.equals(this.name)) {	// we are at the rootNode still, so just walk up
-			super.process(node.getParent());
-		} else {
-			IJavaElement element = Util.resolveElement(node);
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
-					this.extractSourceRange(name);
-				else
-					return;
-			else
-				this.found.add(element);
-		}
-	}
 	
 	@Override
 	void descend(ConditionalExpression node) throws CoreException {
@@ -375,7 +350,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 			final IJavaElement element = Util.resolveElement(vdf);
 			if (!this.found.contains(element))
-				if (!this.settings.refactorsFields() || this.settings.bridgesLibraries()
+				if (!this.settings.refactorsFields() || this.settings.bridgeExternalCode()
 						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
 					this.extractSourceRange(node);
 				else {
@@ -420,7 +395,7 @@ class NullPropagator extends N2ONodeProcessor {
 				return;
 			}
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.extractSourceRange(node);
 				else
 					return;
@@ -439,7 +414,7 @@ class NullPropagator extends N2ONodeProcessor {
 				return;
 			}
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.extractSourceRange(node);
 				else
 					return;
@@ -458,7 +433,7 @@ class NullPropagator extends N2ONodeProcessor {
 				return;
 			}
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.extractSourceRange(node);
 				else
 					return;
@@ -477,7 +452,7 @@ class NullPropagator extends N2ONodeProcessor {
 				return;
 			}
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.extractSourceRange(node);
 				else
 					return;
@@ -497,7 +472,7 @@ class NullPropagator extends N2ONodeProcessor {
 				return;
 			}
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.extractSourceRange(node);
 				else
 					return;
@@ -517,7 +492,7 @@ class NullPropagator extends N2ONodeProcessor {
 			return;
 		}
 		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-			if (this.settings.bridgesLibraries())
+			if (this.settings.bridgeExternalCode())
 				this.extractSourceRange(node);
 			else
 				return;
@@ -537,7 +512,7 @@ class NullPropagator extends N2ONodeProcessor {
 			return;
 		}
 		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-			if (this.settings.bridgesLibraries())
+			if (this.settings.bridgeExternalCode())
 				this.extractSourceRange(node);
 			else
 				return;
@@ -560,7 +535,7 @@ class NullPropagator extends N2ONodeProcessor {
 					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
 		else // Check the topmost method.
 		if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-			if (this.settings.bridgesLibraries())
+			if (this.settings.bridgeExternalCode())
 				this.extractSourceRange(methDecl);
 			else
 				return;
@@ -595,7 +570,7 @@ class NullPropagator extends N2ONodeProcessor {
 			return;
 		}
 		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-			if (this.settings.bridgesLibraries())
+			if (this.settings.bridgeExternalCode())
 				this.extractSourceRange(node);
 			else
 				return;
@@ -609,7 +584,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 			final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
 			if (!this.found.contains(element))
-				if (!this.settings.refactorsLocalVariables() || this.settings.bridgesLibraries()
+				if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
 						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
 					this.extractSourceRange(node);
 				else {
@@ -629,7 +604,7 @@ class NullPropagator extends N2ONodeProcessor {
 				return;
 			}
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.extractSourceRange(node);
 				else
 					return;
@@ -649,7 +624,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final Name name = (Name) node;
 			IJavaElement element = Util.resolveElement(name);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.extractSourceRange(name);
 				else
 					return;
@@ -695,7 +670,7 @@ class NullPropagator extends N2ONodeProcessor {
 					return;
 				}
 				if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-					if (this.settings.bridgesLibraries())
+					if (this.settings.bridgeExternalCode())
 						this.extractSourceRange(ctorCall);
 					else
 						return;
@@ -722,7 +697,7 @@ class NullPropagator extends N2ONodeProcessor {
 				return;
 			}
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.extractSourceRange(fieldAccess);
 				else
 					return;
@@ -747,7 +722,7 @@ class NullPropagator extends N2ONodeProcessor {
 					return;
 				}
 				if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-					if (this.settings.bridgesLibraries())
+					if (this.settings.bridgeExternalCode())
 						this.extractSourceRange(m);
 					else
 						return;
@@ -772,7 +747,7 @@ class NullPropagator extends N2ONodeProcessor {
 				return;
 			}
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.extractSourceRange(superFieldAccess);
 				else
 					return;
@@ -796,7 +771,7 @@ class NullPropagator extends N2ONodeProcessor {
 					return;
 				}
 				if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-					if (this.settings.bridgesLibraries())
+					if (this.settings.bridgeExternalCode())
 						this.extractSourceRange(sm);
 					else
 						return;
@@ -813,7 +788,7 @@ class NullPropagator extends N2ONodeProcessor {
 			for (Object o : varDec.fragments()) {
 				final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
 				final IJavaElement element = Util.resolveElement(vdf);
-				if (!this.settings.refactorsLocalVariables() || this.settings.bridgesLibraries()
+				if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
 						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
 					this.extractSourceRange(vdf);
 				else

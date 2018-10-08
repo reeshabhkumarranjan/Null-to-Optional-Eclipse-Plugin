@@ -15,6 +15,7 @@ import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.InfixExpression.Operator;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
@@ -22,6 +23,7 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
@@ -100,10 +102,32 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	}
 	
 	@Override
+	void descend(SimpleName node) throws CoreException {
+		IJavaElement element = Util.resolveElement(node);
+		if (this.failsSettingsCompliance(node, element)) {
+			if (this.settings.bridgeExternalCode())
+				this.extractSourceRange(node);
+		} else
+			this.candidates.add(element);
+	}
+	
+	abstract void extractSourceRange(ASTNode node);
+
+	@Override
 	void ascend(QualifiedName node) throws CoreException {
 		this.process(node.getParent());
 	}
 	
+	@Override
+	void descend(QualifiedName node) throws CoreException {
+		IJavaElement element = Util.resolveElement(node);
+		if (this.failsSettingsCompliance(node, element)) {
+			if (this.settings.bridgeExternalCode())
+				this.extractSourceRange(node);
+		} else
+			this.candidates.add(element);
+	}
+
 	@Override
 	void ascend(FieldAccess node) throws CoreException {
 		this.process(node.getParent());
@@ -112,5 +136,14 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	@Override
 	void ascend(SuperFieldAccess node) throws CoreException {
 		this.process(node.getParent());
+	}
+	
+	boolean failsSettingsCompliance(ASTNode node, IJavaElement element) {
+		if (node instanceof Name) {
+			if (element.isReadOnly() || 
+					Util.isBinaryCode(element) || 
+					Util.isGeneratedCode(element))
+				return true;
+		} return false;
 	}
 }

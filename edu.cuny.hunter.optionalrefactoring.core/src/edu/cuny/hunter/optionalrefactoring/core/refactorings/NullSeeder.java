@@ -117,7 +117,7 @@ class NullSeeder extends N2ONodeProcessor {
 				ILocalVariable[] params = method.getParameters();
 				ILocalVariable targetParam = params[argPos];
 				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam))
-					if (this.settings.bridgesLibraries())
+					if (this.settings.bridgeExternalCode())
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else
@@ -151,7 +151,7 @@ class NullSeeder extends N2ONodeProcessor {
 				ILocalVariable[] params = method.getParameters();
 				ILocalVariable targetParam = params[argPos];
 				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam))
-					if (this.settings.bridgesLibraries())
+					if (this.settings.bridgeExternalCode())
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else
@@ -170,7 +170,7 @@ class NullSeeder extends N2ONodeProcessor {
 		if (this.settings.refactorsFields()) {
 			IJavaElement element = Util.resolveElement(node);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.sourceRangesToBridge.put(element, Util.getBridgeableExpressionSourceRange(this.currentNull));
 				else
 					return;
@@ -188,7 +188,7 @@ class NullSeeder extends N2ONodeProcessor {
 				ILocalVariable[] params = method.getParameters();
 				ILocalVariable targetParam = params[argPos];
 				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam))
-					if (this.settings.bridgesLibraries())
+					if (this.settings.bridgeExternalCode())
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else
@@ -200,18 +200,6 @@ class NullSeeder extends N2ONodeProcessor {
 						PreconditionFailure.MISSING_JAVA_ELEMENT, method);
 			}
 		}
-	}
-
-	@Override
-	void descend(SimpleName node) throws HarvesterASTException {
-		IJavaElement element = Util.resolveElement(node);
-		this.candidates.add(element);
-	}
-
-	@Override
-	void descend(QualifiedName node) throws HarvesterASTException {
-		IJavaElement element = Util.resolveElement(node);
-		this.candidates.add(element);
 	}
 	
 	@Override
@@ -251,7 +239,7 @@ class NullSeeder extends N2ONodeProcessor {
 				ILocalVariable[] params = method.getParameters();
 				ILocalVariable targetParam = params[argPos];
 				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam))
-					if (this.settings.bridgesLibraries())
+					if (this.settings.bridgeExternalCode())
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else
@@ -270,7 +258,7 @@ class NullSeeder extends N2ONodeProcessor {
 		if (this.settings.refactorsFields()) {
 			IJavaElement element = Util.resolveElement(node);
 			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgesLibraries())
+				if (this.settings.bridgeExternalCode())
 					this.sourceRangesToBridge.put(element, Util.getBridgeableExpressionSourceRange(this.currentNull));
 				else
 					return;
@@ -288,7 +276,7 @@ class NullSeeder extends N2ONodeProcessor {
 				ILocalVariable[] params = method.getParameters();
 				ILocalVariable targetParam = params[argPos];
 				if (targetParam.isReadOnly() || Util.isBinaryCode(targetParam) || Util.isGeneratedCode(targetParam))
-					if (this.settings.bridgesLibraries())
+					if (this.settings.bridgeExternalCode())
 						this.sourceRangesToBridge.put(targetParam,
 								Util.getBridgeableExpressionSourceRange(this.currentNull));
 					else
@@ -427,5 +415,11 @@ class NullSeeder extends N2ONodeProcessor {
 		this.rootNode.accept(visitor);
 		if (!thrownInVisitor.isEmpty()) throw thrownInVisitor.get(0);
 		return !this.candidates.isEmpty();
+	}
+
+	@Override
+	void extractSourceRange(ASTNode node) {
+		// TODO Auto-generated method stub
+		
 	}
 }
