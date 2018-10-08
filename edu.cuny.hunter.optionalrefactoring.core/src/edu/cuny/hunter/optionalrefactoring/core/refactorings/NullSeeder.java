@@ -252,7 +252,7 @@ class NullSeeder extends N2ONodeProcessor {
 				try { // try to process the node
 					NullSeeder.this.processAscent(nl.getParent());
 				} catch (HarvesterException e) { // catch any exceptions
-					Logger.getAnonymousLogger().warning(Messages.Harvester_NullLiteralFailed + "\n" + e.getMessage());
+					Util.LOGGER.warning(Messages.Harvester_NullLiteralFailed + "\n" + e.getMessage());
 				} catch (CoreException e) {
 					thrownInVisitor.add(e);
 					return false;
@@ -314,7 +314,7 @@ class NullSeeder extends N2ONodeProcessor {
 										NullSeeder.this.candidates.add(element);
 							}
 					} catch (HarvesterException e) {
-						Logger.getAnonymousLogger()
+						Util.LOGGER
 								.warning(Messages.Harvester_NullLiteralFailed + "\n" + e.getMessage());
 					}
 				}

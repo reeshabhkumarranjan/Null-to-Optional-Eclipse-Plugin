@@ -3,6 +3,8 @@
  */
 package edu.cuny.hunter.optionalrefactoring.core.utils;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -10,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -68,6 +71,7 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
+import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -82,6 +86,9 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOption
 @SuppressWarnings("restriction")
 public interface Util {
 
+	public static final Logger LOGGER = Logger.getLogger(
+			ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID+":"+Instant.now().truncatedTo(ChronoUnit.MINUTES));
+	
 	// temporary development method for console logging extracted results
 	static void candidatePrinter(Entity elements) {
 		System.out.print("{");

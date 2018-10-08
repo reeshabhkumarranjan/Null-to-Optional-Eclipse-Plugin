@@ -4,12 +4,15 @@ import static org.eclipse.jdt.ui.JavaElementLabels.ALL_FULLY_QUALIFIED;
 import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -70,14 +73,11 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private static final GroupCategorySet SET_CONVERT_NULL_TO_OPTIONAL = new GroupCategorySet(
 			new GroupCategory("edu.cuny.hunter.optionalrefactoring", //$NON-NLS-1$
 					Messages.CategoryName, Messages.CategoryDescription));
-
+	
 	/**
 	 * For excluding AST parse time.
 	 */
 	private TimeCollector excludedTimeCollector = new TimeCollector();
-
-	/** Does the refactoring use a working copy layer? */
-	private final boolean layer;
 
 	private final IJavaElement[] javaElements; // the input java model elements
 
@@ -107,7 +107,6 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		super(settings);
 		try {
 			this.javaElements = javaElements;
-			this.layer = layer;
 			this.refactoringScope = SearchEngine.createJavaSearchScope(javaElements);
 			this.settings = refactoringSettings;
 		} finally {

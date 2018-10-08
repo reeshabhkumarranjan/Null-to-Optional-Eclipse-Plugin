@@ -1,8 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import java.util.AbstractMap.SimpleEntry;
-import java.util.logging.Logger;
-
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
@@ -10,6 +8,7 @@ import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 public enum PreconditionFailure {
 	/**
@@ -74,7 +73,7 @@ public enum PreconditionFailure {
 		String msg = e.getMessage() + "\n" + e.toString();
 		switch (e.getFailure()) {
 		case AST_ERROR: {
-			Logger.getAnonymousLogger().warning(msg);
+			Util.LOGGER.warning(msg);
 			return new SimpleEntry<>(null, RefactoringStatus.createErrorStatus(msg));
 		}
 		case CAST_EXPRESSION: { // not refactorable
@@ -84,17 +83,17 @@ public enum PreconditionFailure {
 			return new SimpleEntry<>(null, RefactoringStatus.createErrorStatus(msg));
 		}
 		case MISSING_BINDING: {
-			Logger.getAnonymousLogger().warning(msg);
+			Util.LOGGER.warning(msg);
 			return new SimpleEntry<>(null, RefactoringStatus.createErrorStatus(msg));
 		}
 		case MISSING_JAVA_ELEMENT: {
-			Logger.getAnonymousLogger().warning(msg);
+			Util.LOGGER.warning(msg);
 			return new SimpleEntry<>(null, RefactoringStatus.createErrorStatus(msg));
 		}
 		default: { // something is terribly wrong because we have a PreconditionFailure we haven't
 					// handled
 			String msg2 = Messages.Harvester_PreconditionFailureFailure + "\n" + msg;
-			Logger.getAnonymousLogger().severe(msg2);
+			Util.LOGGER.severe(msg2);
 			return new SimpleEntry<>(null, RefactoringStatus.createFatalErrorStatus(msg2));
 		}
 		}
@@ -124,7 +123,7 @@ public enum PreconditionFailure {
 		default: // something is terribly wrong because we have a PreconditionFailure we haven't
 					// handled
 			String msg2 = Messages.Harvester_PreconditionFailureFailure + "\n" + msg;
-			Logger.getAnonymousLogger().severe(msg2);
+			Util.LOGGER.severe(msg2);
 			return new SimpleEntry<>(null, RefactoringStatus.createFatalErrorStatus(msg2));
 		}
 	}
