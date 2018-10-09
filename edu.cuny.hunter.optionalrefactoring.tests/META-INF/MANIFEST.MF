@@ -10,7 +10,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.junit,
  edu.cuny.citytech.refactoring.common.core;bundle-version="1.2.0",
  edu.cuny.citytech.refactoring.common.tests;bundle-version="2.1.0",
- org.eclipse.jdt.ui.tests.refactoring;bundle-version="3.13.200"
+ org.eclipse.jdt.ui.tests.refactoring
 Import-Package: com.google.common.collect;version="15.0.0",
  edu.cuny.citytech.refactoring.common.tests,
  edu.cuny.hunter.optionalrefactoring.core.analysis,
@@ -21,6 +21,5 @@ Import-Package: com.google.common.collect;version="15.0.0",
  junit.framework;version="4.12.0",
  org.eclipse.jdt.core,
  org.eclipse.jdt.core.dom,
- org.eclipse.jdt.testplugin,
- org.eclipse.jdt.ui.tests.refactoring
+ org.eclipse.jdt.testplugin
 Export-Package: edu.cuny.hunter.optionalrefactoring.ui.tests
