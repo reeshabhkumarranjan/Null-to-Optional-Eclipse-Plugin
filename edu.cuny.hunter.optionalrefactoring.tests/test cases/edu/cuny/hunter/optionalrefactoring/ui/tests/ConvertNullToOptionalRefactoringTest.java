@@ -378,6 +378,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testSettingsParametersOn() throws Exception {
 		this.propagationHelper(setOf(setOf("x")), setOf(), null, new RefactoringStatus());
 	}
+	
+	public void testMainMethod() throws Exception {
+		this.propagationHelper(setOf(), setOf(), null, RefactoringStatus.createErrorStatus(""));
+	}
 
 	public void testTransformationFieldAccessAssignment() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
