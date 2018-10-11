@@ -121,6 +121,7 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 
 	private void findFormalsForVariable(ClassInstanceCreation node) throws JavaModelException, CoreException {
+		@SuppressWarnings("unchecked")
 		final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
 		final IMethodBinding b = node.resolveConstructorBinding();
 		if (b == null)
@@ -159,6 +160,7 @@ class NullPropagator extends N2ONodeProcessor {
 			this.findFormalsForVariable(top, paramNumber);
 	}
 
+	@SuppressWarnings("unchecked")
 	private void findFormalsForVariable(ConstructorInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveConstructorBinding();
 		if (b == null)
@@ -187,6 +189,7 @@ class NullPropagator extends N2ONodeProcessor {
 		this.findParameters(paramNumber, pattern);
 	}
 
+	@SuppressWarnings("unchecked")
 	private void findFormalsForVariable(MethodInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveMethodBinding();
 		if (b == null)
@@ -202,6 +205,7 @@ class NullPropagator extends N2ONodeProcessor {
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
+	@SuppressWarnings("unchecked")
 	private void findFormalsForVariable(SuperConstructorInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveConstructorBinding();
 		if (b == null)
@@ -218,6 +222,7 @@ class NullPropagator extends N2ONodeProcessor {
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
+	@SuppressWarnings("unchecked")
 	private void findFormalsForVariable(SuperMethodInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveMethodBinding();
 		if (b == null)
@@ -360,6 +365,7 @@ class NullPropagator extends N2ONodeProcessor {
 		node.accept(visitor);
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(ClassInstanceCreation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
@@ -380,6 +386,7 @@ class NullPropagator extends N2ONodeProcessor {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(ConstructorInvocation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
@@ -399,6 +406,7 @@ class NullPropagator extends N2ONodeProcessor {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(SuperConstructorInvocation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
@@ -418,6 +426,7 @@ class NullPropagator extends N2ONodeProcessor {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(SuperMethodInvocation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
@@ -438,6 +447,7 @@ class NullPropagator extends N2ONodeProcessor {
 
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(MethodInvocation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
@@ -581,6 +591,7 @@ class NullPropagator extends N2ONodeProcessor {
 			this.processDescent((Expression) exp);
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	void descend(ClassInstanceCreation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name)) {
@@ -652,6 +663,7 @@ class NullPropagator extends N2ONodeProcessor {
 	@Override
 	void descend(VariableDeclarationExpression node) throws CoreException {
 		final VariableDeclarationExpression varDec = (VariableDeclarationExpression) node;
+		@SuppressWarnings("unchecked")
 		List<VariableDeclarationFragment> fragments = varDec.fragments();
 		for (VariableDeclarationFragment frag : fragments) {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) frag;

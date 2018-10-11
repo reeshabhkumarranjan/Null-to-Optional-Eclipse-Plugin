@@ -169,6 +169,7 @@ public class Entity implements Iterable<IJavaElement> {
 		return empty;
 	}
 
+	@SuppressWarnings("unchecked")
 	private Type getConvertedType(AST ast, String rawType) {
 		ParameterizedType parameterized = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
 		Type parameter = ast.newSimpleType(ast.newSimpleName(rawType));
@@ -181,6 +182,7 @@ public class Entity implements Iterable<IJavaElement> {
 		return this.elements.iterator();
 	}
 
+	@SuppressWarnings("unchecked")
 	private Expression ofNullableOptional(AST ast, Expression expression) {
 		Expression transformed = (Expression) ASTNode.copySubtree(ast, expression);
 		MethodInvocation optionalOf = ast.newMethodInvocation();
@@ -190,6 +192,7 @@ public class Entity implements Iterable<IJavaElement> {
 		return optionalOf;
 	}
 
+	@SuppressWarnings("unchecked")
 	private Expression ofOptional(AST ast, Expression expression) {
 		Expression transformed = (Expression) ASTNode.copySubtree(ast, expression);
 		MethodInvocation optionalOf = ast.newMethodInvocation();
@@ -199,6 +202,7 @@ public class Entity implements Iterable<IJavaElement> {
 		return optionalOf;
 	}
 
+	@SuppressWarnings("unchecked")
 	private Expression orElseOptional(AST ast, Expression expression) {
 		Expression transformed = (Expression) ASTNode.copySubtree(ast, expression);
 		MethodInvocation orElse = ast.newMethodInvocation();

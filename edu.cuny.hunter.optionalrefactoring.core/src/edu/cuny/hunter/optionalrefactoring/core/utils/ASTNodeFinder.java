@@ -25,6 +25,7 @@ public class ASTNodeFinder {
 
 	private final List<ASTNode> targetNodes = new LinkedList<>();
 
+	@SuppressWarnings("unchecked")
 	private ASTNodeFinder(CompilationUnit scope) {
 		this.types = scope.types();
 	}
