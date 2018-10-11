@@ -158,9 +158,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		System.out.println(refactoring.settings());
 
-		assertTrue(
-				"The refactoring status matches the expected refactoring status " + expectedStatus.getSeverity() + ".",
-				status.getSeverity() == expectedStatus.getSeverity());
+		// assert that the actual severity matches that of the expected.
+		assertEquals(expectedStatus.getSeverity(), status.getSeverity());
 
 		// Here we are getting all the sets of type dependent entities
 		Set<Entity> passingSets = refactoring.getPassingEntities();
