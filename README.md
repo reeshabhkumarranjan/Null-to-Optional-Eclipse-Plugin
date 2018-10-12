@@ -7,21 +7,21 @@
 ## Introduction
 This prototype refactoring plug-in for [Eclipse](http://eclipse.org) represents ongoing work in developing an automated refactoring tool that would assist developers in optimizing their Java 8 code. The ultimate goal is to add to the Eclipse JDT a fully automated, semantics-preserving refactoring for legacy Java code that replaces occurrences of null values with instances of an appropriately parameterized optional type, first introduced in Java 8.
 
-The work done on this repository during the summer of 2018 was pursuant to [participation in Google Summer of Code by @orenwf](https://summerofcode.withgoogle.com/projects/?sp-page=2#6214280911781888). A brief summary of the experience can be found [here](https://gist.github.com/orenwf/82d506fe4f70dd2cd563c6baf86ee0ff).
+The work done on this repository during the summer of 2018 was pursuant to [participation in Google Summer of Code by @orenwf](https://summerofcode.withgoogle.com/projects/?sp-page=2#6214280911781888).
 
 The plugin searches the Java AST for all instances of the `NullLiteral` type within a particular scope and determines all transitively type-dependent values including variables, fields, method parameters and method return values. It then produces an appropriate transformation which replaces values dependent on possibly `null` values with appropriately parameterized instances of `Optional<T>`.
 
 ### Installation for Usage And Development
-Currently, the plugin builds and runs in both evaluation and refactoring mode on [Eclipse Oxygen for RCP/RAP](https://www.eclipse.org/downloads/packages/release/oxygen/3a/eclipse-rcp-and-rap-developers).
+Currently, the plugin builds and runs in both evaluation and refactoring mode on [Eclipse for RCP/RAP](https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/2018-09/R/eclipse-rcp-2018-09-linux-gtk-x86_64.tar.gz).
 The project includes a maven configuration file using the tycho plug-in, which is part of the [maven eclipse plugin](http://www.eclipse.org/m2e/). Running `mvn install` will install all dependencies. Note that if you are not using maven, this plugin depends on the following projects and plugins being present in the workspace:
 - https://github.com/khatchad/edu.cuny.citytech.refactoring.common (which can be imported as a git repository)
 - the **Eclipse SDK**, **Eclipse SDK tests**, and the **Eclipse testing framework**. 
   - These can be installed from the "Install New Software..." menu option under "Help" in Eclipse.
   - Choose the 'update site': [The Eclipse Project Updates](http://download.eclipse.org/eclipse/updates/4.7) in 'Work With' field.
-- After installing these plugins, there will be two 'Missing API Baseline' errors visible in the 'Problems' view. Simply quick fix these and reduce the errors to warnings, as it isn't particularly critical.
+- After installing these plugins, there will be two 'Missing API Baseline' errors visible in the 'Problems' view. Developers can quick fix these and reduce the errors to warnings.
 
 <img src="https://i.imgur.com/XATKKxA.png" width="425"/> <img src="https://i.imgur.com/SOKJkNr.png" width="425"/> 
-- In addition there will be at least 16 'Plugin Execution Not Covered By Lifecycle Config...' errors in the 'Problems' view. Quick fixing these will prompt you to 'Discover new m2e connectors', which you should do for all of the errors. Install the suggested plugins in order to fix all the remaining configuration issues. There will be a warning about insecure sources for these, the reason for which is currently not known.
+- In addition there will be at least 16 'Plugin Execution Not Covered By Lifecycle Config...' errors in the 'Problems' view. Quick fixing these will prompt you to 'Discover new m2e connectors', which you should do for all of the errors. Install the suggested plugins in order to fix all the remaining configuration issues. There will be a warning about insecure sources for these, since the files are not signed.
 
 <img src="https://i.imgur.com/ZbzOcVC.png" width="425"/> <img src="https://i.imgur.com/mcbBznJ.png" width="425"/> 
 #### Optionally, you may also install:
