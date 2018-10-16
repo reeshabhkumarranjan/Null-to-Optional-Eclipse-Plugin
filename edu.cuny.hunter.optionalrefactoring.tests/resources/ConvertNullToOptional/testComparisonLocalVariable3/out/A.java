@@ -11,6 +11,6 @@ class A {
 
 		Optional<Object> o3 = Optional.ofNullable(new Object());
 
-		b = !o3.isPresent();
+		b = o3.isPresent();
 	}
 }

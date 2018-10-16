@@ -295,6 +295,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 
+	public void testComparisonLocalVariable3() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
 	public void testDeclarationField() throws Exception {
 		this.propagationHelper(setOf(setOf("e"), setOf("earray"), setOf("einitializedarray"), setOf("f"),
 				setOf("farray"), setOf("finitializedarray")), setOf(), null, new RefactoringStatus());

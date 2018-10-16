@@ -1,7 +1,5 @@
 package p;
 
-import java.util.Optional;
-
 class A {
 	void m() {
 		Object o1 = new Object();
@@ -9,8 +7,8 @@ class A {
 
 		boolean b = o2 == o1;
 
-		Optional<Object> o3 = Optional.ofNullable(new Object());
+		Object o3 = new Object();
 
-		b = !o3.isPresent();
+		b = o3 != null;
 	}
 }
