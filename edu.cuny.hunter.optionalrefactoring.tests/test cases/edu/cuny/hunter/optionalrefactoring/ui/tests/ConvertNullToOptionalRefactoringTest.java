@@ -265,6 +265,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testAssignmentLocalVariable3() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
+	
+	public void testAssignmentField() throws Exception {
+		this.transformationHelper(Choice.CONSIDER_IMPLICITLY_NULL_FIELDS, new RefactoringStatus());
+	}
 
 	public void testAssignmentLocalVariableArray() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
