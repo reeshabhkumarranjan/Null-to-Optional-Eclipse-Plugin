@@ -217,6 +217,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.propagationHelper(setOf(setOf("o")), setOf(), null, new RefactoringStatus());
 	}
 
+	public void testAssignmentField() throws Exception {
+		this.transformationHelper(Choice.CONSIDER_IMPLICITLY_NULL_FIELDS, new RefactoringStatus());
+	}
+
 	public void testAssignmentFieldArray() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
 	}
@@ -266,14 +270,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 
-	public void testAssignmentField() throws Exception {
-		this.transformationHelper(Choice.CONSIDER_IMPLICITLY_NULL_FIELDS, new RefactoringStatus());
-	}
-
-	public void testAssignmentParameters() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
-	}
-
 	public void testAssignmentLocalVariableArray() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
 	}
@@ -281,6 +277,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testAssignmentLocalVariableTransitive() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b"), setOf("c", "d", "e", "f", "g"), setOf("control")), setOf(), null,
 				new RefactoringStatus());
+	}
+
+	public void testAssignmentParameters() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
 	}
 
 	public void testCastExpressionFailNoSeed() throws Exception {
