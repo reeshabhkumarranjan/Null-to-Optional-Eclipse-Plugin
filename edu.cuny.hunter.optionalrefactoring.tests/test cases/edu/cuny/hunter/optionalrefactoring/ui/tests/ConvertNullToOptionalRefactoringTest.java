@@ -384,15 +384,15 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testSettingsFieldsOff() throws Exception {
-		this.propagationHelper(setOf(), setOf(), Choice.FIELDS, RefactoringStatus.createErrorStatus(""));
+		this.propagationHelper(setOf(), setOf(), Choice.REFACTOR_FIELDS, RefactoringStatus.createErrorStatus(""));
 	}
 
 	public void testSettingsFieldsOn() throws Exception {
-		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.METHOD_RETURNS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES, new RefactoringStatus());
 	}
 
 	public void testSettingsImplicitOff() throws Exception {
-		this.propagationHelper(setOf(), setOf(), Choice.IMPLICIT_FIELDS, RefactoringStatus.createErrorStatus(""));
+		this.propagationHelper(setOf(), setOf(), Choice.CONSIDER_IMPLICITLY_NULL_FIELDS, RefactoringStatus.createErrorStatus(""));
 	}
 
 	public void testSettingsImplicitOn() throws Exception {
@@ -400,23 +400,23 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testSettingsLocalVarsOff() throws Exception {
-		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.LOCAL_VARS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.REFACTOR_LOCAL_VARS, new RefactoringStatus());
 	}
 
 	public void testSettingsLocalVarsOn() throws Exception {
-		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.METHOD_RETURNS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES, new RefactoringStatus());
 	}
 
 	public void testSettingsMethodReturnOff() throws Exception {
-		this.propagationHelper(setOf(setOf("a")), setOf(), Choice.METHOD_RETURNS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES, new RefactoringStatus());
 	}
 
 	public void testSettingsMethodReturnOn() throws Exception {
-		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.FIELDS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.REFACTOR_FIELDS, new RefactoringStatus());
 	}
 
 	public void testSettingsParametersOff() throws Exception {
-		this.propagationHelper(setOf(setOf("o")), setOf(), Choice.METHOD_PARAMS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("o")), setOf(), Choice.REFACTOR_METHOD_PARAMS, new RefactoringStatus());
 	}
 
 	public void testSettingsParametersOn() throws Exception {

@@ -22,41 +22,46 @@ public class RefactoringSettings {
 		 * Optional.orElse(<T>), while bridging in uses Optional.ofNullable(<T>)
 		 */
 		BRIDGE_EXTERNAL,
+
 		/**
 		 * Including this means we want to refactor Fields that are transitively
 		 * null-type dependent to Optional.
 		 */
-		FIELDS,
+		REFACTOR_FIELDS,
+
 		/**
 		 * Including this means that during seeding phase, we want to construe
 		 * any fields that are not initialized as implicitly null-type dependent
 		 */
-		IMPLICIT_FIELDS,
+		CONSIDER_IMPLICITLY_NULL_FIELDS,
+
 		/**
 		 * Including this means we want to refactor Local Variables that are
 		 * transitively null-type dependent to Optional
 		 */
-		LOCAL_VARS,
+		REFACTOR_LOCAL_VARS,
+
 		/**
 		 * Including this means that we want to refactor formal parameters types
 		 * of methods that are transitively null-type dependent to Optional
 		 */
-		METHOD_PARAMS,
+		REFACTOR_METHOD_PARAMS,
+
 		/**
 		 * Including this means that we want to refactor return type of methods
 		 * that are transitively null-type dependent to Optional
 		 */
-		METHOD_RETURNS,
+		REFACTOR_METHOD_RETURN_TYPES,
 	}
 
 	public static RefactoringSettings testDefaults() {
-		return new RefactoringSettings(EnumSet.of(Choice.FIELDS, Choice.IMPLICIT_FIELDS, Choice.BRIDGE_EXTERNAL,
-				Choice.LOCAL_VARS, Choice.METHOD_PARAMS, Choice.METHOD_RETURNS));
+		return new RefactoringSettings(EnumSet.of(Choice.REFACTOR_FIELDS, Choice.CONSIDER_IMPLICITLY_NULL_FIELDS,
+				Choice.BRIDGE_EXTERNAL, Choice.REFACTOR_LOCAL_VARS, Choice.REFACTOR_METHOD_PARAMS, Choice.REFACTOR_METHOD_RETURN_TYPES));
 	}
 
 	public static RefactoringSettings userDefaults() {
 		return new RefactoringSettings(
-				EnumSet.of(Choice.FIELDS, Choice.LOCAL_VARS, Choice.METHOD_PARAMS, Choice.METHOD_RETURNS));
+				EnumSet.of(Choice.REFACTOR_FIELDS, Choice.REFACTOR_LOCAL_VARS, Choice.REFACTOR_METHOD_PARAMS, Choice.REFACTOR_METHOD_RETURN_TYPES));
 	}
 
 	private final EnumSet<Choice> settings;
@@ -74,15 +79,15 @@ public class RefactoringSettings {
 
 		for (String s : choices.keySet()) {
 			if (s.equalsIgnoreCase("fields"))
-				this.set(true, Choice.FIELDS);
+				this.set(true, Choice.REFACTOR_FIELDS);
 			if (s.equalsIgnoreCase("implicitfields"))
-				this.set(true, Choice.IMPLICIT_FIELDS);
+				this.set(true, Choice.CONSIDER_IMPLICITLY_NULL_FIELDS);
 			if (s.equalsIgnoreCase("localvars"))
-				this.set(true, Choice.LOCAL_VARS);
+				this.set(true, Choice.REFACTOR_LOCAL_VARS);
 			if (s.equalsIgnoreCase("methodparams"))
-				this.set(true, Choice.METHOD_PARAMS);
+				this.set(true, Choice.REFACTOR_METHOD_PARAMS);
 			if (s.equalsIgnoreCase("methodreturns"))
-				this.set(true, Choice.METHOD_RETURNS);
+				this.set(true, Choice.REFACTOR_METHOD_RETURN_TYPES);
 			if (s.equalsIgnoreCase("bridge"))
 				this.set(true, Choice.BRIDGE_EXTERNAL);
 		}
@@ -93,23 +98,23 @@ public class RefactoringSettings {
 	}
 
 	public boolean refactorsFields() {
-		return this.settings.contains(Choice.FIELDS);
+		return this.settings.contains(Choice.REFACTOR_FIELDS);
 	}
 
 	public boolean refactorsLocalVariables() {
-		return this.settings.contains(Choice.LOCAL_VARS);
+		return this.settings.contains(Choice.REFACTOR_LOCAL_VARS);
 	}
 
 	public boolean refactorsMethods() {
-		return this.settings.contains(Choice.METHOD_RETURNS);
+		return this.settings.contains(Choice.REFACTOR_METHOD_RETURN_TYPES);
 	}
 
 	public boolean refactorsParameters() {
-		return this.settings.contains(Choice.METHOD_PARAMS);
+		return this.settings.contains(Choice.REFACTOR_METHOD_PARAMS);
 	}
 
 	public boolean seedsImplicit() {
-		return this.settings.contains(Choice.IMPLICIT_FIELDS);
+		return this.settings.contains(Choice.CONSIDER_IMPLICITLY_NULL_FIELDS);
 	}
 
 	public void set(boolean choice, Choice setting) {
