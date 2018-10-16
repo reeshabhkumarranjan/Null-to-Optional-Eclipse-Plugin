@@ -119,9 +119,10 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					elementResultsPrinter.println();
 
 					// Then let's refactor them
-					if (processor.settings().doesTransformation()) {
-
-					}
+					// TODO: This should refer to a constant in this file as it once did #59.
+//					if (processor.settings().doesTransformation()) {
+//
+//					}
 
 					// Then let's print some more information about the
 					// refactoring

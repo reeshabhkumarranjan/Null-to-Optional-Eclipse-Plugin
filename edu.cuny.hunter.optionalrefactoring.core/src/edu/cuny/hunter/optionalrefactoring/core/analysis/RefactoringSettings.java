@@ -47,11 +47,6 @@ public class RefactoringSettings {
 		 * that are transitively null-type dependent to Optional
 		 */
 		METHOD_RETURNS,
-		/**
-		 * Including this means that the Evaluator plug-in will attempt to
-		 * perform a transformation after evaluating
-		 */
-		PERFORM_TRANSFORMATION;
 	}
 
 	public static RefactoringSettings testDefaults() {
@@ -88,15 +83,9 @@ public class RefactoringSettings {
 				this.set(true, Choice.METHOD_PARAMS);
 			if (s.equalsIgnoreCase("methodreturns"))
 				this.set(true, Choice.METHOD_RETURNS);
-			if (s.equalsIgnoreCase("refactor"))
-				this.set(true, Choice.PERFORM_TRANSFORMATION);
 			if (s.equalsIgnoreCase("bridge"))
 				this.set(true, Choice.BRIDGE_EXTERNAL);
 		}
-	}
-
-	public boolean doesTransformation() {
-		return this.settings.contains(Choice.PERFORM_TRANSFORMATION);
 	}
 
 	public boolean get(Choice setting) {
