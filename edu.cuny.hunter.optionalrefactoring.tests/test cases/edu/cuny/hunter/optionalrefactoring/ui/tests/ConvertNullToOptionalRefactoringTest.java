@@ -287,6 +287,14 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.propagationHelper(setOf(), setOf(setOf("a"), setOf("b")), null, RefactoringStatus.createErrorStatus(""));
 	}
 
+	public void testComparisonLocalVariable() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
+	public void testComparisonLocalVariable2() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
 	public void testDeclarationField() throws Exception {
 		this.propagationHelper(setOf(setOf("e"), setOf("earray"), setOf("einitializedarray"), setOf("f"),
 				setOf("farray"), setOf("finitializedarray")), setOf(), null, new RefactoringStatus());
@@ -352,6 +360,18 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testNewStatement() throws Exception {
 		this.propagationHelper(setOf(setOf("k", "g", "d", "b", "a"), setOf("m", "i", "f"), setOf("o")), setOf(), null,
 				new RefactoringStatus());
+	}
+
+	public void testOfNullable() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
+	public void testOfNullable2() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
+	public void testOfNullable3() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
 	}
 
 	public void testReturnStatement() throws Exception {
