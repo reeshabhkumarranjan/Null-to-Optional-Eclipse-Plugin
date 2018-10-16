@@ -7,7 +7,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IField;
@@ -34,6 +33,7 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
@@ -45,7 +45,7 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 /**
  * @author <a href="mailto:ofriedman@acm.org">Oren Friedman</a>
  *
- * This class processes source files for instances of NullLiteral
+ *         This class processes source files for instances of NullLiteral
  *         expressions and extracts the locally type dependent entity, if any
  *         can be extracted, in the form of a singleton TypeDependentElementSet
  *         with a RefactoringStatus indicating whether or not the entity can be
@@ -61,15 +61,11 @@ class NullSeeder extends N2ONodeProcessor {
 		super(node, settings);
 	}
 
-	public Map<IJavaElement, ISourceRange> getsourceRangesToBridge() {
-		return this.sourceRangesToBridge;
-	}
-
 	@Override
 	void ascend(ArrayCreation node) throws CoreException {
 		this.processAscent(node.getParent());
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(ClassInstanceCreation node) throws HarvesterASTException {
@@ -155,21 +151,6 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
-	@Override
-	void descend(SingleVariableDeclaration node) throws HarvesterASTException {
-		/*
-		 * Single variable declaration nodes are used in a limited number of places,
-		 * including formal parameter lists and catch clauses. We don't have to worry
-		 * about formal parameters here, since that work is done in the 
-		 * ascend(*Invocation) class of methods. They are not used for field 
-		 * declarations and regular variable declaration statements.
-		 */
-		if (this.settings.refactorsLocalVariables()) {
-			IJavaElement element = Util.resolveElement(node);
-			this.candidates.add(element);
-		}
-	}
-
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(SuperConstructorInvocation node) throws HarvesterASTException {
@@ -219,9 +200,25 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 
 	@Override
+	void descend(SingleVariableDeclaration node) throws HarvesterASTException {
+		/*
+		 * Single variable declaration nodes are used in a limited number of
+		 * places, including formal parameter lists and catch clauses. We don't
+		 * have to worry about formal parameters here, since that work is done
+		 * in the ascend(*Invocation) class of methods. They are not used for
+		 * field declarations and regular variable declaration statements.
+		 */
+		if (this.settings.refactorsLocalVariables()) {
+			IJavaElement element = Util.resolveElement(node);
+			this.candidates.add(element);
+		}
+	}
+
+	@Override
 	void descend(VariableDeclarationFragment node) throws HarvesterASTException {
 		final IJavaElement element = Util.resolveElement(node);
-		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
+		if (!this.candidates.contains(element)) { // we don't want to keep
+													// processing if it does
 			if (!this.settings.refactorsLocalVariables() && !node.resolveBinding().isField()
 					|| !this.settings.refactorsFields() && node.resolveBinding().isField()) {
 				this.extractSourceRange(node);
@@ -237,9 +234,19 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
+	@Override
+	void extractSourceRange(ASTNode node) {
+		// TODO Auto-generated method stub
+
+	}
+
+	public Map<IJavaElement, ISourceRange> getsourceRangesToBridge() {
+		return this.sourceRangesToBridge;
+	}
+
 	/**
 	 * @return Whether or not any seeds passed the precondition checks
-	 * @throws CoreException 
+	 * @throws CoreException
 	 */
 	@Override
 	boolean process() throws CoreException {
@@ -263,10 +270,11 @@ class NullSeeder extends N2ONodeProcessor {
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core.dom.
-			 * VariableDeclarationFragment) here we are just processing to find
-			 * un-initialized (implicitly null) Field declarations. All processing is done
-			 * inside the visitor.
+			 * @see
+			 * org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core.
+			 * dom. VariableDeclarationFragment) here we are just processing to
+			 * find un-initialized (implicitly null) Field declarations. All
+			 * processing is done inside the visitor.
 			 */
 			@Override
 			public boolean visit(VariableDeclarationFragment node) {
@@ -277,7 +285,7 @@ class NullSeeder extends N2ONodeProcessor {
 						IJavaElement element = Util.resolveElement(node);
 						if (element instanceof IField)
 							if (NullSeeder.this.settings.seedsImplicit()) {
-								List<Boolean> fici = new LinkedList<>(); 
+								List<Boolean> fici = new LinkedList<>();
 								NullSeeder.this.rootNode.accept(new ASTVisitor() {
 									@Override
 									public boolean visit(MethodDeclaration node) {
@@ -289,46 +297,48 @@ class NullSeeder extends N2ONodeProcessor {
 													Expression expr = node.getLeftHandSide();
 													IVariableBinding targetField = null;
 													switch (expr.getNodeType()) {
-													case ASTNode.FIELD_ACCESS: targetField = ((FieldAccess)expr).resolveFieldBinding();
-													break;
+													case ASTNode.FIELD_ACCESS:
+														targetField = ((FieldAccess) expr).resolveFieldBinding();
+														break;
 													case ASTNode.SIMPLE_NAME:
-													case ASTNode.QUALIFIED_NAME: targetField = (IVariableBinding) ((Name)expr).resolveBinding();
+													case ASTNode.QUALIFIED_NAME:
+														targetField = (IVariableBinding) ((Name) expr).resolveBinding();
 													}
-													if (binding.isEqualTo(targetField)) initialized.add(Boolean.TRUE);
+													if (binding.isEqualTo(targetField))
+														initialized.add(Boolean.TRUE);
 													return super.visit(node);
 												}
 											});
-											if (initialized.contains(Boolean.TRUE)) fici.add(Boolean.TRUE);
-											else fici.add(Boolean.FALSE);
+											if (initialized.contains(Boolean.TRUE))
+												fici.add(Boolean.TRUE);
+											else
+												fici.add(Boolean.FALSE);
 										}
 										return super.visit(node);
 									}
 								});
-								boolean fieldIsConstructorInitialized = fici.isEmpty() ? false : fici.stream().reduce(Boolean.TRUE, Boolean::logicalAnd);
+								boolean fieldIsConstructorInitialized = fici.isEmpty() ? false
+										: fici.stream().reduce(Boolean.TRUE, Boolean::logicalAnd);
 								if (node.getInitializer() == null && !fieldIsConstructorInitialized)
 									/*
-									 * this element gets added to the Map candidates with boolean true indicating an
-									 * implicit null also, if the type of the declaration is primitive, we ignore it
+									 * this element gets added to the Map
+									 * candidates with boolean true indicating
+									 * an implicit null also, if the type of the
+									 * declaration is primitive, we ignore it
 									 */
 									if (!binding.getVariableDeclaration().getType().isPrimitive())
 										NullSeeder.this.candidates.add(element);
 							}
 					} catch (HarvesterException e) {
-						Util.LOGGER
-								.warning(Messages.Harvester_NullLiteralFailed + "\n" + e.getMessage());
+						Util.LOGGER.warning(Messages.Harvester_NullLiteralFailed + "\n" + e.getMessage());
 					}
 				}
 				return super.visit(node);
 			}
 		};
 		this.rootNode.accept(visitor);
-		if (!thrownInVisitor.isEmpty()) throw thrownInVisitor.get(0);
+		if (!thrownInVisitor.isEmpty())
+			throw thrownInVisitor.get(0);
 		return !this.candidates.isEmpty();
-	}
-
-	@Override
-	void extractSourceRange(ASTNode node) {
-		// TODO Auto-generated method stub
-		
 	}
 }

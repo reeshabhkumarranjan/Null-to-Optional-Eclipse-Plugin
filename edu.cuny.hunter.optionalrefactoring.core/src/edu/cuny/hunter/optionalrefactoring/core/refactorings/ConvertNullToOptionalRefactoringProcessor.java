@@ -4,15 +4,12 @@ import static org.eclipse.jdt.ui.JavaElementLabels.ALL_FULLY_QUALIFIED;
 import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -35,9 +32,9 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
-import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.changes.DynamicValidationRefactoringChange;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.ltk.core.refactoring.Change;
@@ -73,7 +70,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private static final GroupCategorySet SET_CONVERT_NULL_TO_OPTIONAL = new GroupCategorySet(
 			new GroupCategory("edu.cuny.hunter.optionalrefactoring", //$NON-NLS-1$
 					Messages.CategoryName, Messages.CategoryDescription));
-	
+
 	/**
 	 * For excluding AST parse time.
 	 */
@@ -85,7 +82,11 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private final RefactoringSettings settings;
 
-	private final Set<Entity> passingEntities = new LinkedHashSet<>(); // the forest of refactorable type-dependent
+	private final Set<Entity> passingEntities = new LinkedHashSet<>(); // the
+																		// forest
+																		// of
+																		// refactorable
+																		// type-dependent
 																		// entities
 
 	private final Set<Entity> failingEntities = new LinkedHashSet<>();
@@ -132,7 +133,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			final RefactoringStatus status = new RefactoringStatus();
 
 			for (IJavaElement elem : this.getJavaElements())
-				// here we merge the resulting RefactoringStatus from the process method with
+				// here we merge the resulting RefactoringStatus from the
+				// process method with
 				// status
 				switch (elem.getElementType()) {
 				case IJavaElement.JAVA_PROJECT:
@@ -419,8 +421,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 * @param project
 	 *            An IJavaProject.
 	 * @param subMonitor
-	 * @return A failing RefactoringStatus, unless any of the potentiallyGoodStatus
-	 *         instances are OK
+	 * @return A failing RefactoringStatus, unless any of the
+	 *         potentiallyGoodStatus instances are OK
 	 * @throws CoreException
 	 */
 	private RefactoringStatus process(IJavaProject project, SubMonitor subMonitor) throws CoreException {
@@ -467,8 +469,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 * @param root
 	 *            A folder or jar.
 	 * @param subMonitor
-	 * @return A failing RefactoringStatus, unless any of the potentiallyGoodStatus
-	 *         instances are OK
+	 * @return A failing RefactoringStatus, unless any of the
+	 *         potentiallyGoodStatus instances are OK
 	 * @throws CoreException
 	 */
 	private RefactoringStatus process(IPackageFragmentRoot root, SubMonitor subMonitor) throws CoreException {

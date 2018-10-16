@@ -43,8 +43,8 @@ import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;;
 public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRefactoringHandler {
 
 	/**
-	 * the command has been executed, so extract extract the needed information from
-	 * the application context.
+	 * the command has been executed, so extract extract the needed information
+	 * from the application context.
 	 */
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -77,8 +77,11 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 
 					resultsTimeCollector.start();
 					ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
-							new IJavaProject[] { javaProject },
-							RefactoringSettings.userDefaults() /* we inject user defaults for now */,
+							new IJavaProject[] { javaProject }, RefactoringSettings
+									.userDefaults() /*
+													 * we inject user defaults
+													 * for now
+													 */,
 							Optional.of(monitor));
 					processor.settings().createFromEnv();
 					resultsTimeCollector.stop();
@@ -120,7 +123,8 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 
 					}
 
-					// Then let's print some more information about the refactoring
+					// Then let's print some more information about the
+					// refactoring
 
 				}
 			} catch (Exception e) {

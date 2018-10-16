@@ -116,6 +116,386 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 
 	@Override
+	void ascend(ArrayAccess node) throws CoreException {
+		final ArrayAccess access = node;
+		// if coming up from the index.
+		if (containedIn(access.getIndex(), this.name))
+			this.extractSourceRange(this.name);
+		else
+			super.processAscent(node.getParent());
+	}
+
+	@Override
+	void ascend(ArrayCreation node) throws CoreException {
+		// if previous node was in the index of the ArrayCreation,
+		// we have to bridge it. Otherwise we continue processing.
+		boolean legal = true;
+		for (Object o : node.dimensions()) {
+			Expression dimension = (Expression) o;
+			// if coming up from the index.
+			if (containedIn(dimension, this.name)) {
+				legal = false;
+				this.extractSourceRange(this.name);
+			}
+		}
+		if (legal)
+			super.processAscent(node.getParent());
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	void ascend(ClassInstanceCreation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name)) {
+			final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
+			IJavaElement element = Util.resolveElement(node, paramNumber);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				// go find the formals.
+				this.findFormalsForVariable(node);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	void ascend(ConstructorInvocation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name)) {
+			IJavaElement element = Util.resolveElement(node);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				// go find the formals.
+				this.findFormalsForVariable(node);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	void ascend(MethodInvocation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name)) {
+			IJavaElement element = Util.resolveElement(node);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				// go find the formals.
+				this.findFormalsForVariable(node);
+		} else
+			this.processAscent(node.getParent());
+	}
+
+	@Override
+	void ascend(ReturnStatement node) throws CoreException {
+		// process what is being returned.
+		this.processDescent(node.getExpression());
+		// Get the corresponding method declaration.
+		final MethodDeclaration methDecl = Util.getMethodDeclaration(node);
+		// Get the corresponding method.
+		final IMethod meth = (IMethod) Util.resolveElement(methDecl);
+		// Get the top most method
+		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
+		if (top == null)
+			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
+		else // Check the topmost method.
+		if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
+			if (this.settings.bridgeExternalCode())
+				this.extractSourceRange(methDecl);
+			else
+				return;
+		else
+			this.candidates.add(top);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	void ascend(SuperConstructorInvocation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name)) {
+			IJavaElement element = Util.resolveElement(node);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				// go find the formals.
+				this.findFormalsForVariable(node);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	void ascend(SuperMethodInvocation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name)) {
+			IJavaElement element = Util.resolveElement(node);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				// go find the formals.
+				this.findFormalsForVariable(node);
+		}
+
+	}
+
+	@Override
+	void ascend(SwitchCase node) throws CoreException {
+		this.processDescent(node.getExpression());
+		this.processAscent(node.getParent());
+	}
+
+	@Override
+	void descend(ArrayCreation node) throws CoreException {
+		this.processDescent(node.getInitializer());
+	}
+
+	@Override
+	void descend(ArrayInitializer node) throws CoreException {
+		for (Object exp : node.expressions())
+			this.processDescent((Expression) exp);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	void descend(ClassInstanceCreation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name)) {
+			final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
+			IJavaElement element = Util.resolveElement(node, paramNumber);
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				// go find the formals.
+				this.findFormalsForVariable(node);
+		}
+	}
+
+	@Override
+	void descend(ConditionalExpression node) throws CoreException {
+		this.processDescent(node.getThenExpression());
+		this.processDescent(node.getElseExpression());
+	}
+
+	@Override
+	void descend(EnhancedForStatement node) {
+		final SingleVariableDeclaration svd = node.getParameter();
+		IJavaElement element = Util.resolveElement(svd);
+		if (!this.settings.refactorsParameters()) {
+			this.extractSourceRange(node);
+			return;
+		}
+		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+			if (this.settings.bridgeExternalCode())
+				this.extractSourceRange(node);
+			else
+				return;
+		else
+			this.candidates.add(element);
+	}
+
+	@Override
+	void descend(FieldDeclaration node) throws CoreException {
+		for (Object o : node.fragments()) {
+			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
+			final IJavaElement element = Util.resolveElement(vdf);
+			if (!this.candidates.contains(element))
+				if (!this.settings.refactorsFields() || this.settings.bridgeExternalCode()
+						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
+					this.extractSourceRange(node);
+				else {
+					this.candidates.add(element);
+					this.processDescent(vdf.getInitializer());
+				}
+		}
+	}
+
+	@Override
+	void descend(MethodDeclaration node) {
+		final ASTVisitor visitor = new ASTVisitor() {
+			@Override
+			public boolean visit(ReturnStatement node) {
+				try {
+					NullPropagator.this.processDescent(node.getExpression());
+				} catch (JavaModelException E) {
+					throw new RuntimeException(E);
+				} catch (CoreException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return true;
+			}
+		};
+		node.accept(visitor);
+	}
+
+	@Override
+	void descend(MethodInvocation node) throws CoreException {
+		final IMethod meth = (IMethod) Util.resolveElement(node);
+		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
+
+		if (top == null)
+			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
+		else {
+			// Check the topmost method.
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				this.candidates.add(top);
+		}
+	}
+
+	@Override
+	void descend(SingleVariableDeclaration node) throws CoreException {
+		// take care of local usage.
+		IJavaElement element = Util.resolveElement(node);
+		if (!this.settings.refactorsParameters()) {
+			this.extractSourceRange(node);
+			return;
+		}
+		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+			if (this.settings.bridgeExternalCode())
+				this.extractSourceRange(node);
+			else
+				return;
+		else
+			this.candidates.add(element);
+		// take care of remote usage.
+		// go find variables on the corresponding calls.
+		this.findVariablesForFormal(node);
+	}
+
+	@Override
+	void descend(SuperMethodInvocation node) throws CoreException {
+		final IMethod meth = (IMethod) Util.resolveElement(node);
+		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
+
+		if (top == null)
+			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
+					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
+		else {
+			// Check the topmost method.
+			if (!this.settings.refactorsParameters()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				this.candidates.add(top);
+		}
+	}
+
+	@Override
+	void descend(SwitchStatement node) throws CoreException {
+		this.processDescent(node.getExpression());
+		for (Object o : node.statements())
+			if (o instanceof SwitchCase) {
+				final SwitchCase sc = (SwitchCase) o;
+				this.processDescent(sc.getExpression());
+			}
+	}
+
+	@Override
+	void descend(VariableDeclarationExpression node) throws CoreException {
+		final VariableDeclarationExpression varDec = node;
+		@SuppressWarnings("unchecked")
+		List<VariableDeclarationFragment> fragments = varDec.fragments();
+		for (VariableDeclarationFragment frag : fragments) {
+			final VariableDeclarationFragment vdf = frag;
+			final IJavaElement element = Util.resolveElement(vdf);
+			if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
+					&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
+				this.extractSourceRange(vdf);
+			else
+				this.candidates.add(element);
+		}
+	}
+
+	@Override
+	void descend(VariableDeclarationFragment node) throws CoreException {
+		final IJavaElement element = Util.resolveElement(node);
+		if (!this.candidates.contains(element)) { // we don't want to keep
+													// processing if it does
+			if (!this.settings.refactorsLocalVariables() && !node.resolveBinding().isField()
+					|| !this.settings.refactorsFields() && node.resolveBinding().isField()) {
+				this.extractSourceRange(node);
+				return;
+			}
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				if (this.settings.bridgeExternalCode())
+					this.extractSourceRange(node);
+				else
+					return;
+			else
+				this.candidates.add(element);
+			this.processDescent(node.getInitializer());
+		}
+	}
+
+	@Override
+	void descend(VariableDeclarationStatement node) throws CoreException {
+		for (Object o : node.fragments()) {
+			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
+			final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
+			if (!this.candidates.contains(element))
+				if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
+						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
+					this.extractSourceRange(node);
+				else {
+					this.candidates.add(element);
+					this.processDescent(vdf.getInitializer());
+				}
+		}
+	}
+
+	@Override
 	void extractSourceRange(ASTNode node) {
 		this.sourceRangesToBridge.add(Util.getBridgeableExpressionSourceRange(node));
 	}
@@ -293,387 +673,8 @@ class NullPropagator extends N2ONodeProcessor {
 		if (this.rootNode != null) {
 			this.processAscent(this.rootNode);
 			return true;
-		}
-		else return false;
-	}
-	
-	@Override
-	void ascend(ArrayAccess node) throws CoreException {
-		final ArrayAccess access = (ArrayAccess) node;
-		// if coming up from the index.
-		if (containedIn(access.getIndex(), this.name))
-			this.extractSourceRange(this.name);
-		else
-			super.processAscent(node.getParent());
-	}
-	
-	@Override
-	void ascend(ArrayCreation node) throws CoreException {
-		// if previous node was in the index of the ArrayCreation, 
-		// we have to bridge it. Otherwise we continue processing.
-		boolean legal = true;
-		for (Object o : node.dimensions()) {
-			Expression dimension = (Expression) o;
-			// if coming up from the index.
-			if (containedIn(dimension, this.name)) {
-				legal = false;
-				this.extractSourceRange(this.name);
-			}
-		}
-		if (legal)
-			super.processAscent(node.getParent());
-	}
-
-	@Override
-	void descend(ConditionalExpression node) throws CoreException {
-		this.processDescent(node.getThenExpression());
-		this.processDescent(node.getElseExpression());
-	}
-	
-	@Override
-	void descend(FieldDeclaration node) throws CoreException {
-		for (Object o : node.fragments()) {
-			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
-			final IJavaElement element = Util.resolveElement(vdf);
-			if (!this.candidates.contains(element))
-				if (!this.settings.refactorsFields() || this.settings.bridgeExternalCode()
-						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
-					this.extractSourceRange(node);
-				else {
-					this.candidates.add(element);
-					this.processDescent(vdf.getInitializer());
-				}
-		}
-	}
-	
-	@Override
-	void descend(MethodDeclaration node) {
-		final ASTVisitor visitor = new ASTVisitor() {
-			@Override
-			public boolean visit(ReturnStatement node) {
-				try {
-					NullPropagator.this.processDescent(node.getExpression());
-				} catch (JavaModelException E) {
-					throw new RuntimeException(E);
-				} catch (CoreException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				return true;
-			}
-		};
-		node.accept(visitor);
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	void ascend(ClassInstanceCreation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
-			IJavaElement element = Util.resolveElement(node, paramNumber);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	void ascend(ConstructorInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			IJavaElement element = Util.resolveElement(node);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	void ascend(SuperConstructorInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			IJavaElement element = Util.resolveElement(node);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	void ascend(SuperMethodInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			IJavaElement element = Util.resolveElement(node);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		}
-
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	void ascend(MethodInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			IJavaElement element = Util.resolveElement(node);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
 		} else
-			this.processAscent(node.getParent());
-	}
-	
-	@Override
-	void descend(SingleVariableDeclaration node) throws CoreException {
-		// take care of local usage.
-		IJavaElement element = Util.resolveElement(node);
-		if (!this.settings.refactorsParameters()) {
-			this.extractSourceRange(node);
-			return;
-		}
-		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-			if (this.settings.bridgeExternalCode())
-				this.extractSourceRange(node);
-			else
-				return;
-		else
-			this.candidates.add(element);
-		// take care of remote usage.
-		// go find variables on the corresponding calls.
-		this.findVariablesForFormal(node);
-	}
-	
-	@Override
-	void descend(EnhancedForStatement node) {
-		final SingleVariableDeclaration svd = ((EnhancedForStatement) node).getParameter();
-		IJavaElement element = Util.resolveElement(svd);
-		if (!this.settings.refactorsParameters()) {
-			this.extractSourceRange(node);
-			return;
-		}
-		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-			if (this.settings.bridgeExternalCode())
-				this.extractSourceRange(node);
-			else
-				return;
-		else
-			this.candidates.add(element);
-	}
-	
-	@Override
-	void ascend(ReturnStatement node) throws CoreException {
-		// process what is being returned.
-		this.processDescent(node.getExpression());
-		// Get the corresponding method declaration.
-		final MethodDeclaration methDecl = Util.getMethodDeclaration(node);
-		// Get the corresponding method.
-		final IMethod meth = (IMethod) Util.resolveElement(methDecl);
-		// Get the top most method
-		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
-		if (top == null)
-			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-		else // Check the topmost method.
-		if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-			if (this.settings.bridgeExternalCode())
-				this.extractSourceRange(methDecl);
-			else
-				return;
-		else
-			this.candidates.add(top);
-	}
-	
-	@Override
-	void descend(SwitchStatement node) throws CoreException {
-		this.processDescent(node.getExpression());
-		for (Object o : node.statements())
-			if (o instanceof SwitchCase) {
-				final SwitchCase sc = (SwitchCase) o;
-				this.processDescent(sc.getExpression());
-			}
-	}
-	
-	@Override
-	void ascend(SwitchCase node) throws CoreException {
-		this.processDescent(node.getExpression());
-		this.processAscent(node.getParent());
-	}
-	
-	@Override
-	void descend(VariableDeclarationStatement node) throws CoreException {
-		for (Object o : node.fragments()) {
-			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
-			final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
-			if (!this.candidates.contains(element))
-				if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
-						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
-					this.extractSourceRange(node);
-				else {
-					this.candidates.add(element);
-					this.processDescent(vdf.getInitializer());
-				}
-		}
-	}
-	
-	@Override
-	void descend(VariableDeclarationFragment node) throws CoreException {
-		final IJavaElement element = Util.resolveElement(node);
-		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
-			if (!this.settings.refactorsLocalVariables() && !node.resolveBinding().isField()
-					|| !this.settings.refactorsFields() && node.resolveBinding().isField()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				this.candidates.add(element);
-			this.processDescent(node.getInitializer());
-		}
-	}
-	
-	@Override
-	void descend(ArrayCreation node) throws CoreException {
-		this.processDescent(node.getInitializer());
-	}
-	
-	@Override
-	void descend(ArrayInitializer node) throws CoreException {
-		for (Object exp : node.expressions())
-			this.processDescent((Expression) exp);
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	void descend(ClassInstanceCreation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
-			IJavaElement element = Util.resolveElement(node, paramNumber);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		}
-	}
-	
-	@Override
-	void descend(MethodInvocation node) throws CoreException {
-		final IMethod meth = (IMethod) Util.resolveElement(node);
-		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
-
-		if (top == null)
-			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-		else {
-			// Check the topmost method.
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				this.candidates.add(top);
-		}
-	}
-	
-	@Override
-	void descend(SuperMethodInvocation node) throws CoreException {
-		final IMethod meth = (IMethod) Util.resolveElement(node);
-		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
-
-		if (top == null)
-			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-		else {
-			// Check the topmost method.
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				this.candidates.add(top);
-		}
-	}
-	
-	@Override
-	void descend(VariableDeclarationExpression node) throws CoreException {
-		final VariableDeclarationExpression varDec = (VariableDeclarationExpression) node;
-		@SuppressWarnings("unchecked")
-		List<VariableDeclarationFragment> fragments = varDec.fragments();
-		for (VariableDeclarationFragment frag : fragments) {
-			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) frag;
-			final IJavaElement element = Util.resolveElement(vdf);
-			if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
-					&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
-				this.extractSourceRange(vdf);
-			else
-				this.candidates.add(element);
-		}
+			return false;
 	}
 
 }

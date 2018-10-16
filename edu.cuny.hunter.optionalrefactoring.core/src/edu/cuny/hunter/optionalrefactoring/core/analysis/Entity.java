@@ -109,14 +109,15 @@ public class Entity implements Iterable<IJavaElement> {
 	private Action determine(ASTNode node, IJavaElement element) throws CoreException {
 		switch (node.getNodeType()) {
 		/*
-		 * For values, if these are not in the bridge list, we leave it alone, because
-		 * its declaration would already have been properly transformed. If they are in
-		 * it, we bridge them.
+		 * For values, if these are not in the bridge list, we leave it alone,
+		 * because its declaration would already have been properly transformed.
+		 * If they are in it, we bridge them.
 		 */
 		case ASTNode.QUALIFIED_NAME:
 		case ASTNode.SIMPLE_NAME:
 		case ASTNode.FIELD_ACCESS: {
-			// are we in an assignment expression ? if so we need to handle the right side
+			// are we in an assignment expression ? if so we need to handle the
+			// right side
 			Assignment assignment = (Assignment) ASTNodes.getParent(node, ASTNode.ASSIGNMENT);
 			if (assignment != null)
 				if (this.bridgeSourceRanges.containsKey(element))
@@ -132,17 +133,17 @@ public class Entity implements Iterable<IJavaElement> {
 			else
 				return Action.NIL;
 			/*
-			 * we can't deal with these cases yet, need to research the API more, but sets
-			 * including them won't be propagated anyway
+			 * we can't deal with these cases yet, need to research the API
+			 * more, but sets including them won't be propagated anyway
 			 */
 		case ASTNode.SUPER_METHOD_REFERENCE:
 		case ASTNode.EXPRESSION_METHOD_REFERENCE:
 		case ASTNode.TYPE_METHOD_REFERENCE:
 			return Action.NIL;
 		/*
-		 * if we have a var decl fragment in the bridge list, bridge it, otherwise we
-		 * transform it's type to Optional and it's right side gets wrapped if it's a
-		 * literal
+		 * if we have a var decl fragment in the bridge list, bridge it,
+		 * otherwise we transform it's type to Optional and it's right side gets
+		 * wrapped if it's a literal
 		 */
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT:
 			if (this.bridgeSourceRanges.containsKey(element))
@@ -274,39 +275,33 @@ public class Entity implements Iterable<IJavaElement> {
 		}
 	}
 
-/*case CHANGE_N2O_VAR_DECL:
-	Set<Boolean> includedInRefactoring = new HashSet<>();
-	expression.accept(new ASTVisitor() {
-		@Override
-		public boolean visit(MethodInvocation node) {
-			if (Entity.this.elements.contains(Util.resolveElement(node))) includedInRefactoring.add(Boolean.TRUE);
-			return super.visit(node);
-		}
-		@Override
-		public boolean visit(SuperMethodInvocation node) {
-			if (Entity.this.elements.contains(Util.resolveElement(node))) includedInRefactoring.add(Boolean.TRUE);
-			return super.visit(node);
-		}
-		@Override
-		public boolean visit(FieldAccess node) {
-			if (Entity.this.elements.contains(Util.resolveElement(node))) includedInRefactoring.add(Boolean.TRUE);
-			return super.visit(node);
-		}
-		@Override
-		public boolean visit(SimpleName node) {
-			if (Entity.this.elements.contains(Util.resolveElement(node))) includedInRefactoring.add(Boolean.TRUE);
-			return super.visit(node);
-		}
-		@Override
-		public boolean visit(QualifiedName node) {
-			if (Entity.this.elements.contains(Util.resolveElement(node))) includedInRefactoring.add(Boolean.TRUE);
-			return super.visit(node);
-		}
-	});
-	if (includedInRefactoring.isEmpty()) 
-		return this.ofNullableOptional(ast, expression);
-	else return expression;*/
-	
+	/*
+	 * case CHANGE_N2O_VAR_DECL: Set<Boolean> includedInRefactoring = new
+	 * HashSet<>(); expression.accept(new ASTVisitor() {
+	 * 
+	 * @Override public boolean visit(MethodInvocation node) { if
+	 * (Entity.this.elements.contains(Util.resolveElement(node)))
+	 * includedInRefactoring.add(Boolean.TRUE); return super.visit(node); }
+	 * 
+	 * @Override public boolean visit(SuperMethodInvocation node) { if
+	 * (Entity.this.elements.contains(Util.resolveElement(node)))
+	 * includedInRefactoring.add(Boolean.TRUE); return super.visit(node); }
+	 * 
+	 * @Override public boolean visit(FieldAccess node) { if
+	 * (Entity.this.elements.contains(Util.resolveElement(node)))
+	 * includedInRefactoring.add(Boolean.TRUE); return super.visit(node); }
+	 * 
+	 * @Override public boolean visit(SimpleName node) { if
+	 * (Entity.this.elements.contains(Util.resolveElement(node)))
+	 * includedInRefactoring.add(Boolean.TRUE); return super.visit(node); }
+	 * 
+	 * @Override public boolean visit(QualifiedName node) { if
+	 * (Entity.this.elements.contains(Util.resolveElement(node)))
+	 * includedInRefactoring.add(Boolean.TRUE); return super.visit(node); } });
+	 * if (includedInRefactoring.isEmpty()) return this.ofNullableOptional(ast,
+	 * expression); else return expression;
+	 */
+
 	public RefactoringStatus status() {
 		return this.status;
 	}
@@ -391,20 +386,20 @@ public class Entity implements Iterable<IJavaElement> {
 			break;
 		}
 		}
-		// now we recover the equivalent VDF node in the copy, and make the changes
+		// now we recover the equivalent VDF node in the copy, and make the
+		// changes
 		copy.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(VariableDeclarationFragment recovered) {
 				if (recovered.getName().toString().equals(node.getName().toString())) {
 					Expression expression = recovered.getInitializer();
-					if (expression != null) { // i.e. we're not on an uninitialized variable decl
+					if (expression != null) { // i.e. we're not on an
+												// uninitialized variable decl
 						Expression wrapped = Entity.this.processRightHandSide(ast, action, expression);
 						if (wrapped != expression)
 							recovered.setInitializer(wrapped);
-					} else {	// if it is an uninitialized field decl
-						if (copy.getNodeType() == ASTNode.FIELD_DECLARATION)
-							recovered.setInitializer(Entity.this.emptyOptional(ast));
-					}
+					} else if (copy.getNodeType() == ASTNode.FIELD_DECLARATION)
+						recovered.setInitializer(Entity.this.emptyOptional(ast));
 				}
 				return super.visit(recovered);
 			}

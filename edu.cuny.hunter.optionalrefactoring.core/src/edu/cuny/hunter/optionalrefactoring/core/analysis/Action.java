@@ -14,8 +14,8 @@ public enum Action {
 	 */
 	CHANGE_N2O_VAR_DECL,
 	/**
-	 * Transform the right side of the declaration whose type is now Optional into
-	 * it's raw type or null
+	 * Transform the right side of the declaration whose type is now Optional
+	 * into it's raw type or null
 	 */
 	BRIDGE_N2O_VAR_DECL,
 	/**
@@ -27,8 +27,8 @@ public enum Action {
 	 */
 	CHANGE_N2O_METH_DECL,
 	/**
-	 * Transform the value of a variable or invocation with optional type to it's
-	 * raw type or null
+	 * Transform the value of a variable or invocation with optional type to
+	 * it's raw type or null
 	 */
 	BRIDGE_VALUE_OUT,
 	/**

@@ -53,7 +53,12 @@ public class ASTNodeFinder {
 
 			@Override
 			public boolean visit(QualifiedName node) {
-				if (!node.getName().getIdentifier().equals("length")) { // we've probably hit an array primitive
+				if (!node.getName().getIdentifier().equals("length")) { // we've
+																		// probably
+																		// hit
+																		// an
+																		// array
+																		// primitive
 					if (node.resolveBinding().getJavaElement().equals(target)) {
 						ASTNodeFinder.this.targetNodes.add(node);
 						return false;

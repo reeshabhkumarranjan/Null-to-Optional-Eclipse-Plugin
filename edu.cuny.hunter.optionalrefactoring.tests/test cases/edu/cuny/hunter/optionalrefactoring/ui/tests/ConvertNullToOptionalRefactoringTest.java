@@ -48,7 +48,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	private static final String REFACTORING_PATH = "ConvertNullToOptional/";
 
 	/**
-	 * The name of the directory containing resources under the project directory.
+	 * The name of the directory containing resources under the project
+	 * directory.
 	 */
 	private static final String RESOURCE_PATH = "resources";
 
@@ -101,9 +102,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	 *
 	 * @see
 	 * org.eclipse.jdt.ui.tests.refactoring.RefactoringTest#getFileContents(java
-	 * .lang.String) Had to override this method because, since this plug-in is a
-	 * fragment (at least I think that this is the reason), it doesn't have an
-	 * activator and the bundle is resolving to the eclipse refactoring test bundle.
+	 * .lang.String) Had to override this method because, since this plug-in is
+	 * a fragment (at least I think that this is the reason), it doesn't have an
+	 * activator and the bundle is resolving to the eclipse refactoring test
+	 * bundle.
 	 */
 	@Override
 	public String getFileContents(String fileName) throws IOException {
@@ -120,7 +122,11 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	@Override
 	protected Refactoring getRefactoring(IJavaElement... elements) throws JavaModelException {
 		ConvertNullToOptionalRefactoringProcessor processor = Util.createNullToOptionalRefactoringProcessor(elements,
-				RefactoringSettings.testDefaults() /* here the test defaults are injected */, Optional.empty());
+				RefactoringSettings
+						.testDefaults() /*
+										 * here the test defaults are injected
+										 */,
+				Optional.empty());
 		return new ProcessorBasedRefactoring(processor);
 	}
 
@@ -131,11 +137,13 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	private ConvertNullToOptionalRefactoringProcessor getRefactoringProcessor(ICompilationUnit icu)
 			throws JavaModelException {
-		// we know it's a ProcessorBasedRefactoring since we overriding getRefactoring()
+		// we know it's a ProcessorBasedRefactoring since we overriding
+		// getRefactoring()
 		// in this class.
 		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
 
-		// we know it's a ConvertNullToOptionalRefactoringProcessor since we overriding
+		// we know it's a ConvertNullToOptionalRefactoringProcessor since we
+		// overriding
 		// getRefactoring() in this class.
 		ConvertNullToOptionalRefactoringProcessor refactoringProcessor = (ConvertNullToOptionalRefactoringProcessor) refactoring
 				.getProcessor();
@@ -204,19 +212,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		Path absolutePath = this.getAbsolutionPath(fileName);
 		Files.write(absolutePath, contents.getBytes());
 	}
-	
-	public void testImplicitlyNullFieldConstructorInit() throws Exception {
-		this.transformationHelper(null, RefactoringStatus.createErrorStatus("No nulls to refactor."));
-	}
 
-	public void testImplicitlyNullFieldNoConstructorInit() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
-	}
-
-	public void testImplicitlyNullFieldSomeConstructorInit() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
-	}
-	
 	public void testAnonymousClassDeclaration() throws Exception {
 		this.propagationHelper(setOf(setOf("o")), setOf(), null, new RefactoringStatus());
 	}
@@ -310,6 +306,18 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				new RefactoringStatus());
 	}
 
+	public void testImplicitlyNullFieldConstructorInit() throws Exception {
+		this.transformationHelper(null, RefactoringStatus.createErrorStatus("No nulls to refactor."));
+	}
+
+	public void testImplicitlyNullFieldNoConstructorInit() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
+	public void testImplicitlyNullFieldSomeConstructorInit() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
 	public void testImplicitlyNullVariableDecl() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b")), setOf(), null, new RefactoringStatus());
 	}
@@ -327,6 +335,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testInvocationSuperConstructor() throws Exception {
 		this.propagationHelper(setOf(setOf("g", "d", "b", "a"), setOf("i", "f")), setOf(), null,
 				new RefactoringStatus());
+	}
+
+	public void testMainMethod() throws Exception {
+		this.propagationHelper(setOf(), setOf(), null, RefactoringStatus.createErrorStatus(""));
 	}
 
 	public void testNewStatement() throws Exception {
@@ -378,10 +390,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testSettingsParametersOn() throws Exception {
 		this.propagationHelper(setOf(setOf("x")), setOf(), null, new RefactoringStatus());
 	}
-	
-	public void testMainMethod() throws Exception {
-		this.propagationHelper(setOf(), setOf(), null, RefactoringStatus.createErrorStatus(""));
-	}
 
 	public void testTransformationFieldAccessAssignment() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
@@ -402,23 +410,23 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testTransformationMethDeclLocal() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
-	
+
 	public void testTransformationTwoFields() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
-	}
-	
-	public void testTransformationWithLineComment() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
-	}
-	
-	public void testTransformationWithMultiLineComment() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 
 	public void testTransformationWithJavaDoc() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
-	
+
+	public void testTransformationWithLineComment() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
+	public void testTransformationWithMultiLineComment() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
+	}
+
 	public void testTransformationWithSeedComparison() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
@@ -436,7 +444,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		RefactoringStatus finalStatus = refactoring.checkFinalConditions(new NullProgressMonitor());
 		this.getLogger().info("Final status: " + finalStatus);
 
-		assertTrue("Precondition checking returned the expected RefactoringStatus: "+expectedStatus+".", finalStatus.getSeverity() == expectedStatus.getSeverity());
+		assertTrue("Precondition checking returned the expected RefactoringStatus: " + expectedStatus + ".",
+				finalStatus.getSeverity() == expectedStatus.getSeverity());
 		this.performChange(refactoring, false);
 
 		String outputTestFileName = this.getOutputTestFileName("A");

@@ -14,11 +14,11 @@ import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.InfixExpression;
-import org.eclipse.jdt.core.dom.SimpleName;
-import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.QualifiedName;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
@@ -39,16 +39,19 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	N2ONodeProcessor(ASTNode node, RefactoringSettings settings) {
 		super(node);
 		if (!node.getAST().hasResolvedBindings())
-			throw new HarvesterASTException(Messages.Harvester_MissingBinding, PreconditionFailure.MISSING_BINDING, node);
+			throw new HarvesterASTException(Messages.Harvester_MissingBinding, PreconditionFailure.MISSING_BINDING,
+					node);
 		this.settings = settings;
 	}
-	
-	public Set<IJavaElement> getCandidates() {
-		return this.candidates;
+
+	@Override
+	void ascend(ArrayInitializer node) throws CoreException {
+		this.processAscent(node.getParent());
 	}
 
 	/**
 	 * When we hit an <code>Assignment</code> node, we always descend.
+	 * 
 	 * @param node
 	 * @throws CoreException
 	 */
@@ -56,47 +59,16 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	void ascend(Assignment node) throws CoreException {
 		this.descend(node);
 	}
-	
-	/**.
-	 * Processes both sides of the assignment node. If we just ascended from an entity that ends up being resolved again,
-	 * set operations prevent it from being duplicated in propagation.
-	 * @param node
-	 * @throws CoreException 
-	 */
-	@Override
-	void descend(Assignment node) throws CoreException { 
-		this.processDescent(node.getLeftHandSide());
-		this.processDescent(node.getRightHandSide());
-	}
-	
+
 	/**
-	 * When we ascend to an <code>VariableDeclarationFragment</code> node, we stop ascending, and descend to process it.
-	 * @param node
-	 * @throws CoreException
-	 */
-	@Override
-	void ascend(VariableDeclarationFragment node) throws CoreException {
-		this.descend(node);
-	}
-	
-	/**
-	 * When we ascend to a <code>CastExpression</code> node, we throw an exception because we want to stop processing.
+	 * When we ascend to a <code>CastExpression</code> node, we throw an
+	 * exception because we want to stop processing.
+	 * 
 	 * @param node
 	 * @throws CoreException
 	 */
 	@Override
 	void ascend(CastExpression node) {
-		// Cast expressions cannot be refactored as Optional
-		throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION, node);
-	}
-
-	/**
-	 * When we descend to a <code>CastExpression</code> node, we throw an exception because we want to stop processing.
-	 * @param node
-	 * @throws CoreException
-	 */
-	@Override
-	void descend(CastExpression node) {
 		// Cast expressions cannot be refactored as Optional
 		throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION, node);
 	}
@@ -110,9 +82,16 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			throw new HarvesterASTException(Messages.Harvester_ASTNodeError + node.getClass().getSimpleName(),
 					PreconditionFailure.AST_ERROR, node);
 	}
-	
+
+	@Override
+	void ascend(FieldAccess node) throws CoreException {
+		this.processAscent(node.getParent());
+	}
+
 	/**
-	 * When we ascend to an <code>InfixExpression</code> node, we stop ascending, and descend to process it.
+	 * When we ascend to an <code>InfixExpression</code> node, we stop
+	 * ascending, and descend to process it.
+	 * 
 	 * @param node
 	 * @throws CoreException
 	 */
@@ -120,71 +99,70 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	void ascend(InfixExpression node) throws CoreException {
 		this.descend(node);
 	}
-	
-	/**
-	 * When processing an <code>InfixExpression</code> node comparison we only care about equality / inequality 
-	 * with <code>null</code>.
-	 * @param node
-	 * @throws CoreException 
-	 */
+
 	@Override
-	void descend(InfixExpression node) throws CoreException {
-		if (!(node.getOperator().equals(Operator.EQUALS) || node.getOperator().equals(Operator.NOT_EQUALS))) return;
-		this.processDescent(node.getLeftOperand());
-		this.processDescent(node.getRightOperand());
+	void ascend(QualifiedName node) throws CoreException {
+		this.processAscent(node.getParent());
 	}
-	
+
 	@Override
-	void ascend(ArrayInitializer node) throws CoreException {
+	void ascend(SimpleName node) throws CoreException {
+		this.processAscent(node.getParent());
+	}
+
+	@Override
+	void ascend(SuperFieldAccess node) throws CoreException {
 		this.processAscent(node.getParent());
 	}
 
 	/**
-	 *  
+	 * When we ascend to an <code>VariableDeclarationFragment</code> node, we
+	 * stop ascending, and descend to process it.
+	 * 
+	 * @param node
+	 * @throws CoreException
+	 */
+	@Override
+	void ascend(VariableDeclarationFragment node) throws CoreException {
+		this.descend(node);
+	}
+
+	/**
+	 *
 	 */
 	@Override
 	void descend(ArrayAccess node) throws CoreException {
 		Expression e = node.getArray();
 		this.processDescent(e);
 	}
-	
-	@Override
-	void ascend(SimpleName node) throws CoreException {
-		this.processAscent(node.getParent());
-	}
-	
-	@Override
-	void descend(SimpleName node) throws CoreException {
-		IJavaElement element = Util.resolveElement(node);
-		if (this.failsSettingsCompliance(node, element)) {
-			if (this.settings.bridgeExternalCode())
-				this.extractSourceRange(node);
-		} else
-			this.candidates.add(element);
-	}
-	
-	abstract void extractSourceRange(ASTNode node);
 
+	/**
+	 * . Processes both sides of the assignment node. If we just ascended from
+	 * an entity that ends up being resolved again, set operations prevent it
+	 * from being duplicated in propagation.
+	 * 
+	 * @param node
+	 * @throws CoreException
+	 */
 	@Override
-	void ascend(QualifiedName node) throws CoreException {
-		this.processAscent(node.getParent());
-	}
-	
-	@Override
-	void descend(QualifiedName node) throws CoreException {
-		IJavaElement element = Util.resolveElement(node);
-		if (this.failsSettingsCompliance(node, element)) {
-			if (this.settings.bridgeExternalCode())
-				this.extractSourceRange(node);
-		} else
-			this.candidates.add(element);
+	void descend(Assignment node) throws CoreException {
+		this.processDescent(node.getLeftHandSide());
+		this.processDescent(node.getRightHandSide());
 	}
 
+	/**
+	 * When we descend to a <code>CastExpression</code> node, we throw an
+	 * exception because we want to stop processing.
+	 * 
+	 * @param node
+	 * @throws CoreException
+	 */
 	@Override
-	void ascend(FieldAccess node) throws CoreException {
-		this.processAscent(node.getParent());
+	void descend(CastExpression node) {
+		// Cast expressions cannot be refactored as Optional
+		throw new HarvesterASTException(Messages.Harvester_CastExpression, PreconditionFailure.CAST_EXPRESSION, node);
 	}
-	
+
 	@Override
 	void descend(FieldAccess node) throws CoreException {
 		IJavaElement element = Util.resolveElement(node);
@@ -200,21 +178,42 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		else
 			this.candidates.add(element);
 	}
-	
+
+	/**
+	 * When processing an <code>InfixExpression</code> node comparison we only
+	 * care about equality / inequality with <code>null</code>.
+	 * 
+	 * @param node
+	 * @throws CoreException
+	 */
 	@Override
-	void ascend(SuperFieldAccess node) throws CoreException {
-		this.processAscent(node.getParent());
+	void descend(InfixExpression node) throws CoreException {
+		if (!(node.getOperator().equals(Operator.EQUALS) || node.getOperator().equals(Operator.NOT_EQUALS)))
+			return;
+		this.processDescent(node.getLeftOperand());
+		this.processDescent(node.getRightOperand());
 	}
-	
-	boolean failsSettingsCompliance(ASTNode node, IJavaElement element) {
-		if (node instanceof Name) {
-			if (element.isReadOnly() || 
-					Util.isBinaryCode(element) || 
-					Util.isGeneratedCode(element))
-				return true;
-		} return false;
+
+	@Override
+	void descend(QualifiedName node) throws CoreException {
+		IJavaElement element = Util.resolveElement(node);
+		if (this.failsSettingsCompliance(node, element)) {
+			if (this.settings.bridgeExternalCode())
+				this.extractSourceRange(node);
+		} else
+			this.candidates.add(element);
 	}
-	
+
+	@Override
+	void descend(SimpleName node) throws CoreException {
+		IJavaElement element = Util.resolveElement(node);
+		if (this.failsSettingsCompliance(node, element)) {
+			if (this.settings.bridgeExternalCode())
+				this.extractSourceRange(node);
+		} else
+			this.candidates.add(element);
+	}
+
 	@Override
 	void descend(SuperFieldAccess node) throws CoreException {
 		IJavaElement element = Util.resolveElement(node);
@@ -229,5 +228,18 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 				return;
 		else
 			this.candidates.add(element);
+	}
+
+	abstract void extractSourceRange(ASTNode node);
+
+	boolean failsSettingsCompliance(ASTNode node, IJavaElement element) {
+		if (node instanceof Name)
+			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
+				return true;
+		return false;
+	}
+
+	public Set<IJavaElement> getCandidates() {
+		return this.candidates;
 	}
 }

@@ -104,8 +104,8 @@ public class RefactorableHarvester {
 
 	private final Set<Entity> failing = new LinkedHashSet<>();
 
-	private RefactorableHarvester(ASTNode rootNode, IJavaSearchScope scope,
-			RefactoringSettings settings, IProgressMonitor m) {
+	private RefactorableHarvester(ASTNode rootNode, IJavaSearchScope scope, RefactoringSettings settings,
+			IProgressMonitor m) {
 		this.refactoringRootNode = rootNode;
 		this.monitor = m;
 		this.scopeRoot = scope;
@@ -127,7 +127,8 @@ public class RefactorableHarvester {
 	public RefactoringStatus harvestRefactorableContexts() throws CoreException {
 
 		this.reset();
-		// this worklist starts with the immediate type-dependent entities on null
+		// this worklist starts with the immediate type-dependent entities on
+		// null
 		// expressions.
 		NullSeeder seeder = new NullSeeder(this.refactoringRootNode, this.settings);
 		// if no nulls pass the preconditions, return an Error status
@@ -143,7 +144,8 @@ public class RefactorableHarvester {
 			// grab the next element.
 			final IJavaElement searchElement = this.workList.next();
 
-			// build a search pattern to find all occurrences of the searchElement.
+			// build a search pattern to find all occurrences of the
+			// searchElement.
 			final SearchPattern pattern = SearchPattern.createPattern(searchElement,
 					IJavaSearchConstants.ALL_OCCURRENCES, SearchPattern.R_EXACT_MATCH);
 
@@ -151,7 +153,8 @@ public class RefactorableHarvester {
 				@Override
 				public void acceptSearchMatch(SearchMatch match) throws CoreException {
 					if (match.getAccuracy() == SearchMatch.A_ACCURATE && !match.isInsideDocComment()
-					// We are finding import declarations for some reason, they should be ignored
+					// We are finding import declarations for some reason, they
+					// should be ignored
 							&& ((IJavaElement) match.getElement())
 									.getElementType() != IJavaElement.IMPORT_DECLARATION) {
 						// here, we have search match.
@@ -166,9 +169,11 @@ public class RefactorableHarvester {
 
 						processor.process();
 
-						// add to the workList all of the type-dependent stuff we found.
+						// add to the workList all of the type-dependent stuff
+						// we found.
 						RefactorableHarvester.this.workList.addAll(processor.getCandidates());
-						// add to the bridgeableSourceRangeMap all the source ranges that can be bridged
+						// add to the bridgeableSourceRangeMap all the source
+						// ranges that can be bridged
 						SimpleEntry<IJavaElement, Set<ISourceRange>> entry = processor.getSourceRangesToBridge();
 						if (entry != null)
 							if (RefactorableHarvester.this.elementToBridgeableSourceRangeMap
@@ -202,19 +207,23 @@ public class RefactorableHarvester {
 		final Set<Set<IJavaElement>> candidateSets = Util.getElementForest(computationForest);
 
 		// convert the set of passing type dependent sets into sets of TDES
-		// It is a set of sets of type-dependent elements. You start with the seed, you
+		// It is a set of sets of type-dependent elements. You start with the
+		// seed, you
 		// grow the seeds into these sets.
 		this.passing.addAll(candidateSets.stream()
 				.map(set -> Entity.create(set, this.elementToBridgeableSourceRangeMap)).collect(Collectors.toSet()));
 
-		// keep in the notRefactorable list only anything that was in the originally
+		// keep in the notRefactorable list only anything that was in the
+		// originally
 		// seeded elements
 		this.notRefactorable.retainAll(seeder.getCandidates());
-		// turn the not refactorable list into a set of singleton TDES for consistency
+		// turn the not refactorable list into a set of singleton TDES for
+		// consistency
 		this.failing.addAll(this.notRefactorable.stream()
 				.map(element -> Entity.fail(element, this.elementToBridgeableSourceRangeMap))
 				.collect(Collectors.toSet()));
-		// if there are no passing sets, return an Error status else return an OK status
+		// if there are no passing sets, return an Error status else return an
+		// OK status
 		return Stream.concat(this.passing.stream(), this.failing.stream()).map(Entity::status)
 				.collect(RefactoringStatus::new, RefactoringStatus::merge, RefactoringStatus::merge);
 	}

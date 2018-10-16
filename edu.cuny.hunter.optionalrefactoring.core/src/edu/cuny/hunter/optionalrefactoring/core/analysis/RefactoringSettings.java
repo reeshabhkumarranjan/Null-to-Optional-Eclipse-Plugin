@@ -13,35 +13,43 @@ public class RefactoringSettings {
 	public static enum Choice {
 
 		/**
-		 * Including this means we want the refactoring to attempt to "bridge" an optional entity to an external dependency in the following cases:
-		 * - Generated code: Local source entity is a dependency for an entity in generated code, or vice versa
-		 * - Read Only Code: As above, but in a file-system resource that is read-only
-		 * - Binary Code: As above, but in a Java Bytecode format
-		 * Bridging a value out uses the Optional.orElse(<T>), while bridging in uses Optional.ofNullable(<T>)
+		 * Including this means we want the refactoring to attempt to "bridge"
+		 * an optional entity to an external dependency in the following cases:
+		 * - Generated code: Local source entity is a dependency for an entity
+		 * in generated code, or vice versa - Read Only Code: As above, but in a
+		 * file-system resource that is read-only - Binary Code: As above, but
+		 * in a Java Bytecode format Bridging a value out uses the
+		 * Optional.orElse(<T>), while bridging in uses Optional.ofNullable(<T>)
 		 */
 		BRIDGE_EXTERNAL,
 		/**
-		 * Including this means we want to refactor Fields that are transitively null-type dependent to Optional.
+		 * Including this means we want to refactor Fields that are transitively
+		 * null-type dependent to Optional.
 		 */
 		FIELDS,
 		/**
-		 * Including this means that during seeding phase, we want to construe any fields that are not initialized as implicitly null-type dependent
+		 * Including this means that during seeding phase, we want to construe
+		 * any fields that are not initialized as implicitly null-type dependent
 		 */
 		IMPLICIT_FIELDS,
 		/**
-		 * Including this means we want to refactor Local Variables that are transitively null-type dependent to Optional
+		 * Including this means we want to refactor Local Variables that are
+		 * transitively null-type dependent to Optional
 		 */
 		LOCAL_VARS,
 		/**
-		 * Including this means that we want to refactor formal parameters types of methods that are transitively null-type dependent to Optional
+		 * Including this means that we want to refactor formal parameters types
+		 * of methods that are transitively null-type dependent to Optional
 		 */
 		METHOD_PARAMS,
 		/**
-		 * Including this means that we want to refactor return type of methods that are transitively null-type dependent to Optional
+		 * Including this means that we want to refactor return type of methods
+		 * that are transitively null-type dependent to Optional
 		 */
 		METHOD_RETURNS,
 		/**
-		 * Including this means that the Evaluator plug-in will attempt to perform a transformation after evaluating
+		 * Including this means that the Evaluator plug-in will attempt to
+		 * perform a transformation after evaluating
 		 */
 		PERFORM_TRANSFORMATION;
 	}

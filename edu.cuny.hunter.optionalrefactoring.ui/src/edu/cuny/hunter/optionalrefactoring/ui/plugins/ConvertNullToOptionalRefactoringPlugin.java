@@ -16,8 +16,8 @@ public class ConvertNullToOptionalRefactoringPlugin extends RefactoringPlugin {
 	/*
 	 * (non-Javadoc)
 	 *
-	 * @see
-	 * edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin#getRefactoringId()
+	 * @see edu.cuny.citytech.refactoring.common.ui.RefactoringPlugin#
+	 * getRefactoringId()
 	 */
 	@Override
 	protected String getRefactoringId() {

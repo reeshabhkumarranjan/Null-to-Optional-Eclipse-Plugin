@@ -86,9 +86,9 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOption
 @SuppressWarnings("restriction")
 public interface Util {
 
-	public static final Logger LOGGER = Logger.getLogger(
-			ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID+":"+Instant.now().truncatedTo(ChronoUnit.MINUTES));
-	
+	public static final Logger LOGGER = Logger.getLogger(ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID + ":"
+			+ Instant.now().truncatedTo(ChronoUnit.MINUTES));
+
 	// temporary development method for console logging extracted results
 	static void candidatePrinter(Entity elements) {
 		System.out.print("{");
@@ -114,7 +114,9 @@ public interface Util {
 	public static ProcessorBasedRefactoring createRefactoring(IJavaElement[] elements,
 			Optional<IProgressMonitor> monitor) throws JavaModelException {
 		ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(elements,
-				RefactoringSettings.userDefaults()/* here user defaults are injected */, monitor);
+				RefactoringSettings
+						.userDefaults()/* here user defaults are injected */,
+				monitor);
 		return new ProcessorBasedRefactoring(processor);
 	}
 
@@ -459,7 +461,8 @@ public interface Util {
 							}
 						}
 					}
-			} else // it's not an anonymous class declaration and we have an error
+			} else // it's not an anonymous class declaration and we have an
+					// error
 				throw new HarvesterASTException(
 						Messages.Harvester_MissingJavaElement + node.getClass().getSimpleName() + ": ",
 						PreconditionFailure.MISSING_JAVA_ELEMENT, node);
