@@ -265,9 +265,13 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testAssignmentLocalVariable3() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
-	
+
 	public void testAssignmentField() throws Exception {
 		this.transformationHelper(Choice.CONSIDER_IMPLICITLY_NULL_FIELDS, new RefactoringStatus());
+	}
+
+	public void testAssignmentParameters() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
 	}
 
 	public void testAssignmentLocalVariableArray() throws Exception {
@@ -392,11 +396,13 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testSettingsFieldsOn() throws Exception {
-		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES,
+				new RefactoringStatus());
 	}
 
 	public void testSettingsImplicitOff() throws Exception {
-		this.propagationHelper(setOf(), setOf(), Choice.CONSIDER_IMPLICITLY_NULL_FIELDS, RefactoringStatus.createErrorStatus(""));
+		this.propagationHelper(setOf(), setOf(), Choice.CONSIDER_IMPLICITLY_NULL_FIELDS,
+				RefactoringStatus.createErrorStatus(""));
 	}
 
 	public void testSettingsImplicitOn() throws Exception {
@@ -408,11 +414,13 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testSettingsLocalVarsOn() throws Exception {
-		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES,
+				new RefactoringStatus());
 	}
 
 	public void testSettingsMethodReturnOff() throws Exception {
-		this.propagationHelper(setOf(setOf("a")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES,
+				new RefactoringStatus());
 	}
 
 	public void testSettingsMethodReturnOn() throws Exception {
