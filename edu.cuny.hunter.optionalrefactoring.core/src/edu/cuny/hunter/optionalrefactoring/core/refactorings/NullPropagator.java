@@ -1,17 +1,16 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -42,17 +41,13 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
-import org.eclipse.jdt.core.search.SearchEngine;
-import org.eclipse.jdt.core.search.SearchMatch;
-import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
-import org.eclipse.jdt.core.search.SearchRequestor;
 
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
-import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -62,7 +57,7 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  */
 class NullPropagator extends N2ONodeProcessor {
 
-	private static boolean containedIn(ASTNode node, Expression name) {
+	private static boolean containedIn(final ASTNode node, final Expression name) {
 		ASTNode curr = name;
 		while (curr != null)
 			if (node.equals(curr))
@@ -72,7 +67,7 @@ class NullPropagator extends N2ONodeProcessor {
 		return false;
 	}
 
-	private static boolean containedIn(List<ASTNode> arguments, Expression name) {
+	private static boolean containedIn(final List<ASTNode> arguments, final Expression name) {
 		ASTNode curr = name;
 		while (curr != null)
 			if (arguments.contains(curr))
@@ -85,57 +80,48 @@ class NullPropagator extends N2ONodeProcessor {
 	/**
 	 * Returns to formal parameter number of svd starting from zero.
 	 *
-	 * @param svd
-	 *            The formal parameter.
+	 * @param svd The formal parameter.
 	 * @return The formal parameter number starting at zero.
 	 */
-	private static int getFormalParameterNumber(SingleVariableDeclaration svd) {
+	private static int getFormalParameterNumber(final SingleVariableDeclaration svd) {
 		if (svd.getParent() instanceof CatchClause)
 			return 0;
 		final MethodDeclaration decl = (MethodDeclaration) svd.getParent();
 		return decl.parameters().indexOf(svd);
 	}
 
-	private final IProgressMonitor monitor;
-
 	private final Expression name;
 
-	private final IJavaElement element;
-
-	private final IJavaSearchScope scope;
-
-	private final Set<ISourceRange> sourceRangesToBridge = new LinkedHashSet<>();
-
-	public NullPropagator(ASTNode node, IJavaElement element, IJavaSearchScope scope, RefactoringSettings settings,
-			IProgressMonitor monitor) {
-		super(node, settings);
+	public NullPropagator(final ASTNode node, final IJavaElement element, final IJavaSearchScope scope,
+			final RefactoringSettings settings, final IProgressMonitor monitor) throws CoreException {
+		super(node, settings, monitor, scope);
 		this.name = (Expression) node;
-		this.element = element;
-		this.scope = scope;
-		this.monitor = monitor;
 	}
 
 	@Override
-	void ascend(ArrayAccess node) throws CoreException {
-		final ArrayAccess access = node;
+	void ascend(final ArrayAccess node) throws CoreException {
 		// if coming up from the index.
-		if (containedIn(access.getIndex(), this.name))
-			this.extractSourceRange(this.name);
-		else
+		if (containedIn(node.getIndex(), this.name)) {
+			final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
+			final Action action = Action.infer(node, pf, this.settings);
+			this.addInstance(null, node, pf, action);
+		} else
 			super.processAscent(node.getParent());
 	}
 
 	@Override
-	void ascend(ArrayCreation node) throws CoreException {
+	void ascend(final ArrayCreation node) throws CoreException {
 		// if previous node was in the index of the ArrayCreation,
 		// we have to bridge it. Otherwise we continue processing.
 		boolean legal = true;
-		for (Object o : node.dimensions()) {
-			Expression dimension = (Expression) o;
+		for (final Object o : node.dimensions()) {
+			final Expression dimension = (Expression) o;
 			// if coming up from the index.
 			if (containedIn(dimension, this.name)) {
 				legal = false;
-				this.extractSourceRange(this.name);
+				final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
+				final Action action = Action.infer(node, pf, this.settings);
+				this.addInstance(null, node, pf, action);
 			}
 		}
 		if (legal)
@@ -144,298 +130,210 @@ class NullPropagator extends N2ONodeProcessor {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	void ascend(ClassInstanceCreation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
-			IJavaElement element = Util.resolveElement(node, paramNumber);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		}
+	void ascend(final ClassInstanceCreation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name))
+			this.findFormalsForVariable(node);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	void ascend(ConstructorInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			IJavaElement element = Util.resolveElement(node);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		}
+	void ascend(final ConstructorInvocation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name))
+			this.findFormalsForVariable(node);
+	}
+
+	@Override
+	void ascend(final EnhancedForStatement node) throws CoreException {
+		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
+		final Action action = Action.infer(node, pf, this.settings);
+		if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			throw new HarvesterASTException(pf, node);
+		// if the Expression itself is a candidate for transformation to Optional type,
+		// we need to bridge it here (as opposed to being a collection parameterized
+		// with an optional type)
+		else if (pf.contains(PreconditionFailure.ENHANCED_FOR))
+			this.addInstance(null, node, pf, action);
+		this.descend(node.getParameter());
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	void ascend(MethodInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			IJavaElement element = Util.resolveElement(node);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
+	void ascend(final MethodInvocation node) throws CoreException {
+		final IMethod element = Util.resolveElement(node);
+		if (containedIn(node.arguments(), this.name))
+			this.findFormalsForVariable(node);
+		else if (node.getExpression() != null)
+			if (containedIn(node.getExpression(), this.name)) {
+				final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node.getExpression(), element,
+						this.settings);
+				final Action action = Action.infer(node.getExpression(), element, pf, this.settings);
+				if (!pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED)) {
+					this.addInstance(element, node, pf, action);
+					this.processAscent(node.getParent());
+				} else
+					throw new HarvesterASTException(pf, node);
 			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		} else
-			this.processAscent(node.getParent());
 	}
 
 	@Override
-	void ascend(ReturnStatement node) throws CoreException {
+	void ascend(final ReturnStatement node) throws CoreException {
 		// process what is being returned.
 		this.processDescent(node.getExpression());
 		// Get the corresponding method declaration.
 		final MethodDeclaration methDecl = Util.getMethodDeclaration(node);
 		// Get the corresponding method.
-		final IMethod meth = (IMethod) Util.resolveElement(methDecl);
+		final IMethod meth = Util.resolveElement(methDecl);
 		// Get the top most method
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 		if (top == null)
-			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-		else // Check the topmost method.
-		if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-			if (this.settings.bridgeExternalCode())
-				this.extractSourceRange(methDecl);
-			else
-				return;
+			throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, meth);
+		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(methDecl, top, this.settings);
+		final Action action = Action.infer(methDecl, top, pf, this.settings);
+		if (pf.isEmpty())
+			this.addCandidate(top, methDecl, pf, action);
+		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			throw new HarvesterASTException(pf, methDecl);
 		else
-			this.candidates.add(top);
+			this.addInstance(top, node, pf, action); // if we need to bridge it, we need the original return statement
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	void ascend(SuperConstructorInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			IJavaElement element = Util.resolveElement(node);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		}
+	void ascend(final SuperConstructorInvocation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name))
+			this.findFormalsForVariable(node);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	void ascend(SuperMethodInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			IJavaElement element = Util.resolveElement(node);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		}
-
+	void ascend(final SuperMethodInvocation node) throws CoreException {
+		if (containedIn(node.arguments(), this.name))
+			this.findFormalsForVariable(node);
 	}
 
 	@Override
-	void ascend(SwitchCase node) throws CoreException {
+	void ascend(final SwitchCase node) throws CoreException {
 		this.processDescent(node.getExpression());
 		this.processAscent(node.getParent());
 	}
 
 	@Override
-	void descend(ArrayCreation node) throws CoreException {
+	void descend(final ArrayCreation node) throws CoreException {
 		this.processDescent(node.getInitializer());
 	}
 
 	@Override
-	void descend(ArrayInitializer node) throws CoreException {
-		for (Object exp : node.expressions())
+	void descend(final ArrayInitializer node) throws CoreException {
+		for (final Object exp : node.expressions())
 			this.processDescent((Expression) exp);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	void descend(ClassInstanceCreation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name)) {
-			final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
-			IJavaElement element = Util.resolveElement(node, paramNumber);
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				// go find the formals.
-				this.findFormalsForVariable(node);
-		}
+	void descend(final ClassInstanceCreation node) throws CoreException {
+		// if we descend into a ClassInstanceCreation we can't refactor it to Optional,
+		// so we just bridge it
+		final IMethod element = Util.resolveElement(node);
+		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
+		final Action action = Action.infer(node, element, pf, this.settings);
+		if (!pf.isEmpty())
+			throw new HarvesterASTException(pf, node);
+		this.addInstance(element, node, pf, action);
 	}
 
 	@Override
-	void descend(ConditionalExpression node) throws CoreException {
+	void descend(final ConditionalExpression node) throws CoreException {
 		this.processDescent(node.getThenExpression());
 		this.processDescent(node.getElseExpression());
 	}
 
 	@Override
-	void descend(EnhancedForStatement node) {
-		final SingleVariableDeclaration svd = node.getParameter();
-		IJavaElement element = Util.resolveElement(svd);
-		if (!this.settings.refactorsParameters()) {
-			this.extractSourceRange(node);
-			return;
-		}
-		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-			if (this.settings.bridgeExternalCode())
-				this.extractSourceRange(node);
-			else
-				return;
-		else
-			this.candidates.add(element);
-	}
-
-	@Override
-	void descend(FieldDeclaration node) throws CoreException {
-		for (Object o : node.fragments()) {
+	void descend(final FieldDeclaration node) throws CoreException {
+		for (final Object o : node.fragments()) {
 			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
-			final IJavaElement element = Util.resolveElement(vdf);
-			if (!this.candidates.contains(element))
-				if (!this.settings.refactorsFields() || this.settings.bridgeExternalCode()
-						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
-					this.extractSourceRange(node);
-				else {
-					this.candidates.add(element);
-					this.processDescent(vdf.getInitializer());
-				}
+			final IField element = (IField) Util.resolveElement(vdf);
+			final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(vdf, element, this.settings);
+			final Action action = Action.infer(vdf, element, pf, this.settings);
+			if (pf.isEmpty()) {
+				NullPropagator.this.addCandidate(element, vdf, pf, action);
+				this.processDescent(vdf.getInitializer());
+			} else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+				throw new HarvesterASTException(pf, vdf);
+			else
+				NullPropagator.this.addInstance(element, vdf, pf, action);
 		}
 	}
 
 	@Override
-	void descend(MethodDeclaration node) {
-		final ASTVisitor visitor = new ASTVisitor() {
+	void descend(final MethodDeclaration node) throws CoreException {
+		final Set<ReturnStatement> ret = new LinkedHashSet<>();
+		node.accept(new ASTVisitor() {
 			@Override
-			public boolean visit(ReturnStatement node) {
-				try {
-					NullPropagator.this.processDescent(node.getExpression());
-				} catch (JavaModelException E) {
-					throw new RuntimeException(E);
-				} catch (CoreException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				return true;
+			public boolean visit(final ReturnStatement node) {
+				ret.add(node);
+				return super.visit(node);
 			}
-		};
-		node.accept(visitor);
+		});
+		for (final ReturnStatement r : ret)
+			this.processDescent(r.getExpression());
 	}
 
 	@Override
-	void descend(MethodInvocation node) throws CoreException {
-		final IMethod meth = (IMethod) Util.resolveElement(node);
+	void descend(final MethodInvocation node) throws CoreException {
+		final IMethod meth = Util.resolveElement(node);
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
-			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-		else {
-			// Check the topmost method.
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				this.candidates.add(top);
-		}
+			throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, meth);
+
+		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, top, this.settings);
+		final Action action = Action.infer(node, top, pf, this.settings);
+		if (pf.isEmpty())
+			this.addCandidate(top, node, pf, action);
+		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			throw new HarvesterASTException(pf, node);
+		else
+			this.addInstance(top, node, pf, action);
 	}
 
 	@Override
-	void descend(SingleVariableDeclaration node) throws CoreException {
+	void descend(final SingleVariableDeclaration node) throws CoreException {
 		// take care of local usage.
-		IJavaElement element = Util.resolveElement(node);
-		if (!this.settings.refactorsParameters()) {
-			this.extractSourceRange(node);
-			return;
-		}
-		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-			if (this.settings.bridgeExternalCode())
-				this.extractSourceRange(node);
-			else
-				return;
+		final IJavaElement element = Util.resolveElement(node);
+		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
+		final Action action = Action.infer(node, element, pf, this.settings);
+		if (pf.isEmpty())
+			NullPropagator.this.addCandidate(element, node, pf, action);
+		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			throw new HarvesterASTException(pf, node);
 		else
-			this.candidates.add(element);
+			NullPropagator.this.addInstance(element, node, pf, action);
 		// take care of remote usage.
 		// go find variables on the corresponding calls.
 		this.findVariablesForFormal(node);
 	}
 
 	@Override
-	void descend(SuperMethodInvocation node) throws CoreException {
-		final IMethod meth = (IMethod) Util.resolveElement(node);
+	void descend(final SuperMethodInvocation node) throws CoreException {
+		final IMethod meth = Util.resolveElement(node);
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null)
-			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-		else {
-			// Check the topmost method.
-			if (!this.settings.refactorsParameters()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (top.isReadOnly() || Util.isBinaryCode(top) || Util.isGeneratedCode(top))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
-			else
-				this.candidates.add(top);
-		}
+			throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, meth);
+
+		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, top, this.settings);
+		final Action action = Action.infer(node, top, pf, this.settings);
+		if (pf.isEmpty())
+			this.addCandidate(top, node, pf, action);
+		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			throw new HarvesterASTException(pf, node);
+		else
+			this.addInstance(top, node, pf, action);
 	}
 
 	@Override
-	void descend(SwitchStatement node) throws CoreException {
+	void descend(final SwitchStatement node) throws CoreException {
 		this.processDescent(node.getExpression());
-		for (Object o : node.statements())
+		for (final Object o : node.statements())
 			if (o instanceof SwitchCase) {
 				final SwitchCase sc = (SwitchCase) o;
 				this.processDescent(sc.getExpression());
@@ -443,70 +341,65 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 
 	@Override
-	void descend(VariableDeclarationExpression node) throws CoreException {
-		final VariableDeclarationExpression varDec = node;
+	void descend(final VariableDeclarationExpression node) throws CoreException {
 		@SuppressWarnings("unchecked")
-		List<VariableDeclarationFragment> fragments = varDec.fragments();
-		for (VariableDeclarationFragment frag : fragments) {
-			final VariableDeclarationFragment vdf = frag;
+		final List<VariableDeclarationFragment> list = node.fragments();
+		for (final VariableDeclarationFragment vdf : list) {
 			final IJavaElement element = Util.resolveElement(vdf);
-			if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
-					&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
-				this.extractSourceRange(vdf);
+			final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
+			final Action action = Action.infer(node, element, pf, this.settings);
+			if (pf.isEmpty()) {
+				this.addCandidate(element, node, pf, action);
+				this.processDescent(vdf.getInitializer());
+			} else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+				throw new HarvesterASTException(pf, node);
 			else
-				this.candidates.add(element);
+				NullPropagator.this.addInstance(element, node, pf, action);
 		}
 	}
 
 	@Override
-	void descend(VariableDeclarationFragment node) throws CoreException {
+	void descend(final VariableDeclarationFragment node) throws CoreException {
 		final IJavaElement element = Util.resolveElement(node);
-		if (!this.candidates.contains(element)) { // we don't want to keep
-													// processing if it does
-			if (!this.settings.refactorsLocalVariables() && !node.resolveBinding().isField()
-					|| !this.settings.refactorsFields() && node.resolveBinding().isField()) {
-				this.extractSourceRange(node);
-				return;
-			}
-			if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element))
-				if (this.settings.bridgeExternalCode())
-					this.extractSourceRange(node);
-				else
-					return;
+		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
+			final EnumSet<PreconditionFailure> pf = node.getParent() instanceof FieldDeclaration
+					? PreconditionFailure.check(node, (IField) element, this.settings)
+					: PreconditionFailure.check(node, element, this.settings);
+			final Action action = Action.infer(node, element, pf, this.settings);
+			if (pf.isEmpty()) {
+				this.addCandidate(element, node, pf, action);
+				this.processDescent(node.getInitializer());
+			} else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+				throw new HarvesterASTException(pf, node);
 			else
-				this.candidates.add(element);
-			this.processDescent(node.getInitializer());
+				this.addInstance(element, node, pf, action);
 		}
 	}
 
 	@Override
-	void descend(VariableDeclarationStatement node) throws CoreException {
-		for (Object o : node.fragments()) {
-			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
-			final ILocalVariable element = (ILocalVariable) Util.resolveElement(vdf);
-			if (!this.candidates.contains(element))
-				if (!this.settings.refactorsLocalVariables() || this.settings.bridgeExternalCode()
-						&& (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)))
-					this.extractSourceRange(node);
-				else {
-					this.candidates.add(element);
-					this.processDescent(vdf.getInitializer());
-				}
+	void descend(final VariableDeclarationStatement node) throws CoreException {
+		@SuppressWarnings("unchecked")
+		final List<VariableDeclarationFragment> list = node.fragments();
+		for (final VariableDeclarationFragment vdf : list) {
+			final IJavaElement element = Util.resolveElement(vdf);
+			final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
+			final Action action = Action.infer(node, element, pf, this.settings);
+			if (pf.isEmpty()) {
+				this.addCandidate(element, node, pf, action);
+				this.processDescent(vdf.getInitializer());
+			} else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+				throw new HarvesterASTException(pf, node);
+			else
+				NullPropagator.this.addInstance(element, node, pf, action);
 		}
 	}
 
-	@Override
-	void extractSourceRange(ASTNode node) {
-		this.sourceRangesToBridge.add(Util.getBridgeableExpressionSourceRange(node));
-	}
-
-	private void findFormalsForVariable(ClassInstanceCreation node) throws JavaModelException, CoreException {
+	private void findFormalsForVariable(final ClassInstanceCreation node) throws JavaModelException, CoreException {
 		@SuppressWarnings("unchecked")
 		final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
 		final IMethodBinding b = node.resolveConstructorBinding();
 		if (b == null)
-			throw new HarvesterASTException("While trying to resolve the binding for a ClassInstanceCreation: ",
-					PreconditionFailure.MISSING_BINDING, node);
+			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
 
 		IMethod meth = (IMethod) b.getJavaElement();
 		if (meth == null && node.getAnonymousClassDeclaration() != null) {
@@ -514,7 +407,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final AnonymousClassDeclaration acd = node.getAnonymousClassDeclaration();
 			final ITypeBinding binding = acd.resolveBinding();
 			final ITypeBinding superBinding = binding.getSuperclass();
-			for (IMethodBinding imb : Arrays.asList(superBinding.getDeclaredMethods()))
+			for (final IMethodBinding imb : Arrays.asList(superBinding.getDeclaredMethods()))
 				if (imb.isConstructor()) {
 					final ITypeBinding[] itb = imb.getParameterTypes();
 					if (itb.length > paramNumber) {
@@ -528,144 +421,120 @@ class NullPropagator extends N2ONodeProcessor {
 				}
 		}
 		if (meth == null)
-			throw new HarvesterASTException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, node);
+			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
 
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
-		if (top == null)
-			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-		else
+		if (top == null) {
+			final EnumSet<PreconditionFailure> pf = this.settings.bridgeExternalCode()
+					? EnumSet.of(PreconditionFailure.NON_SOURCE_CODE)
+					: EnumSet.of(PreconditionFailure.NON_SOURCE_CODE, PreconditionFailure.NO_BRIDGING_ALLOWED);
+			if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+				throw new HarvesterASTException(pf, this.name);
+			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
+		} else
 			this.findFormalsForVariable(top, paramNumber);
 	}
 
 	@SuppressWarnings("unchecked")
-	private void findFormalsForVariable(ConstructorInvocation node) throws JavaModelException, CoreException {
+	private void findFormalsForVariable(final ConstructorInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveConstructorBinding();
 		if (b == null)
-			throw new HarvesterASTException("While trying to resolve the binding for a ConstructorInvocation: ",
-					PreconditionFailure.MISSING_BINDING, node);
+			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
 
 		final IMethod meth = (IMethod) b.getJavaElement();
 
 		if (meth == null)
-			throw new HarvesterASTException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, node);
+			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
-		if (top == null)
-			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-		else
+		if (top == null) {
+			final EnumSet<PreconditionFailure> pf = this.settings.bridgeExternalCode()
+					? EnumSet.of(PreconditionFailure.NON_SOURCE_CODE)
+					: EnumSet.of(PreconditionFailure.NON_SOURCE_CODE, PreconditionFailure.NO_BRIDGING_ALLOWED);
+			if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+				throw new HarvesterASTException(pf, this.name);
+			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
+		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
-	private void findFormalsForVariable(IMethod correspondingMethod, final int paramNumber) throws CoreException {
-
-		final SearchPattern pattern = SearchPattern.createPattern(correspondingMethod,
-				IJavaSearchConstants.DECLARATIONS, SearchPattern.R_EXACT_MATCH);
-
-		this.findParameters(paramNumber, pattern);
-	}
-
 	@SuppressWarnings("unchecked")
-	private void findFormalsForVariable(MethodInvocation node) throws JavaModelException, CoreException {
+	private void findFormalsForVariable(final MethodInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveMethodBinding();
 		if (b == null)
-			throw new HarvesterASTException("While trying to resolve the binding for a MethodInvocation: ",
-					PreconditionFailure.MISSING_BINDING, node);
+			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
 
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
+		if (top == null) {
+			final EnumSet<PreconditionFailure> pf = this.settings.bridgeExternalCode()
+					? EnumSet.of(PreconditionFailure.NON_SOURCE_CODE)
+					: EnumSet.of(PreconditionFailure.NON_SOURCE_CODE, PreconditionFailure.NO_BRIDGING_ALLOWED);
+			if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+				throw new HarvesterASTException(pf, this.name);
+			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
+		}
 
-		if (top == null)
-			this.extractSourceRange(node);
 		else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
 	@SuppressWarnings("unchecked")
-	private void findFormalsForVariable(SuperConstructorInvocation node) throws JavaModelException, CoreException {
+	private void findFormalsForVariable(final SuperConstructorInvocation node)
+			throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveConstructorBinding();
 		if (b == null)
-			throw new HarvesterASTException("While trying to resolve the binding for a SuperConstructorInvocation: ",
-					PreconditionFailure.MISSING_BINDING, node);
+			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
 
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
-		if (top == null)
-			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-		else
+		if (top == null) {
+			final EnumSet<PreconditionFailure> pf = this.settings.bridgeExternalCode()
+					? EnumSet.of(PreconditionFailure.NON_SOURCE_CODE)
+					: EnumSet.of(PreconditionFailure.NON_SOURCE_CODE, PreconditionFailure.NO_BRIDGING_ALLOWED);
+			if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+				throw new HarvesterASTException(pf, this.name);
+			this.addInstance(meth, node, pf, Action.infer(this.name, meth, pf, this.settings));
+		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
 	@SuppressWarnings("unchecked")
-	private void findFormalsForVariable(SuperMethodInvocation node) throws JavaModelException, CoreException {
+	private void findFormalsForVariable(final SuperMethodInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveMethodBinding();
 		if (b == null)
-			throw new HarvesterASTException("While trying to resolve the binding for a SuperMethodInvocation: ",
-					PreconditionFailure.MISSING_BINDING, node);
+			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
 
 		final IMethod meth = (IMethod) node.resolveMethodBinding().getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
-		if (top == null)
-			throw new HarvesterJavaModelException(Messages.Harvester_SourceNotPresent,
-					PreconditionFailure.MISSING_JAVA_ELEMENT, meth);
-		else
+		if (top == null) {
+			final EnumSet<PreconditionFailure> pf = this.settings.bridgeExternalCode()
+					? EnumSet.of(PreconditionFailure.NON_SOURCE_CODE)
+					: EnumSet.of(PreconditionFailure.NON_SOURCE_CODE, PreconditionFailure.NO_BRIDGING_ALLOWED);
+			if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+				throw new HarvesterASTException(pf, this.name);
+			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
+		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
 
-	private void findParameters(final int paramNumber, SearchPattern pattern) throws CoreException {
-
-		final SearchRequestor requestor = new SearchRequestor() {
-
-			@Override
-			public void acceptSearchMatch(SearchMatch match) throws CoreException {
-				if (match.getAccuracy() == SearchMatch.A_ACCURATE && !match.isInsideDocComment()) {
-					IJavaElement elem = (IJavaElement) match.getElement();
-					ASTNode node = Util.getASTNode(elem, NullPropagator.this.monitor);
-					ParameterProcessingVisitor visitor = new ParameterProcessingVisitor(paramNumber, match.getOffset());
-					node.accept(visitor);
-					NullPropagator.this.candidates.addAll(visitor.getElements());
-					NullPropagator.this.sourceRangesToBridge.addAll(visitor.getSourceRangesToBridge());
-					for (Object element2 : visitor.getExpressions()) {
-						Expression exp = (Expression) element2;
-						NullPropagator.this.processDescent(exp);
-					}
-				}
-			}
-		};
-
-		final SearchEngine searchEngine = new SearchEngine();
-		searchEngine.search(pattern, new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() }, this.scope,
-				requestor, null);
-	}
-
-	private void findVariablesForFormal(SingleVariableDeclaration node) throws CoreException {
+	private void findVariablesForFormal(final SingleVariableDeclaration node) throws CoreException {
 
 		// Find invocations of the corresponding method.
 		final IVariableBinding b = node.resolveBinding();
 		if (b == null)
-			throw new HarvesterASTException("While trying to resolve the binding for a SingleVariableDeclaration: ",
-					PreconditionFailure.MISSING_BINDING, node);
+			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
 
 		final IMethod meth = (IMethod) b.getDeclaringMethod().getJavaElement();
 
 		final SearchPattern pattern = SearchPattern.createPattern(meth, IJavaSearchConstants.REFERENCES,
 				SearchPattern.R_EXACT_MATCH);
 
-		this.findParameters(getFormalParameterNumber(node), pattern);
-	}
-
-	public SimpleEntry<IJavaElement, Set<ISourceRange>> getSourceRangesToBridge() {
-		if (!this.sourceRangesToBridge.isEmpty())
-			return new SimpleEntry<>(this.element, this.sourceRangesToBridge);
-		else
-			return null;
+		this.findParameters(node.getParent() instanceof EnhancedForStatement ? 0 : getFormalParameterNumber(node),
+				pattern);
 	}
 
 	@Override
@@ -676,5 +545,4 @@ class NullPropagator extends N2ONodeProcessor {
 		} else
 			return false;
 	}
-
 }

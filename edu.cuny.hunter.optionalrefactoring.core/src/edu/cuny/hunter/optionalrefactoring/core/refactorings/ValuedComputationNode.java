@@ -7,15 +7,15 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Visitor;
 public class ValuedComputationNode extends ComputationNode {
 	private final IJavaElement val;
 
-	public ValuedComputationNode(IJavaElement val) {
+	public ValuedComputationNode(final IJavaElement val) {
 		super();
 		this.val = val;
 	}
 
 	@Override
-	public void accept(Visitor visitor) {
+	public void accept(final Visitor visitor) {
 		visitor.visit(this);
-		for (ComputationNode node : this.children)
+		for (final ComputationNode node : this.children)
 			node.accept(visitor);
 	}
 
@@ -31,7 +31,7 @@ public class ValuedComputationNode extends ComputationNode {
 	@Override
 	public String toString() {
 		final StringBuffer ret = new StringBuffer("(" + this.getNodeSymbol()); //$NON-NLS-1$
-		for (ComputationNode node : this.children)
+		for (final ComputationNode node : this.children)
 			ret.append(node);
 		ret.append(")"); //$NON-NLS-1$
 		return ret.toString();

@@ -2,7 +2,9 @@ package p;
 
 public class A {
 	/** 
-	 * With implicit nulls option by default
+	 * Testing settings turned on for implicit null field delcarations being seeded, but with 
+	 * constructor initialization of all fields detected, no nulls to refactor.
+	 * This should return a Fatal severity RefactoringStatus because nothing can be seeded.
 	 */
 	Object a;
 	

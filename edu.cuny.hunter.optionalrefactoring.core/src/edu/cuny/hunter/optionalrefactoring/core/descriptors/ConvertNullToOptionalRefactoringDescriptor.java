@@ -19,14 +19,14 @@ public class ConvertNullToOptionalRefactoringDescriptor extends JavaRefactoringD
 		super(REFACTORING_ID);
 	}
 
-	public ConvertNullToOptionalRefactoringDescriptor(String project, String description, String comment,
-			@SuppressWarnings("rawtypes") Map arguments, int flags) {
+	public ConvertNullToOptionalRefactoringDescriptor(final String project, final String description,
+			final String comment, @SuppressWarnings("rawtypes") final Map arguments, final int flags) {
 		this(REFACTORING_ID, project, description, comment, arguments, flags);
 	}
 
 	@SuppressWarnings("unchecked")
-	public ConvertNullToOptionalRefactoringDescriptor(String id, String project, String description, String comment,
-			@SuppressWarnings("rawtypes") Map arguments, int flags) {
+	public ConvertNullToOptionalRefactoringDescriptor(final String id, final String project, final String description,
+			final String comment, @SuppressWarnings("rawtypes") final Map arguments, final int flags) {
 		super(id, project, description, comment, arguments, flags);
 	}
 

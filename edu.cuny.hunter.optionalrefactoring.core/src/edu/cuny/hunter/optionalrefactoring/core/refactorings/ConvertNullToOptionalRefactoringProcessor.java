@@ -5,11 +5,11 @@ import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -25,7 +25,6 @@ import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
-import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -48,7 +47,7 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringParticipant;
 import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
 
 import edu.cuny.citytech.refactoring.common.core.RefactoringProcessor;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
@@ -74,7 +73,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	/**
 	 * For excluding AST parse time.
 	 */
-	private TimeCollector excludedTimeCollector = new TimeCollector();
+	private final TimeCollector excludedTimeCollector = new TimeCollector();
 
 	private final IJavaElement[] javaElements; // the input java model elements
 
@@ -82,29 +81,20 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private final RefactoringSettings settings;
 
-	private final Set<Entity> passingEntities = new LinkedHashSet<>(); // the
-																		// forest
-																		// of
-																		// refactorable
-																		// type-dependent
-																		// entities
-
-	private final Set<Entity> failingEntities = new LinkedHashSet<>();
-
-	private final Map<IJavaElement, Set<ISourceRange>> bridgeableSourceRanges = new LinkedHashMap<>();
+	private final Set<Entities> entities = new LinkedHashSet<>();
 
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
 		this(null, null, false, null, Optional.empty());
 	}
 
 	public ConvertNullToOptionalRefactoringProcessor(final CodeGenerationSettings settings,
-			Optional<IProgressMonitor> monitor) throws JavaModelException {
+			final Optional<IProgressMonitor> monitor) throws JavaModelException {
 		this(null, settings, false, null, monitor);
 	}
 
-	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, final CodeGenerationSettings settings,
-			boolean layer, RefactoringSettings refactoringSettings, Optional<IProgressMonitor> monitor)
-			throws JavaModelException {
+	public ConvertNullToOptionalRefactoringProcessor(final IJavaElement[] javaElements,
+			final CodeGenerationSettings settings, final boolean layer, final RefactoringSettings refactoringSettings,
+			final Optional<IProgressMonitor> monitor) throws JavaModelException {
 		super(settings);
 		try {
 			this.javaElements = javaElements;
@@ -115,12 +105,14 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	public ConvertNullToOptionalRefactoringProcessor(IJavaElement[] javaElements, final CodeGenerationSettings settings,
-			RefactoringSettings refactoringSettings, Optional<IProgressMonitor> monitor) throws JavaModelException {
+	public ConvertNullToOptionalRefactoringProcessor(final IJavaElement[] javaElements,
+			final CodeGenerationSettings settings, final RefactoringSettings refactoringSettings,
+			final Optional<IProgressMonitor> monitor) throws JavaModelException {
 		this(javaElements, settings, false, refactoringSettings, monitor);
 	}
 
-	public ConvertNullToOptionalRefactoringProcessor(Optional<IProgressMonitor> monitor) throws JavaModelException {
+	public ConvertNullToOptionalRefactoringProcessor(final Optional<IProgressMonitor> monitor)
+			throws JavaModelException {
 		this(null, null, false, null, monitor);
 	}
 
@@ -128,13 +120,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	public RefactoringStatus checkFinalConditions(final IProgressMonitor monitor, final CheckConditionsContext context)
 			throws CoreException, OperationCanceledException {
 		try {
-			SubMonitor subMonitor = SubMonitor.convert(monitor, Messages.CheckingPreconditions,
+			final SubMonitor subMonitor = SubMonitor.convert(monitor, Messages.CheckingPreconditions,
 					this.getJavaElements().length * 1000);
 			final RefactoringStatus status = new RefactoringStatus();
 
-			for (IJavaElement elem : this.getJavaElements())
-				// here we merge the resulting RefactoringStatus from the
-				// process method with
+			for (final IJavaElement elem : this.getJavaElements())
+				// here we merge the resulting RefactoringStatus from the process method with
 				// status
 				switch (elem.getElementType()) {
 				case IJavaElement.JAVA_PROJECT:
@@ -163,14 +154,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 					break;
 				}
 
-			// if there are no errors.
 			if (!status.hasError()) {
-				// offer to do the transformation
 			}
 			return status;
 		} catch (
 
-		Exception e) {
+		final Exception e) {
 			JavaPlugin.log(e);
 			throw e;
 		} finally {
@@ -179,22 +168,17 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	}
 
 	@Override
-	public RefactoringStatus checkInitialConditions(IProgressMonitor pm)
+	public RefactoringStatus checkInitialConditions(final IProgressMonitor pm)
 			throws CoreException, OperationCanceledException {
 		try {
 			this.clearCaches();
 			this.getExcludedTimeCollector().clear();
 
-			// TODO (later):
-			// if (this.getSourceMethods().isEmpty())
-			// return
-			// RefactoringStatus.createFatalErrorStatus(Messages.NullssNotSpecified);
-			// else {
-			RefactoringStatus status = new RefactoringStatus();
+			final RefactoringStatus status = new RefactoringStatus();
 			pm.beginTask(Messages.CheckingPreconditions, 1);
 			return status;
 			// }
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			JavaPlugin.log(e);
 			throw e;
 		} finally {
@@ -202,18 +186,13 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		}
 	}
 
-	private RefactoringStatus checkProjectCompliance(IJavaProject destinationProject) throws JavaModelException {
-		RefactoringStatus status = new RefactoringStatus();
-
-		// if (!JavaModelUtil.is18OrHigher(destinationProject))
-		// addErrorAndMark(status,
-		// PreconditionFailure.DestinationProjectIncompatible, sourceMethod,
-		// targetMethod);
+	private RefactoringStatus checkProjectCompliance(final IJavaProject destinationProject) throws JavaModelException {
+		final RefactoringStatus status = new RefactoringStatus();
 
 		return status;
 	}
 
-	private RefactoringStatus checkStructure(IMember member) throws JavaModelException {
+	private RefactoringStatus checkStructure(final IMember member) throws JavaModelException {
 		if (!member.isStructureKnown())
 			return RefactoringStatus.createErrorStatus(
 					MessageFormat.format(Messages.CUContainsCompileErrors, getElementLabel(member, ALL_FULLY_QUALIFIED),
@@ -222,29 +201,27 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		return new RefactoringStatus();
 	}
 
-	private RefactoringStatus checkWritability(IMember member, PreconditionFailure failure) {
-		// if (member.isBinary() || member.isReadOnly()) {
-		// return createError(failure, member);
-		// }
+	private RefactoringStatus checkWritability(final IMember member, final PreconditionFailure failure) {
 		return new RefactoringStatus();
 	}
 
 	@Override
-	public Change createChange(IProgressMonitor pm) throws CoreException, OperationCanceledException {
+	public Change createChange(final IProgressMonitor pm) throws CoreException, OperationCanceledException {
 		try {
 
 			final TextEditBasedChangeManager manager = new TextEditBasedChangeManager();
 
-			if (this.passingEntities.isEmpty())
+			if (this.entities.stream().filter(entity -> !entity.status().hasError()).collect(Collectors.toSet())
+					.isEmpty())
 				return new NullChange(Messages.NoNullsHavePassedThePreconditions);
 
-			int count = (int) this.passingEntities.stream().flatMap(entity -> entity.element().stream()).count();
+			final int count = (int) this.entities.stream().flatMap(entity -> entity.elements().stream()).count();
 
 			pm.beginTask(Messages.CreatingChange, count);
 
-			for (Entity entity : this.passingEntities) {
-				for (IJavaElement element : entity) {
-					ICompilationUnit icu = (ICompilationUnit) element.getAncestor(IJavaElement.COMPILATION_UNIT);
+			for (final Entities entity : this.entities) {
+				for (final IJavaElement element : entity) {
+					final ICompilationUnit icu = (ICompilationUnit) element.getAncestor(IJavaElement.COMPILATION_UNIT);
 					entity.addRewrite(this.getCompilationUnitRewrite(icu, this.getCompilationUnit(icu, pm)), element);
 					pm.worked(1);
 				}
@@ -252,22 +229,20 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			}
 
 			// save the source changes.
-			ICompilationUnit[] units = this.getCompilationUnitToCompilationUnitRewriteMap().keySet().stream()
+			final ICompilationUnit[] units = this.getCompilationUnitToCompilationUnitRewriteMap().keySet().stream()
 					.filter(cu -> !manager.containsChangesIn(cu)).toArray(ICompilationUnit[]::new);
 
-			for (ICompilationUnit cu : units) {
-				CompilationUnit compilationUnit = this.getCompilationUnit(cu, pm);
+			for (final ICompilationUnit cu : units) {
+				final CompilationUnit compilationUnit = this.getCompilationUnit(cu, pm);
 				this.manageCompilationUnit(manager, this.getCompilationUnitRewrite(cu, compilationUnit),
 						Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
 			}
 
 			final Map<String, String> arguments = new HashMap<>();
-			int flags = RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
+			final int flags = RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
 
-			// TODO: Fill in description.
-
-			ConvertNullToOptionalRefactoringDescriptor descriptor = new ConvertNullToOptionalRefactoringDescriptor(null,
-					"TODO", null, arguments, flags);
+			final ConvertNullToOptionalRefactoringDescriptor descriptor = new ConvertNullToOptionalRefactoringDescriptor(
+					null, "TODO", null, arguments, flags);
 
 			return new DynamicValidationRefactoringChange(descriptor, this.getProcessorName(), manager.getAllChanges());
 		} finally {
@@ -279,35 +254,16 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	/**
 	 * Creates a working copy layer if necessary.
 	 *
-	 * @param monitor
-	 *            the progress monitor to use
+	 * @param monitor the progress monitor to use
 	 * @return a status describing the outcome of the operation
 	 */
-	private RefactoringStatus createWorkingCopyLayer(IProgressMonitor monitor) {
+	private RefactoringStatus createWorkingCopyLayer(final IProgressMonitor monitor) {
 		try {
 			monitor.beginTask(Messages.CheckingPreconditions, 1);
-			// ICompilationUnit unit =
-			// getDeclaringType().getCompilationUnit();
-			// if (fLayer)
-			// unit = unit.findWorkingCopy(fOwner);
-			// resetWorkingCopies(unit);
 			return new RefactoringStatus();
 		} finally {
 			monitor.done();
 		}
-	}
-
-	private void extractBridgeableSourceRanges(RefactorableHarvester harvester) {
-		harvester.getBridgeable().entrySet().stream().forEach(entry -> {
-			if (this.bridgeableSourceRanges.containsKey(entry.getKey()))
-				this.bridgeableSourceRanges.get(entry.getKey()).addAll(entry.getValue());
-			else
-				this.bridgeableSourceRanges.put(entry.getKey(), entry.getValue());
-		});
-	}
-
-	public Map<IJavaElement, Set<ISourceRange>> getBridgeableSourceRanges() {
-		return this.bridgeableSourceRanges;
 	}
 
 	@Override
@@ -323,12 +279,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		return null;
 	}
 
-	public TimeCollector getExcludedTimeCollector() {
-		return this.excludedTimeCollector;
+	public Set<Entities> getEntities() {
+		return this.entities;
 	}
 
-	public Set<Entity> getFailingEntities() {
-		return this.failingEntities;
+	public TimeCollector getExcludedTimeCollector() {
+		return this.excludedTimeCollector;
 	}
 
 	@Override
@@ -338,10 +294,6 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	protected IJavaElement[] getJavaElements() {
 		return this.javaElements;
-	}
-
-	public Set<Entity> getPassingEntities() {
-		return this.passingEntities;
 	}
 
 	@Override
@@ -360,26 +312,24 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	}
 
 	@Override
-	public RefactoringParticipant[] loadParticipants(RefactoringStatus status, SharableParticipants sharedParticipants)
-			throws CoreException {
+	public RefactoringParticipant[] loadParticipants(final RefactoringStatus status,
+			final SharableParticipants sharedParticipants) throws CoreException {
 		return new RefactoringParticipant[0];
 	}
 
 	/**
-	 * @param icu
-	 *            an ICompilationUnit
+	 * @param icu        an ICompilationUnit
 	 * @param subMonitor
 	 * @return the RefactoringStatus from the harvester
 	 * @throws CoreException
 	 */
-	private RefactoringStatus process(ICompilationUnit icu, SubMonitor subMonitor) throws CoreException {
-		CompilationUnit compilationUnit = this.getCompilationUnit(icu, subMonitor.split(1));
-		RefactorableHarvester harvester = RefactorableHarvester.of(icu, compilationUnit, this.refactoringScope,
+	private RefactoringStatus process(final ICompilationUnit icu, final SubMonitor subMonitor) throws CoreException {
+		final CompilationUnit compilationUnit = this.getCompilationUnit(icu, subMonitor.split(1));
+		final RefactorableHarvester harvester = RefactorableHarvester.of(icu, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
-		RefactoringStatus status = harvester.harvestRefactorableContexts();
-		this.passingEntities.addAll(harvester.getPassing());
-		this.failingEntities.addAll(harvester.getFailing());
-		this.extractBridgeableSourceRanges(harvester);
+		final RefactoringStatus status = harvester.harvestRefactorableContexts();
+		this.entities.addAll(harvester.getEntities());
+
 		return status;
 	}
 
@@ -389,14 +339,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 * @return the RefactoringStatus from the harvester
 	 * @throws CoreException
 	 */
-	private RefactoringStatus process(IField field, SubMonitor subMonitor) throws CoreException {
-		CompilationUnit compilationUnit = this.getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
-		RefactorableHarvester harvester = RefactorableHarvester.of(field, compilationUnit, this.refactoringScope,
+	private RefactoringStatus process(final IField field, final SubMonitor subMonitor) throws CoreException {
+		final CompilationUnit compilationUnit = this.getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
+		final RefactorableHarvester harvester = RefactorableHarvester.of(field, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
-		RefactoringStatus status = harvester.harvestRefactorableContexts();
-		this.passingEntities.addAll(harvester.getPassing());
-		this.failingEntities.addAll(harvester.getFailing());
-		this.extractBridgeableSourceRanges(harvester);
+		final RefactoringStatus status = harvester.harvestRefactorableContexts();
+		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
 
@@ -406,29 +354,27 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 * @return the RefactoringStatus from the harvester
 	 * @throws CoreException
 	 */
-	private RefactoringStatus process(IInitializer initializer, SubMonitor subMonitor) throws CoreException {
-		CompilationUnit compilationUnit = this.getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
-		RefactorableHarvester harvester = RefactorableHarvester.of(initializer, compilationUnit, this.refactoringScope,
-				this.settings, subMonitor);
-		RefactoringStatus status = harvester.harvestRefactorableContexts();
-		this.passingEntities.addAll(harvester.getPassing());
-		this.failingEntities.addAll(harvester.getFailing());
-		this.extractBridgeableSourceRanges(harvester);
+	private RefactoringStatus process(final IInitializer initializer, final SubMonitor subMonitor)
+			throws CoreException {
+		final CompilationUnit compilationUnit = this.getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
+		final RefactorableHarvester harvester = RefactorableHarvester.of(initializer, compilationUnit,
+				this.refactoringScope, this.settings, subMonitor);
+		final RefactoringStatus status = harvester.harvestRefactorableContexts();
+		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
 
 	/**
-	 * @param project
-	 *            An IJavaProject.
+	 * @param project    An IJavaProject.
 	 * @param subMonitor
-	 * @return A failing RefactoringStatus, unless any of the
-	 *         potentiallyGoodStatus instances are OK
+	 * @return A failing RefactoringStatus, unless any of the potentiallyGoodStatus
+	 *         instances are OK
 	 * @throws CoreException
 	 */
-	private RefactoringStatus process(IJavaProject project, SubMonitor subMonitor) throws CoreException {
-		IPackageFragmentRoot[] roots = project.getPackageFragmentRoots();
-		RefactoringStatus status = new RefactoringStatus();
-		for (IPackageFragmentRoot root : roots)
+	private RefactoringStatus process(final IJavaProject project, final SubMonitor subMonitor) throws CoreException {
+		final IPackageFragmentRoot[] roots = project.getPackageFragmentRoots();
+		final RefactoringStatus status = new RefactoringStatus();
+		for (final IPackageFragmentRoot root : roots)
 			status.merge(this.process(root, subMonitor));
 		return status;
 	}
@@ -439,63 +385,58 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 * @return the RefactoringStatus from the harvester
 	 * @throws CoreException
 	 */
-	private RefactoringStatus process(IMethod method, SubMonitor subMonitor) throws CoreException {
-		CompilationUnit compilationUnit = this.getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
-		RefactorableHarvester harvester = RefactorableHarvester.of(method, compilationUnit, this.refactoringScope,
+	private RefactoringStatus process(final IMethod method, final SubMonitor subMonitor) throws CoreException {
+		final CompilationUnit compilationUnit = this.getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
+		final RefactorableHarvester harvester = RefactorableHarvester.of(method, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
-		RefactoringStatus status = harvester.harvestRefactorableContexts();
-		this.passingEntities.addAll(harvester.getPassing());
-		this.failingEntities.addAll(harvester.getFailing());
-		this.extractBridgeableSourceRanges(harvester);
+		final RefactoringStatus status = harvester.harvestRefactorableContexts();
+		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
 
 	/**
-	 * @param fragment
-	 *            A package.
+	 * @param fragment   A package.
 	 * @param subMonitor
 	 * @return A RefactoringStatus
 	 * @throws CoreException
 	 */
-	private RefactoringStatus process(IPackageFragment fragment, SubMonitor subMonitor) throws CoreException {
-		ICompilationUnit[] units = fragment.getCompilationUnits();
-		RefactoringStatus status = new RefactoringStatus();
-		for (ICompilationUnit unit : units)
+	private RefactoringStatus process(final IPackageFragment fragment, final SubMonitor subMonitor)
+			throws CoreException {
+		final ICompilationUnit[] units = fragment.getCompilationUnits();
+		final RefactoringStatus status = new RefactoringStatus();
+		for (final ICompilationUnit unit : units)
 			status.merge(this.process(unit, subMonitor));
 		return status;
 	}
 
 	/**
-	 * @param root
-	 *            A folder or jar.
+	 * @param root       A folder or jar.
 	 * @param subMonitor
-	 * @return A failing RefactoringStatus, unless any of the
-	 *         potentiallyGoodStatus instances are OK
+	 * @return A failing RefactoringStatus, unless any of the potentiallyGoodStatus
+	 *         instances are OK
 	 * @throws CoreException
 	 */
-	private RefactoringStatus process(IPackageFragmentRoot root, SubMonitor subMonitor) throws CoreException {
-		RefactoringStatus status = new RefactoringStatus();
-		IJavaElement[] children = root.getChildren();
-		for (IJavaElement child : children)
+	private RefactoringStatus process(final IPackageFragmentRoot root, final SubMonitor subMonitor)
+			throws CoreException {
+		final RefactoringStatus status = new RefactoringStatus();
+		final IJavaElement[] children = root.getChildren();
+		for (final IJavaElement child : children)
 			status.merge(this.process((IPackageFragment) child, subMonitor));
 		return status;
 	}
 
 	/**
-	 * @param type
-	 *            an IType
+	 * @param type       an IType
 	 * @param subMonitor
 	 * @return the RefactoringStatus from the harvester
 	 * @throws CoreException
 	 */
-	private RefactoringStatus process(IType type, SubMonitor subMonitor) throws CoreException {
-		CompilationUnit compilationUnit = this.getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
-		RefactorableHarvester harvester = RefactorableHarvester.of(type, compilationUnit, this.refactoringScope,
+	private RefactoringStatus process(final IType type, final SubMonitor subMonitor) throws CoreException {
+		final CompilationUnit compilationUnit = this.getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
+		final RefactorableHarvester harvester = RefactorableHarvester.of(type, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
-		RefactoringStatus status = harvester.harvestRefactorableContexts();
-		this.passingEntities.addAll(harvester.getPassing());
-		this.failingEntities.addAll(harvester.getFailing());
-		this.extractBridgeableSourceRanges(harvester);
+		final RefactoringStatus status = harvester.harvestRefactorableContexts();
+		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
 

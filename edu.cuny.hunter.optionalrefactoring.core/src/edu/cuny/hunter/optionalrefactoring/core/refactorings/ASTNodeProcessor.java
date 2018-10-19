@@ -114,601 +114,599 @@ import org.eclipse.jdt.core.dom.WildcardType;
 abstract class ASTNodeProcessor {
 
 	/**
-	 * This is the <code>ASTNode</code> instance that is the root of our
-	 * processing.
+	 * This is the <code>ASTNode</code> instance that is the root of our processing.
 	 */
 	final ASTNode rootNode;
 
-	ASTNodeProcessor(ASTNode node) {
+	ASTNodeProcessor(final ASTNode node) {
 		this.rootNode = node;
 	}
 
-	void ascend(AnnotationTypeDeclaration node) throws CoreException {
+	void ascend(final AnnotationTypeDeclaration node) throws CoreException {
 	}
 
-	void ascend(AnnotationTypeMemberDeclaration node) throws CoreException {
+	void ascend(final AnnotationTypeMemberDeclaration node) throws CoreException {
 	}
 
-	void ascend(AnonymousClassDeclaration node) throws CoreException {
+	void ascend(final AnonymousClassDeclaration node) throws CoreException {
 	}
 
-	void ascend(ArrayAccess node) throws CoreException {
+	void ascend(final ArrayAccess node) throws CoreException {
 	}
 
-	void ascend(ArrayCreation node) throws CoreException {
+	void ascend(final ArrayCreation node) throws CoreException {
 	}
 
-	void ascend(ArrayInitializer node) throws CoreException {
+	void ascend(final ArrayInitializer node) throws CoreException {
 	}
 
-	void ascend(ArrayType node) throws CoreException {
+	void ascend(final ArrayType node) throws CoreException {
 	}
 
-	void ascend(AssertStatement node) throws CoreException {
+	void ascend(final AssertStatement node) throws CoreException {
 	}
 
-	void ascend(Assignment node) throws CoreException {
+	void ascend(final Assignment node) throws CoreException {
 	}
 
-	void ascend(Block node) throws CoreException {
+	void ascend(final Block node) throws CoreException {
 	}
 
-	void ascend(BlockComment node) throws CoreException {
+	void ascend(final BlockComment node) throws CoreException {
 	}
 
-	void ascend(BooleanLiteral node) throws CoreException {
+	void ascend(final BooleanLiteral node) throws CoreException {
 	}
 
-	void ascend(BreakStatement node) throws CoreException {
+	void ascend(final BreakStatement node) throws CoreException {
 	}
 
-	void ascend(CastExpression node) throws CoreException {
+	void ascend(final CastExpression node) throws CoreException {
 	}
 
-	void ascend(CatchClause node) throws CoreException {
+	void ascend(final CatchClause node) throws CoreException {
 	}
 
-	void ascend(CharacterLiteral node) throws CoreException {
+	void ascend(final CharacterLiteral node) throws CoreException {
 	}
 
-	void ascend(ClassInstanceCreation node) throws CoreException {
+	void ascend(final ClassInstanceCreation node) throws CoreException {
 	}
 
-	void ascend(CompilationUnit node) throws CoreException {
+	void ascend(final CompilationUnit node) throws CoreException {
 	}
 
-	void ascend(ConditionalExpression node) throws CoreException {
+	void ascend(final ConditionalExpression node) throws CoreException {
 	}
 
-	void ascend(ConstructorInvocation node) throws CoreException {
+	void ascend(final ConstructorInvocation node) throws CoreException {
 	}
 
-	void ascend(ContinueStatement node) throws CoreException {
+	void ascend(final ContinueStatement node) throws CoreException {
 	}
 
-	void ascend(CreationReference node) throws CoreException {
+	void ascend(final CreationReference node) throws CoreException {
 	}
 
-	void ascend(Dimension node) throws CoreException {
+	void ascend(final Dimension node) throws CoreException {
 	}
 
-	void ascend(DoStatement node) throws CoreException {
+	void ascend(final DoStatement node) throws CoreException {
 	}
 
-	void ascend(EmptyStatement node) throws CoreException {
+	void ascend(final EmptyStatement node) throws CoreException {
 	}
 
-	void ascend(EnhancedForStatement node) throws CoreException {
+	void ascend(final EnhancedForStatement node) throws CoreException {
 	}
 
-	void ascend(EnumConstantDeclaration node) throws CoreException {
+	void ascend(final EnumConstantDeclaration node) throws CoreException {
 	}
 
-	void ascend(EnumDeclaration node) throws CoreException {
+	void ascend(final EnumDeclaration node) throws CoreException {
 	}
 
-	void ascend(ExpressionMethodReference node) throws CoreException {
+	void ascend(final ExpressionMethodReference node) throws CoreException {
 	}
 
 	/**
 	 * Processes the <code>Expression</code> node inside an
 	 * <code>ExpressionStatement</code> node.
-	 * 
+	 *
 	 * @param node
 	 * @throws CoreException
 	 */
-	void ascend(ExpressionStatement node) throws CoreException {
+	void ascend(final ExpressionStatement node) throws CoreException {
 	}
 
-	void ascend(FieldAccess node) throws CoreException {
+	void ascend(final FieldAccess node) throws CoreException {
 	}
 
-	void ascend(FieldDeclaration node) throws CoreException {
+	void ascend(final FieldDeclaration node) throws CoreException {
 	}
 
-	void ascend(ForStatement node) throws CoreException {
+	void ascend(final ForStatement node) throws CoreException {
 	}
 
-	void ascend(IfStatement node) throws CoreException {
+	void ascend(final IfStatement node) throws CoreException {
 	}
 
-	void ascend(ImportDeclaration node) throws CoreException {
+	void ascend(final ImportDeclaration node) throws CoreException {
 	}
 
-	void ascend(InfixExpression node) throws CoreException {
+	void ascend(final InfixExpression node) throws CoreException {
 	}
 
-	void ascend(Initializer node) throws CoreException {
+	void ascend(final Initializer node) throws CoreException {
 	}
 
-	void ascend(InstanceofExpression node) throws CoreException {
+	void ascend(final InstanceofExpression node) throws CoreException {
 	}
 
-	void ascend(IntersectionType node) throws CoreException {
+	void ascend(final IntersectionType node) throws CoreException {
 	}
 
-	void ascend(Javadoc node) throws CoreException {
+	void ascend(final Javadoc node) throws CoreException {
 	}
 
-	void ascend(LabeledStatement node) throws CoreException {
+	void ascend(final LabeledStatement node) throws CoreException {
 	}
 
-	void ascend(LambdaExpression node) throws CoreException {
+	void ascend(final LambdaExpression node) throws CoreException {
 	}
 
-	void ascend(LineComment node) throws CoreException {
+	void ascend(final LineComment node) throws CoreException {
 	}
 
-	void ascend(MarkerAnnotation node) throws CoreException {
+	void ascend(final MarkerAnnotation node) throws CoreException {
 	}
 
-	void ascend(MemberRef node) throws CoreException {
+	void ascend(final MemberRef node) throws CoreException {
 	}
 
-	void ascend(MemberValuePair node) throws CoreException {
+	void ascend(final MemberValuePair node) throws CoreException {
 	}
 
-	void ascend(MethodDeclaration node) throws CoreException {
+	void ascend(final MethodDeclaration node) throws CoreException {
 	}
 
-	void ascend(MethodInvocation node) throws CoreException {
+	void ascend(final MethodInvocation node) throws CoreException {
 	}
 
-	void ascend(MethodRef node) throws CoreException {
+	void ascend(final MethodRef node) throws CoreException {
 	}
 
-	void ascend(MethodRefParameter node) throws CoreException {
+	void ascend(final MethodRefParameter node) throws CoreException {
 	}
 
-	void ascend(Modifier node) throws CoreException {
+	void ascend(final Modifier node) throws CoreException {
 	}
 
-	void ascend(NameQualifiedType node) throws CoreException {
+	void ascend(final NameQualifiedType node) throws CoreException {
 	}
 
-	void ascend(NormalAnnotation node) throws CoreException {
+	void ascend(final NormalAnnotation node) throws CoreException {
 	}
 
-	void ascend(NullLiteral node) throws CoreException {
+	void ascend(final NullLiteral node) throws CoreException {
 	}
 
-	void ascend(NumberLiteral node) throws CoreException {
+	void ascend(final NumberLiteral node) throws CoreException {
 	}
 
-	void ascend(PackageDeclaration node) throws CoreException {
+	void ascend(final PackageDeclaration node) throws CoreException {
 	}
 
-	void ascend(ParameterizedType node) throws CoreException {
+	void ascend(final ParameterizedType node) throws CoreException {
 	}
 
 	/**
 	 * Processes the part of a
 	 * {@link org.eclipse.jdt.core.dom.ParenthesizedExpression} node.
-	 * 
+	 *
 	 * @param node
 	 * @throws CoreException
 	 */
-	void ascend(ParenthesizedExpression node) throws CoreException {
+	void ascend(final ParenthesizedExpression node) throws CoreException {
 		this.processAscent(node.getParent());
 	}
 
-	void ascend(PostfixExpression node) throws CoreException {
+	void ascend(final PostfixExpression node) throws CoreException {
 	}
 
-	void ascend(PrefixExpression node) throws CoreException {
+	void ascend(final PrefixExpression node) throws CoreException {
 	}
 
-	void ascend(PrimitiveType node) throws CoreException {
+	void ascend(final PrimitiveType node) throws CoreException {
 	}
 
-	void ascend(QualifiedName node) throws CoreException {
+	void ascend(final QualifiedName node) throws CoreException {
 	}
 
-	void ascend(QualifiedType node) throws CoreException {
+	void ascend(final QualifiedType node) throws CoreException {
 	}
 
-	void ascend(ReturnStatement node) throws CoreException {
+	void ascend(final ReturnStatement node) throws CoreException {
 	}
 
-	void ascend(SimpleName node) throws CoreException {
+	void ascend(final SimpleName node) throws CoreException {
 	}
 
-	void ascend(SimpleType node) throws CoreException {
+	void ascend(final SimpleType node) throws CoreException {
 	}
 
-	void ascend(SingleMemberAnnotation node) throws CoreException {
+	void ascend(final SingleMemberAnnotation node) throws CoreException {
 	}
 
-	void ascend(SingleVariableDeclaration node) throws CoreException {
+	void ascend(final SingleVariableDeclaration node) throws CoreException {
 	}
 
-	void ascend(StringLiteral node) throws CoreException {
+	void ascend(final StringLiteral node) throws CoreException {
 	}
 
-	void ascend(SuperConstructorInvocation node) throws CoreException {
+	void ascend(final SuperConstructorInvocation node) throws CoreException {
 	}
 
-	void ascend(SuperFieldAccess node) throws CoreException {
+	void ascend(final SuperFieldAccess node) throws CoreException {
 	}
 
-	void ascend(SuperMethodInvocation node) throws CoreException {
+	void ascend(final SuperMethodInvocation node) throws CoreException {
 	}
 
-	void ascend(SuperMethodReference node) throws CoreException {
+	void ascend(final SuperMethodReference node) throws CoreException {
 	}
 
-	void ascend(SwitchCase node) throws CoreException {
+	void ascend(final SwitchCase node) throws CoreException {
 	}
 
-	void ascend(SwitchStatement node) throws CoreException {
+	void ascend(final SwitchStatement node) throws CoreException {
 	}
 
-	void ascend(SynchronizedStatement node) throws CoreException {
+	void ascend(final SynchronizedStatement node) throws CoreException {
 	}
 
-	void ascend(TagElement node) throws CoreException {
+	void ascend(final TagElement node) throws CoreException {
 	}
 
-	void ascend(TextElement node) throws CoreException {
+	void ascend(final TextElement node) throws CoreException {
 	}
 
-	void ascend(ThisExpression node) throws CoreException {
+	void ascend(final ThisExpression node) throws CoreException {
 	}
 
-	void ascend(ThrowStatement node) throws CoreException {
+	void ascend(final ThrowStatement node) throws CoreException {
 	}
 
-	void ascend(TryStatement node) throws CoreException {
+	void ascend(final TryStatement node) throws CoreException {
 	}
 
-	void ascend(TypeDeclaration node) throws CoreException {
+	void ascend(final TypeDeclaration node) throws CoreException {
 	}
 
-	void ascend(TypeDeclarationStatement node) throws CoreException {
+	void ascend(final TypeDeclarationStatement node) throws CoreException {
 	}
 
-	void ascend(TypeLiteral node) throws CoreException {
+	void ascend(final TypeLiteral node) throws CoreException {
 	}
 
-	void ascend(TypeMethodReference node) throws CoreException {
+	void ascend(final TypeMethodReference node) throws CoreException {
 	}
 
-	void ascend(TypeParameter node) throws CoreException {
+	void ascend(final TypeParameter node) throws CoreException {
 	}
 
-	void ascend(UnionType node) throws CoreException {
+	void ascend(final UnionType node) throws CoreException {
 	}
 
-	void ascend(VariableDeclarationExpression node) throws CoreException {
+	void ascend(final VariableDeclarationExpression node) throws CoreException {
 	}
 
-	void ascend(VariableDeclarationFragment node) throws CoreException {
+	void ascend(final VariableDeclarationFragment node) throws CoreException {
 	}
 
-	void ascend(VariableDeclarationStatement node) throws CoreException {
+	void ascend(final VariableDeclarationStatement node) throws CoreException {
 	}
 
-	void ascend(WhileStatement node) throws CoreException {
+	void ascend(final WhileStatement node) throws CoreException {
 	}
 
-	void ascend(WildcardType node) throws CoreException {
+	void ascend(final WildcardType node) throws CoreException {
 	}
 
 	/*
-	 * void descend(ModuleDeclaration node) { } void descend(RequiresDirective
-	 * node) { } void descend(ExportsDirective node) { } void
-	 * descend(OpensDirective node) { } void descend(UsesDirective node) { }
-	 * void descend(ProvidesDirective node) { } void descend(ModuleModifier
-	 * node) { }
+	 * void descend(ModuleDeclaration node) { } void descend(RequiresDirective node)
+	 * { } void descend(ExportsDirective node) { } void descend(OpensDirective node)
+	 * { } void descend(UsesDirective node) { } void descend(ProvidesDirective node)
+	 * { } void descend(ModuleModifier node) { }
 	 */
 
-	void descend(AnnotationTypeDeclaration node) throws CoreException {
+	void descend(final AnnotationTypeDeclaration node) throws CoreException {
 	}
 
-	void descend(AnonymousClassDeclaration node) throws CoreException {
+	void descend(final AnonymousClassDeclaration node) throws CoreException {
 	}
 
-	void descend(ArrayAccess node) throws CoreException {
+	void descend(final ArrayAccess node) throws CoreException {
 	}
 
-	void descend(ArrayCreation node) throws CoreException {
+	void descend(final ArrayCreation node) throws CoreException {
 	}
 
-	void descend(ArrayInitializer node) throws CoreException {
+	void descend(final ArrayInitializer node) throws CoreException {
 	}
 
-	void descend(ArrayType node) throws CoreException {
+	void descend(final ArrayType node) throws CoreException {
 	}
 
-	void descend(AssertStatement node) throws CoreException {
+	void descend(final AssertStatement node) throws CoreException {
 	}
 
-	void descend(Assignment node) throws CoreException {
+	void descend(final Assignment node) throws CoreException {
 	}
 
-	void descend(Block node) throws CoreException {
+	void descend(final Block node) throws CoreException {
 	}
 
-	void descend(BlockComment node) throws CoreException {
+	void descend(final BlockComment node) throws CoreException {
 	}
 
-	void descend(BooleanLiteral node) throws CoreException {
+	void descend(final BooleanLiteral node) throws CoreException {
 	}
 
-	void descend(BreakStatement node) throws CoreException {
+	void descend(final BreakStatement node) throws CoreException {
 	}
 
-	void descend(CastExpression node) throws CoreException {
+	void descend(final CastExpression node) throws CoreException {
 	}
 
-	void descend(CatchClause node) throws CoreException {
+	void descend(final CatchClause node) throws CoreException {
 	}
 
-	void descend(CharacterLiteral node) throws CoreException {
+	void descend(final CharacterLiteral node) throws CoreException {
 	}
 
-	void descend(ClassInstanceCreation node) throws CoreException {
+	void descend(final ClassInstanceCreation node) throws CoreException {
 	}
 
-	void descend(CompilationUnit node) throws CoreException {
+	void descend(final CompilationUnit node) throws CoreException {
 	}
 
-	void descend(ConditionalExpression node) throws CoreException {
+	void descend(final ConditionalExpression node) throws CoreException {
 	}
 
-	void descend(ConstructorInvocation node) throws CoreException {
+	void descend(final ConstructorInvocation node) throws CoreException {
 	}
 
-	void descend(ContinueStatement node) throws CoreException {
+	void descend(final ContinueStatement node) throws CoreException {
 	}
 
-	void descend(CreationReference node) throws CoreException {
+	void descend(final CreationReference node) throws CoreException {
 	}
 
-	void descend(Dimension node) throws CoreException {
+	void descend(final Dimension node) throws CoreException {
 	}
 
-	void descend(DoStatement node) throws CoreException {
+	void descend(final DoStatement node) throws CoreException {
 	}
 
-	void descend(EmptyStatement node) throws CoreException {
+	void descend(final EmptyStatement node) throws CoreException {
 	}
 
-	void descend(EnhancedForStatement node) throws CoreException {
+	void descend(final EnhancedForStatement node) throws CoreException {
 	}
 
-	void descend(EnumConstantDeclaration node) throws CoreException {
+	void descend(final EnumConstantDeclaration node) throws CoreException {
 	}
 
-	void descend(EnumDeclaration node) throws CoreException {
+	void descend(final EnumDeclaration node) throws CoreException {
 	}
 
-	void descend(ExpressionMethodReference node) throws CoreException {
+	void descend(final ExpressionMethodReference node) throws CoreException {
 	}
 
 	/**
 	 * Processes the <code>Expression</code> node inside an
 	 * <code>ExpressionStatement</code> node.
-	 * 
+	 *
 	 * @param node
 	 * @throws CoreException
 	 */
-	void descend(ExpressionStatement node) throws CoreException {
+	void descend(final ExpressionStatement node) throws CoreException {
 		this.processDescent(node.getExpression());
 	}
 
-	void descend(FieldAccess node) throws CoreException {
+	void descend(final FieldAccess node) throws CoreException {
 	}
 
-	void descend(FieldDeclaration node) throws CoreException {
+	void descend(final FieldDeclaration node) throws CoreException {
 	}
 
-	void descend(ForStatement node) throws CoreException {
+	void descend(final ForStatement node) throws CoreException {
 	}
 
-	void descend(IfStatement node) throws CoreException {
+	void descend(final IfStatement node) throws CoreException {
 	}
 
-	void descend(ImportDeclaration node) throws CoreException {
+	void descend(final ImportDeclaration node) throws CoreException {
 	}
 
-	void descend(InfixExpression node) throws CoreException {
+	void descend(final InfixExpression node) throws CoreException {
 	}
 
-	void descend(Initializer node) throws CoreException {
+	void descend(final Initializer node) throws CoreException {
 	}
 
-	void descend(InstanceofExpression node) throws CoreException {
+	void descend(final InstanceofExpression node) throws CoreException {
 	}
 
-	void descend(IntersectionType node) throws CoreException {
+	void descend(final IntersectionType node) throws CoreException {
 	}
 
-	void descend(Javadoc node) throws CoreException {
+	void descend(final Javadoc node) throws CoreException {
 	}
 
-	void descend(LabeledStatement node) throws CoreException {
+	void descend(final LabeledStatement node) throws CoreException {
 	}
 
-	void descend(LambdaExpression node) throws CoreException {
+	void descend(final LambdaExpression node) throws CoreException {
 	}
 
-	void descend(LineComment node) throws CoreException {
+	void descend(final LineComment node) throws CoreException {
 	}
 
-	void descend(MarkerAnnotation node) throws CoreException {
+	void descend(final MarkerAnnotation node) throws CoreException {
 	}
 
-	void descend(MemberRef node) throws CoreException {
+	void descend(final MemberRef node) throws CoreException {
 	}
 
-	void descend(MemberValuePair node) throws CoreException {
+	void descend(final MemberValuePair node) throws CoreException {
 	}
 
-	void descend(MethodDeclaration node) throws CoreException {
+	void descend(final MethodDeclaration node) throws CoreException {
 	}
 
-	void descend(MethodInvocation node) throws CoreException {
+	void descend(final MethodInvocation node) throws CoreException {
 	}
 
-	void descend(MethodRef node) throws CoreException {
+	void descend(final MethodRef node) throws CoreException {
 	}
 
-	void descend(MethodRefParameter node) throws CoreException {
+	void descend(final MethodRefParameter node) throws CoreException {
 	}
 
-	void descend(Modifier node) throws CoreException {
+	void descend(final Modifier node) throws CoreException {
 	}
 
-	void descend(NameQualifiedType node) throws CoreException {
+	void descend(final NameQualifiedType node) throws CoreException {
 	}
 
-	void descend(NormalAnnotation node) throws CoreException {
+	void descend(final NormalAnnotation node) throws CoreException {
 	}
 
-	void descend(NullLiteral node) throws CoreException {
+	void descend(final NullLiteral node) throws CoreException {
 	}
 
-	void descend(NumberLiteral node) throws CoreException {
+	void descend(final NumberLiteral node) throws CoreException {
 	}
 
-	void descend(PackageDeclaration node) throws CoreException {
+	void descend(final PackageDeclaration node) throws CoreException {
 	}
 
-	void descend(ParameterizedType node) throws CoreException {
+	void descend(final ParameterizedType node) throws CoreException {
 	}
 
 	/**
 	 * Processes the expression inside a
 	 * {@link org.eclipse.jdt.core.dom.ParenthesizedExpression} node.
-	 * 
+	 *
 	 * @param node
 	 * @throws CoreException
 	 */
-	void descend(ParenthesizedExpression node) throws CoreException {
+	void descend(final ParenthesizedExpression node) throws CoreException {
 		this.processDescent(node.getExpression());
 	}
 
-	void descend(PostfixExpression node) throws CoreException {
+	void descend(final PostfixExpression node) throws CoreException {
 	}
 
-	void descend(PrefixExpression node) throws CoreException {
+	void descend(final PrefixExpression node) throws CoreException {
 	}
 
-	void descend(PrimitiveType node) throws CoreException {
+	void descend(final PrimitiveType node) throws CoreException {
 	}
 
-	void descend(QualifiedName node) throws CoreException {
+	void descend(final QualifiedName node) throws CoreException {
 	}
 
-	void descend(QualifiedType node) throws CoreException {
+	void descend(final QualifiedType node) throws CoreException {
 	}
 
-	void descend(ReturnStatement node) throws CoreException {
+	void descend(final ReturnStatement node) throws CoreException {
 	}
 
-	void descend(SimpleName node) throws CoreException {
+	void descend(final SimpleName node) throws CoreException {
 	}
 
-	void descend(SimpleType node) throws CoreException {
+	void descend(final SimpleType node) throws CoreException {
 	}
 
-	void descend(SingleMemberAnnotation node) throws CoreException {
+	void descend(final SingleMemberAnnotation node) throws CoreException {
 	}
 
-	void descend(SingleVariableDeclaration node) throws CoreException {
+	void descend(final SingleVariableDeclaration node) throws CoreException {
 	}
 
-	void descend(StringLiteral node) throws CoreException {
+	void descend(final StringLiteral node) throws CoreException {
 	}
 
-	void descend(SuperConstructorInvocation node) throws CoreException {
+	void descend(final SuperConstructorInvocation node) throws CoreException {
 	}
 
-	void descend(SuperFieldAccess node) throws CoreException {
+	void descend(final SuperFieldAccess node) throws CoreException {
 	}
 
-	void descend(SuperMethodInvocation node) throws CoreException {
+	void descend(final SuperMethodInvocation node) throws CoreException {
 	}
 
-	void descend(SuperMethodReference node) throws CoreException {
+	void descend(final SuperMethodReference node) throws CoreException {
 	}
 
-	void descend(SwitchCase node) throws CoreException {
+	void descend(final SwitchCase node) throws CoreException {
 	}
 
-	void descend(SwitchStatement node) throws CoreException {
+	void descend(final SwitchStatement node) throws CoreException {
 	}
 
-	void descend(SynchronizedStatement node) throws CoreException {
+	void descend(final SynchronizedStatement node) throws CoreException {
 	}
 
-	void descend(TagElement node) throws CoreException {
+	void descend(final TagElement node) throws CoreException {
 	}
 
-	void descend(TextElement node) throws CoreException {
+	void descend(final TextElement node) throws CoreException {
 	}
 
-	void descend(ThisExpression node) throws CoreException {
+	void descend(final ThisExpression node) throws CoreException {
 	}
 
-	void descend(ThrowStatement node) throws CoreException {
+	void descend(final ThrowStatement node) throws CoreException {
 	}
 
-	void descend(TryStatement node) throws CoreException {
+	void descend(final TryStatement node) throws CoreException {
 	}
 
-	void descend(TypeDeclaration node) throws CoreException {
+	void descend(final TypeDeclaration node) throws CoreException {
 	}
 
-	void descend(TypeDeclarationStatement node) throws CoreException {
+	void descend(final TypeDeclarationStatement node) throws CoreException {
 	}
 
-	void descend(TypeLiteral node) throws CoreException {
+	void descend(final TypeLiteral node) throws CoreException {
 	}
 
-	void descend(TypeMethodReference node) throws CoreException {
+	void descend(final TypeMethodReference node) throws CoreException {
 	}
 
-	void descend(TypeParameter node) throws CoreException {
+	void descend(final TypeParameter node) throws CoreException {
 	}
 
-	void descend(UnionType node) throws CoreException {
+	void descend(final UnionType node) throws CoreException {
 	}
 
-	void descend(VariableDeclarationExpression node) throws CoreException {
+	void descend(final VariableDeclarationExpression node) throws CoreException {
 	}
 
-	void descend(VariableDeclarationFragment node) throws CoreException {
+	void descend(final VariableDeclarationFragment node) throws CoreException {
 	}
 
-	void descend(VariableDeclarationStatement node) throws CoreException {
+	void descend(final VariableDeclarationStatement node) throws CoreException {
 	}
 
-	void descend(WhileStatement node) throws CoreException {
+	void descend(final WhileStatement node) throws CoreException {
 	}
 
-	void descend(WildcardType node) throws CoreException {
+	void descend(final WildcardType node) throws CoreException {
 	}
 
 	abstract boolean process() throws CoreException;
@@ -716,20 +714,19 @@ abstract class ASTNodeProcessor {
 	/**
 	 * Processes the {@link org.eclipse.jdt.core.dom.ASTNode} to determine the
 	 * descent method with the correct signature to call.
-	 * 
+	 *
 	 * @param node
 	 * @throws CoreException
 	 */
-	void processAscent(ASTNode node) throws CoreException {
+	void processAscent(final ASTNode node) throws CoreException {
 		switch (node.getNodeType()) {
 		case ASTNode.ANONYMOUS_CLASS_DECLARATION:
 			this.ascend((AnonymousClassDeclaration) node);
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ArrayAccess</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ArrayAccess</code>.
+		 *
 		 * @see ArrayAccess
 		 */
 		case ASTNode.ARRAY_ACCESS:
@@ -737,9 +734,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ArrayCreation</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ArrayCreation</code>.
+		 *
 		 * @see ArrayCreation
 		 */
 		case ASTNode.ARRAY_CREATION:
@@ -747,9 +743,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ArrayInitializer</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ArrayInitializer</code>.
+		 *
 		 * @see ArrayInitializer
 		 */
 		case ASTNode.ARRAY_INITIALIZER:
@@ -758,7 +753,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>ArrayType</code>.
-		 * 
+		 *
 		 * @see ArrayType
 		 */
 		case ASTNode.ARRAY_TYPE:
@@ -766,9 +761,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>AssertStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>AssertStatement</code>.
+		 *
 		 * @see AssertStatement
 		 */
 		case ASTNode.ASSERT_STATEMENT:
@@ -777,7 +771,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>Assignment</code>.
-		 * 
+		 *
 		 * @see Assignment
 		 */
 		case ASTNode.ASSIGNMENT:
@@ -786,7 +780,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>Block</code>.
-		 * 
+		 *
 		 * @see Block
 		 */
 		case ASTNode.BLOCK:
@@ -794,9 +788,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>BooleanLiteral</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>BooleanLiteral</code>.
+		 *
 		 * @see BooleanLiteral
 		 */
 		case ASTNode.BOOLEAN_LITERAL:
@@ -804,9 +797,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>BreakStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>BreakStatement</code>.
+		 *
 		 * @see BreakStatement
 		 */
 		case ASTNode.BREAK_STATEMENT:
@@ -814,9 +806,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>CastExpression</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>CastExpression</code>.
+		 *
 		 * @see CastExpression
 		 */
 		case ASTNode.CAST_EXPRESSION:
@@ -824,9 +815,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>CatchClause</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>CatchClause</code>.
+		 *
 		 * @see CatchClause
 		 */
 		case ASTNode.CATCH_CLAUSE:
@@ -834,9 +824,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>CharacterLiteral</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>CharacterLiteral</code>.
+		 *
 		 * @see CharacterLiteral
 		 */
 		case ASTNode.CHARACTER_LITERAL:
@@ -846,7 +835,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>ClassInstanceCreation</code>.
-		 * 
+		 *
 		 * @see ClassInstanceCreation
 		 */
 		case ASTNode.CLASS_INSTANCE_CREATION:
@@ -854,9 +843,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>CompilationUnit</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>CompilationUnit</code>.
+		 *
 		 * @see CompilationUnit
 		 */
 		case ASTNode.COMPILATION_UNIT:
@@ -866,7 +854,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>ConditionalExpression</code>.
-		 * 
+		 *
 		 * @see ConditionalExpression
 		 */
 		case ASTNode.CONDITIONAL_EXPRESSION:
@@ -876,7 +864,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>ConstructorInvocation</code>.
-		 * 
+		 *
 		 * @see ConstructorInvocation
 		 */
 		case ASTNode.CONSTRUCTOR_INVOCATION:
@@ -884,9 +872,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ContinueStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ContinueStatement</code>.
+		 *
 		 * @see ContinueStatement
 		 */
 		case ASTNode.CONTINUE_STATEMENT:
@@ -894,9 +881,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>DoStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>DoStatement</code>.
+		 *
 		 * @see DoStatement
 		 */
 		case ASTNode.DO_STATEMENT:
@@ -904,9 +890,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>EmptyStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>EmptyStatement</code>.
+		 *
 		 * @see EmptyStatement
 		 */
 		case ASTNode.EMPTY_STATEMENT:
@@ -916,7 +901,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>ExpressionStatement</code>.
-		 * 
+		 *
 		 * @see ExpressionStatement
 		 */
 		case ASTNode.EXPRESSION_STATEMENT:
@@ -924,9 +909,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>FieldAccess</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>FieldAccess</code>.
+		 *
 		 * @see FieldAccess
 		 */
 		case ASTNode.FIELD_ACCESS:
@@ -934,9 +918,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>FieldDeclaration</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>FieldDeclaration</code>.
+		 *
 		 * @see FieldDeclaration
 		 */
 		case ASTNode.FIELD_DECLARATION:
@@ -944,9 +927,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ForStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ForStatement</code>.
+		 *
 		 * @see ForStatement
 		 */
 		case ASTNode.FOR_STATEMENT:
@@ -954,9 +936,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>IfStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>IfStatement</code>.
+		 *
 		 * @see IfStatement
 		 */
 		case ASTNode.IF_STATEMENT:
@@ -964,9 +945,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ImportDeclaration</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ImportDeclaration</code>.
+		 *
 		 * @see ImportDeclaration
 		 */
 		case ASTNode.IMPORT_DECLARATION:
@@ -974,9 +954,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>InfixExpression</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>InfixExpression</code>.
+		 *
 		 * @see InfixExpression
 		 */
 		case ASTNode.INFIX_EXPRESSION:
@@ -984,9 +963,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>Initializer</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>Initializer</code>.
+		 *
 		 * @see Initializer
 		 */
 		case ASTNode.INITIALIZER:
@@ -995,7 +973,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>Javadoc</code>.
-		 * 
+		 *
 		 * @see Javadoc
 		 */
 		case ASTNode.JAVADOC:
@@ -1003,9 +981,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>LabeledStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>LabeledStatement</code>.
+		 *
 		 * @see LabeledStatement
 		 */
 		case ASTNode.LABELED_STATEMENT:
@@ -1013,9 +990,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>MethodDeclaration</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>MethodDeclaration</code>.
+		 *
 		 * @see MethodDeclaration
 		 */
 		case ASTNode.METHOD_DECLARATION:
@@ -1023,9 +999,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>MethodInvocation</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>MethodInvocation</code>.
+		 *
 		 * @see MethodInvocation
 		 */
 		case ASTNode.METHOD_INVOCATION:
@@ -1033,9 +1008,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>NullLiteral</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>NullLiteral</code>.
+		 *
 		 * @see NullLiteral
 		 */
 		case ASTNode.NULL_LITERAL:
@@ -1043,9 +1017,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>NumberLiteral</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>NumberLiteral</code>.
+		 *
 		 * @see NumberLiteral
 		 */
 		case ASTNode.NUMBER_LITERAL:
@@ -1053,9 +1026,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>PackageDeclaration</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>PackageDeclaration</code>.
+		 *
 		 * @see PackageDeclaration
 		 */
 		case ASTNode.PACKAGE_DECLARATION:
@@ -1065,7 +1037,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>ParenthesizedExpression</code>.
-		 * 
+		 *
 		 * @see ParenthesizedExpression
 		 */
 		case ASTNode.PARENTHESIZED_EXPRESSION:
@@ -1073,9 +1045,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>PostfixExpression</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>PostfixExpression</code>.
+		 *
 		 * @see PostfixExpression
 		 */
 		case ASTNode.POSTFIX_EXPRESSION:
@@ -1083,9 +1054,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>PrefixExpression</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>PrefixExpression</code>.
+		 *
 		 * @see PrefixExpression
 		 */
 		case ASTNode.PREFIX_EXPRESSION:
@@ -1093,9 +1063,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>PrimitiveType</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>PrimitiveType</code>.
+		 *
 		 * @see PrimitiveType
 		 */
 		case ASTNode.PRIMITIVE_TYPE:
@@ -1103,9 +1072,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>QualifiedName</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>QualifiedName</code>.
+		 *
 		 * @see QualifiedName
 		 */
 		case ASTNode.QUALIFIED_NAME:
@@ -1113,9 +1081,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ReturnStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ReturnStatement</code>.
+		 *
 		 * @see ReturnStatement
 		 */
 		case ASTNode.RETURN_STATEMENT:
@@ -1124,7 +1091,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>SimpleName</code>.
-		 * 
+		 *
 		 * @see SimpleName
 		 */
 		case ASTNode.SIMPLE_NAME:
@@ -1133,7 +1100,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>SimpleType</code>.
-		 * 
+		 *
 		 * @see SimpleType
 		 */
 		case ASTNode.SIMPLE_TYPE:
@@ -1143,7 +1110,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>SingleVariableDeclaration</code>.
-		 * 
+		 *
 		 * @see SingleVariableDeclaration
 		 */
 		case ASTNode.SINGLE_VARIABLE_DECLARATION:
@@ -1151,9 +1118,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>StringLiteral</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>StringLiteral</code>.
+		 *
 		 * @see StringLiteral
 		 */
 		case ASTNode.STRING_LITERAL:
@@ -1163,7 +1129,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>SuperConstructorInvocation</code>.
-		 * 
+		 *
 		 * @see SuperConstructorInvocation
 		 */
 		case ASTNode.SUPER_CONSTRUCTOR_INVOCATION:
@@ -1171,9 +1137,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>SuperFieldAccess</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>SuperFieldAccess</code>.
+		 *
 		 * @see SuperFieldAccess
 		 */
 		case ASTNode.SUPER_FIELD_ACCESS:
@@ -1183,7 +1148,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>SuperMethodInvocation</code>.
-		 * 
+		 *
 		 * @see SuperMethodInvocation
 		 */
 		case ASTNode.SUPER_METHOD_INVOCATION:
@@ -1192,7 +1157,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>SwitchCase</code>.
-		 * 
+		 *
 		 * @see SwitchCase
 		 */
 		case ASTNode.SWITCH_CASE:
@@ -1200,9 +1165,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>SwitchStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>SwitchStatement</code>.
+		 *
 		 * @see SwitchStatement
 		 */
 		case ASTNode.SWITCH_STATEMENT:
@@ -1212,7 +1176,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>SynchronizedStatement</code>.
-		 * 
+		 *
 		 * @see SynchronizedStatement
 		 */
 		case ASTNode.SYNCHRONIZED_STATEMENT:
@@ -1220,9 +1184,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ThisExpression</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ThisExpression</code>.
+		 *
 		 * @see ThisExpression
 		 */
 		case ASTNode.THIS_EXPRESSION:
@@ -1230,9 +1193,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ThrowStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ThrowStatement</code>.
+		 *
 		 * @see ThrowStatement
 		 */
 		case ASTNode.THROW_STATEMENT:
@@ -1240,9 +1202,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>TryStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>TryStatement</code>.
+		 *
 		 * @see TryStatement
 		 */
 		case ASTNode.TRY_STATEMENT:
@@ -1250,9 +1211,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>TypeDeclaration</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>TypeDeclaration</code>.
+		 *
 		 * @see TypeDeclaration
 		 */
 		case ASTNode.TYPE_DECLARATION:
@@ -1262,7 +1222,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>TypeDeclarationStatement</code>.
-		 * 
+		 *
 		 * @see TypeDeclarationStatement
 		 */
 		case ASTNode.TYPE_DECLARATION_STATEMENT:
@@ -1270,9 +1230,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>TypeLiteral</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>TypeLiteral</code>.
+		 *
 		 * @see TypeLiteral
 		 */
 		case ASTNode.TYPE_LITERAL:
@@ -1282,7 +1241,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>VariableDeclarationExpression</code>.
-		 * 
+		 *
 		 * @see VariableDeclarationExpression
 		 */
 		case ASTNode.VARIABLE_DECLARATION_EXPRESSION:
@@ -1292,7 +1251,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>VariableDeclarationFragment</code>.
-		 * 
+		 *
 		 * @see VariableDeclarationFragment
 		 */
 		case ASTNode.VARIABLE_DECLARATION_FRAGMENT:
@@ -1302,7 +1261,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>VariableDeclarationStatement</code>.
-		 * 
+		 *
 		 * @see VariableDeclarationStatement
 		 */
 		case ASTNode.VARIABLE_DECLARATION_STATEMENT:
@@ -1310,9 +1269,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>WhileStatement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>WhileStatement</code>.
+		 *
 		 * @see WhileStatement
 		 */
 		case ASTNode.WHILE_STATEMENT:
@@ -1322,7 +1280,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>InstanceofExpression</code>.
-		 * 
+		 *
 		 * @see InstanceofExpression
 		 */
 		case ASTNode.INSTANCEOF_EXPRESSION:
@@ -1330,9 +1288,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>LineComment</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>LineComment</code>.
+		 *
 		 * @see LineComment
 		 * @since 3.0
 		 */
@@ -1341,9 +1298,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>BlockComment</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>BlockComment</code>.
+		 *
 		 * @see BlockComment
 		 * @since 3.0
 		 */
@@ -1353,7 +1309,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>TagElement</code>.
-		 * 
+		 *
 		 * @see TagElement
 		 * @since 3.0
 		 */
@@ -1362,9 +1318,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>TextElement</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>TextElement</code>.
+		 *
 		 * @see TextElement
 		 * @since 3.0
 		 */
@@ -1374,7 +1329,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>MemberRef</code>.
-		 * 
+		 *
 		 * @see MemberRef
 		 * @since 3.0
 		 */
@@ -1384,7 +1339,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>MethodRef</code>.
-		 * 
+		 *
 		 * @see MethodRef
 		 * @since 3.0
 		 */
@@ -1393,9 +1348,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>MethodRefParameter</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>MethodRefParameter</code>.
+		 *
 		 * @see MethodRefParameter
 		 * @since 3.0
 		 */
@@ -1406,7 +1360,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>EnhancedForStatement</code>.
-		 * 
+		 *
 		 * @see EnhancedForStatement
 		 * @since 3.1
 		 */
@@ -1415,9 +1369,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>EnumDeclaration</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>EnumDeclaration</code>.
+		 *
 		 * @see EnumDeclaration
 		 * @since 3.1
 		 */
@@ -1428,7 +1381,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>EnumConstantDeclaration</code>.
-		 * 
+		 *
 		 * @see EnumConstantDeclaration
 		 * @since 3.1
 		 */
@@ -1437,9 +1390,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>TypeParameter</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>TypeParameter</code>.
+		 *
 		 * @see TypeParameter
 		 * @since 3.1
 		 */
@@ -1448,9 +1400,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ParameterizedType</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ParameterizedType</code>.
+		 *
 		 * @see ParameterizedType
 		 * @since 3.1
 		 */
@@ -1459,9 +1410,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>QualifiedType</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>QualifiedType</code>.
+		 *
 		 * @see QualifiedType
 		 * @since 3.1
 		 */
@@ -1470,9 +1420,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>WildcardType</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>WildcardType</code>.
+		 *
 		 * @see WildcardType
 		 * @since 3.1
 		 */
@@ -1481,9 +1430,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>NormalAnnotation</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>NormalAnnotation</code>.
+		 *
 		 * @see NormalAnnotation
 		 * @since 3.1
 		 */
@@ -1492,9 +1440,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>MarkerAnnotation</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>MarkerAnnotation</code>.
+		 *
 		 * @see MarkerAnnotation
 		 * @since 3.1
 		 */
@@ -1505,7 +1452,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>SingleMemberAnnotation</code>.
-		 * 
+		 *
 		 * @see SingleMemberAnnotation
 		 * @since 3.1
 		 */
@@ -1514,9 +1461,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>MemberValuePair</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>MemberValuePair</code>.
+		 *
 		 * @see MemberValuePair
 		 * @since 3.1
 		 */
@@ -1527,7 +1473,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>AnnotationTypeDeclaration</code>.
-		 * 
+		 *
 		 * @see AnnotationTypeDeclaration
 		 * @since 3.1
 		 */
@@ -1538,7 +1484,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>AnnotationTypeMemberDeclaration</code>.
-		 * 
+		 *
 		 * @see AnnotationTypeMemberDeclaration
 		 * @since 3.1
 		 */
@@ -1548,7 +1494,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>Modifier</code>.
-		 * 
+		 *
 		 * @see Modifier
 		 * @since 3.1
 		 */
@@ -1558,7 +1504,7 @@ abstract class ASTNodeProcessor {
 
 		/**
 		 * Node type constant indicating a node of type <code>UnionType</code>.
-		 * 
+		 *
 		 * @see UnionType
 		 * @since 3.7.1
 		 */
@@ -1577,9 +1523,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>LambdaExpression</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>LambdaExpression</code>.
+		 *
 		 * @see LambdaExpression
 		 * @since 3.10
 		 */
@@ -1588,8 +1533,7 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>IntersectionType</code>.
+		 * Node type constant indicating a node of type <code>IntersectionType</code>.
 		 *
 		 * @see IntersectionType
 		 * @since 3.10
@@ -1599,9 +1543,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>NameQualifiedType</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>NameQualifiedType</code>.
+		 *
 		 * @see NameQualifiedType
 		 * @since 3.10
 		 */
@@ -1610,9 +1553,8 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>CreationReference</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>CreationReference</code>.
+		 *
 		 * @see CreationReference
 		 * @since 3.10
 		 */
@@ -1623,7 +1565,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>ExpressionMethodReference</code>.
-		 * 
+		 *
 		 * @see ExpressionMethodReference
 		 * @since 3.10
 		 */
@@ -1634,7 +1576,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>SuperMethhodReference</code>.
-		 * 
+		 *
 		 * @see SuperMethodReference
 		 * @since 3.10
 		 */
@@ -1645,7 +1587,7 @@ abstract class ASTNodeProcessor {
 		/**
 		 * Node type constant indicating a node of type
 		 * <code>TypeMethodReference</code>.
-		 * 
+		 *
 		 * @see TypeMethodReference
 		 * @since 3.10
 		 */
@@ -1654,99 +1596,88 @@ abstract class ASTNodeProcessor {
 			break;
 
 		/**
-		 * Node type constant indicating a node of type
-		 * <code>ModuleDeclaration</code>.
-		 * 
+		 * Node type constant indicating a node of type <code>ModuleDeclaration</code>.
+		 *
 		 * @see ModuleDeclaration
 		 * @since 3.14
 		 */
 		/*
-		 * case ASTNode.MODULE_DECLARATION: this.ascend((ModuleDeclaration)
-		 * node); break;
-		 * 
+		 * case ASTNode.MODULE_DECLARATION: this.ascend((ModuleDeclaration) node);
+		 * break;
+		 *
 		 *//**
-			 * Node type constant indicating a node of type
-			 * <code>RequiresDirective</code>.
-			 * 
+			 * Node type constant indicating a node of type <code>RequiresDirective</code>.
+			 *
 			 * @see RequiresDirective
 			 * @since 3.14
 			 */
 		/*
-		 * case ASTNode.REQUIRES_DIRECTIVE: this.ascend((RequiresDirective)
-		 * node); break;
-		 * 
+		 * case ASTNode.REQUIRES_DIRECTIVE: this.ascend((RequiresDirective) node);
+		 * break;
+		 *
 		 *//**
-			 * Node type constant indicating a node of type
-			 * <code>ExportsDirective</code>.
-			 * 
+			 * Node type constant indicating a node of type <code>ExportsDirective</code>.
+			 *
 			 * @see ExportsDirective
 			 * @since 3.14
 			 */
 		/*
-		 * case ASTNode.EXPORTS_DIRECTIVE: this.ascend((ExportsDirective) node);
-		 * break;
-		 * 
+		 * case ASTNode.EXPORTS_DIRECTIVE: this.ascend((ExportsDirective) node); break;
+		 *
 		 *//**
-			 * Node type constant indicating a node of type
-			 * <code>OpensDirective</code>.
-			 * 
+			 * Node type constant indicating a node of type <code>OpensDirective</code>.
+			 *
 			 * @see OpensDirective
 			 * @since 3.14
 			 */
 		/*
-		 * case ASTNode.OPENS_DIRECTIVE: this.ascend((OpensDirective) node);
-		 * break;
-		 * 
+		 * case ASTNode.OPENS_DIRECTIVE: this.ascend((OpensDirective) node); break;
+		 *
 		 *//**
-			 * Node type constant indicating a node of type
-			 * <code>UsesDirective</code>.
-			 * 
+			 * Node type constant indicating a node of type <code>UsesDirective</code>.
+			 *
 			 * @see UsesDirective
 			 * @since 3.14
 			 */
 		/*
-		 * case ASTNode.USES_DIRECTIVE: this.ascend((UsesDirective) node);
-		 * break;
-		 * 
+		 * case ASTNode.USES_DIRECTIVE: this.ascend((UsesDirective) node); break;
+		 *
 		 *//**
-			 * Node type constant indicating a node of type
-			 * <code>ProvidesDirective</code>.
-			 * 
+			 * Node type constant indicating a node of type <code>ProvidesDirective</code>.
+			 *
 			 * @see ProvidesDirective
 			 * @since 3.14
 			 */
 		/*
-		 * case ASTNode.PROVIDES_DIRECTIVE: this.ascend((ProvidesDirective)
-		 * node); break;
-		 * 
+		 * case ASTNode.PROVIDES_DIRECTIVE: this.ascend((ProvidesDirective) node);
+		 * break;
+		 *
 		 *//**
-			 * Node type constant indicating a node of type
-			 * <code>ModuleModifier</code>.
-			 * 
+			 * Node type constant indicating a node of type <code>ModuleModifier</code>.
+			 *
 			 * @see ModuleModifier
 			 * @since 3.14
 			 *//*
-				 * case ASTNode.MODULE_MODIFIER: this.ascend((ModuleModifier)
-				 * node); break;
+				 * case ASTNode.MODULE_MODIFIER: this.ascend((ModuleModifier) node); break;
 				 */
 		}
 	}
 
 	/*
-	 * void ascend(ModuleDeclaration node) { } void ascend(RequiresDirective
-	 * node) { } void ascend(ExportsDirective node) { } void
-	 * ascend(OpensDirective node) { } void ascend(UsesDirective node) { } void
-	 * ascend(ProvidesDirective node) { } void ascend(ModuleModifier node) { }
+	 * void ascend(ModuleDeclaration node) { } void ascend(RequiresDirective node) {
+	 * } void ascend(ExportsDirective node) { } void ascend(OpensDirective node) { }
+	 * void ascend(UsesDirective node) { } void ascend(ProvidesDirective node) { }
+	 * void ascend(ModuleModifier node) { }
 	 */
 
 	/**
 	 * Processes the {@link org.eclipse.jdt.core.dom.ASTNode} to determine the
 	 * descent method with the correct signature to call.
-	 * 
+	 *
 	 * @param node
 	 * @throws CoreException
 	 */
-	void processDescent(ASTNode node) throws CoreException {
+	void processDescent(final ASTNode node) throws CoreException {
 		if (node instanceof NormalAnnotation)
 			this.descend((NormalAnnotation) node);
 		else if (node instanceof MarkerAnnotation)

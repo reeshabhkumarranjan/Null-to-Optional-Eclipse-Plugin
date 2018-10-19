@@ -1,5 +1,7 @@
 package edu.cuny.hunter.optionalrefactoring.core.exceptions;
 
+import java.util.EnumSet;
+
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -15,8 +17,13 @@ public class HarvesterASTException extends HarvesterException {
 
 	private final ASTNode problem;
 
-	public HarvesterASTException(String message, PreconditionFailure failure, ASTNode problem) {
-		super(message, failure);
+	public HarvesterASTException(final EnumSet<PreconditionFailure> failures, final ASTNode problem) {
+		super(problem.toString(), failures);
+		this.problem = problem;
+	}
+
+	public HarvesterASTException(final PreconditionFailure failure, final ASTNode problem) {
+		super(problem.toString(), failure);
 		this.problem = problem;
 	}
 

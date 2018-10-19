@@ -1,5 +1,7 @@
 package edu.cuny.hunter.optionalrefactoring.core.exceptions;
 
+import java.util.EnumSet;
+
 import org.eclipse.jdt.core.IJavaElement;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
@@ -13,8 +15,13 @@ public class HarvesterJavaModelException extends HarvesterException {
 
 	private final IJavaElement element;
 
-	public HarvesterJavaModelException(String message, PreconditionFailure failure, IJavaElement element) {
-		super(message, failure);
+	public HarvesterJavaModelException(final EnumSet<PreconditionFailure> failures, final IJavaElement element) {
+		super(element.toString(), failures);
+		this.element = element;
+	}
+
+	public HarvesterJavaModelException(final PreconditionFailure failure, final IJavaElement element) {
+		super(element.toString(), failure);
 		this.element = element;
 	}
 

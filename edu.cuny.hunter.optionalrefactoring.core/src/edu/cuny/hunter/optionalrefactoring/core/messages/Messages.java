@@ -6,7 +6,7 @@ package edu.cuny.hunter.optionalrefactoring.core.messages;
 import org.eclipse.osgi.util.NLS;
 
 /**
- * @author raffi
+ * @author raffi, oren
  *
  */
 public class Messages extends NLS {
@@ -14,6 +14,7 @@ public class Messages extends NLS {
 
 	public static final String ConvertNullToOptionalTypePage_Description = "Select the Java Model Elements to convert nulls to optionals.";
 
+	public static String Enhanced_For;
 	public static String Name;
 	public static String CategoryName;
 	public static String CategoryDescription;
@@ -33,7 +34,13 @@ public class Messages extends NLS {
 	public static String Harvester_PreconditionFailureFailure;
 	public static String Harvester_JavaModelError;
 	public static String Harvester_SetFailure;
-	public static String Excluded_by_Settings;
+	public static String Bridging_Excluded;
+	public static String Entity_Excluded;
+	public static String Cast_Expression;
+	public static String InstanceOf_Expression;
+	public static String Object_Type;
+	public static String Entity_NoFailures;
+	public static String Comparison_Op;
 
 	static {
 		// initialize resource bundle

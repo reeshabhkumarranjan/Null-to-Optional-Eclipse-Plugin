@@ -10,21 +10,22 @@ class TreeTrimingVisitor implements Visitor {
 	private final Set<ComputationNode> computationForest;
 	private final Set<IJavaElement> nonEnumerizableList;
 
-	public TreeTrimingVisitor(Set<ComputationNode> computationForest, Set<IJavaElement> nonEnumerizableList) {
+	public TreeTrimingVisitor(final Set<ComputationNode> computationForest,
+			final Set<IJavaElement> nonEnumerizableList) {
 		this.nonEnumerizableList = nonEnumerizableList;
 		this.computationForest = computationForest;
 	}
 
 	@Override
-	public void visit(ComputationNode node) {
+	public void visit(final ComputationNode node) {
 	}
 
 	@Override
-	public void visit(UnionComputationNode node) {
+	public void visit(final UnionComputationNode node) {
 	}
 
 	@Override
-	public void visit(ValuedComputationNode node) {
+	public void visit(final ValuedComputationNode node) {
 		final IJavaElement extractedValue = node.getVal();
 		if (this.nonEnumerizableList.contains(extractedValue))
 			this.computationForest.remove(node.getRoot());

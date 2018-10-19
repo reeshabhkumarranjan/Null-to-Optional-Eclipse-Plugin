@@ -3,6 +3,9 @@
  */
 package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
+import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.CAST_EXPRESSION;
+import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.ENHANCED_FOR;
+import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.NO_BRIDGING_ALLOWED;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.setOf;
 
 import java.io.IOException;
@@ -10,10 +13,12 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -21,14 +26,20 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.tests.refactoring.Java18Setup;
+import org.eclipse.ltk.core.refactoring.NullChange;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 
 import edu.cuny.citytech.refactoring.common.tests.RefactoringTest;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.N2ORefactoringStatusContext;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.Choice;
+import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
@@ -43,23 +54,43 @@ import junit.framework.TestSuite;
 @SuppressWarnings("restriction")
 public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
+	private static class MockEntryData {
+		Integer severity;
+		String message;
+		EnumSet<PreconditionFailure> pf;
+		Integer code;
+
+		/**
+		 * @param s  RefactoringStatus severity
+		 * @param pf set of failures
+		 * @param m  message from highest precedence failure
+		 * @param c  code from highest precedence failure
+		 */
+		MockEntryData(final Integer s, final EnumSet<PreconditionFailure> pf, final PreconditionFailure f) {
+			/* we take the precondition failure code with the lowest integer value */
+			this.severity = s;
+			this.message = f.getMessage();
+			this.pf = pf;
+			this.code = f.getCode();
+		}
+	}
+
 	private static final Class<ConvertNullToOptionalRefactoringTest> clazz = ConvertNullToOptionalRefactoringTest.class;
 
 	private static final String REFACTORING_PATH = "ConvertNullToOptional/";
 
 	/**
-	 * The name of the directory containing resources under the project
-	 * directory.
+	 * The name of the directory containing resources under the project directory.
 	 */
 	private static final String RESOURCE_PATH = "resources";
 
 	private static final Logger LOGGER = Logger.getLogger(clazz.getName());
 
-	private static boolean compiles(String source) throws IOException {
+	private static boolean compiles(final String source) throws IOException {
 		return compiles(source, Files.createTempDirectory(null));
 	}
 
-	public static Test setUpTest(Test test) {
+	public static Test setUpTest(final Test test) {
 		return new Java18Setup(test);
 	}
 
@@ -67,7 +98,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		return setUpTest(new TestSuite(clazz));
 	}
 
-	public ConvertNullToOptionalRefactoringTest(String name) {
+	public ConvertNullToOptionalRefactoringTest(final String name) {
 		super(name);
 	}
 
@@ -79,11 +110,12 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	 * (org.eclipse.jdt.core.IPackageFragment, java.lang.String)
 	 */
 	@Override
-	protected ICompilationUnit createCUfromTestFile(IPackageFragment pack, String cuName) throws Exception {
-		ICompilationUnit unit = super.createCUfromTestFile(pack, cuName);
+	protected ICompilationUnit createCUfromTestFile(final IPackageFragment pack, final String cuName) throws Exception {
+		final ICompilationUnit unit = super.createCUfromTestFile(pack, cuName);
 
 		// full path of where the CU exists.
-		Path directory = Paths.get(unit.getParent().getParent().getParent().getResource().getLocation().toString());
+		final Path directory = Paths
+				.get(unit.getParent().getParent().getParent().getResource().getLocation().toString());
 
 		// compile it to make and store the class file.
 		assertTrue("Input should compile", compiles(unit.getSource(), directory));
@@ -91,9 +123,64 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		return unit;
 	}
 
-	private Path getAbsolutionPath(String fileName) {
-		Path path = Paths.get(RESOURCE_PATH, fileName);
-		Path absolutePath = path.toAbsolutePath();
+	private RefactoringStatus createExpectedStatus(final MockEntryData[] list) {
+		final RefactoringStatus rs = new RefactoringStatus();
+		for (final MockEntryData tuple : list)
+			rs.addEntry(new RefactoringStatusEntry(tuple.severity, tuple.message,
+					new N2ORefactoringStatusContext(null, null, tuple.pf),
+					ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, tuple.code));
+		return rs;
+	}
+
+	/**
+	 * Checks if an expected RefactoringStatus mocked by test is equal to a
+	 * RefactoringStatus from the Refactoring.
+	 *
+	 * @param first
+	 * @param second
+	 * @return
+	 */
+	private boolean equivalentRefactoringStatus(final RefactoringStatus first, final RefactoringStatus second) {
+		if (first.isOK() || first.hasFatalError())
+			return first.getSeverity() == second.getSeverity();
+		else
+			return first.getSeverity() == second.getSeverity() && Stream.of(first.getEntries()).allMatch(left -> // check
+																													// if
+																													// all
+																													// the
+																													// first
+																													// are
+																													// present
+																													// in
+																													// second
+			Stream.of(second.getEntries()).anyMatch(right -> this.equivalentRefactoringStatusEntry(left, right)))
+					&& Stream.of(second.getEntries()).allMatch(left -> // check if all the second are present in first
+					Stream.of(first.getEntries())
+							.anyMatch(right -> this.equivalentRefactoringStatusEntry(left, right)));
+	}
+
+	/**
+	 * Checks if a RefactoringStatusEntry from a mocked RefactoringStatus matches
+	 * one from the Refactoring. Checks severity, message, context, pluginId, and
+	 * code for equality, but in the case of context it only checks that the set of
+	 * PreconditionFailures is the same, and does not check the element or
+	 * sourceRange.
+	 *
+	 * @param first
+	 * @param second
+	 * @return
+	 */
+	private boolean equivalentRefactoringStatusEntry(final RefactoringStatusEntry first,
+			final RefactoringStatusEntry second) {
+		return first.getSeverity() == second.getSeverity() && first.getMessage().equals(second.getMessage())
+				&& ((N2ORefactoringStatusContext) first.getContext()).getPreconditionFailures()
+						.equals(((N2ORefactoringStatusContext) second.getContext()).getPreconditionFailures())
+				&& first.getPluginId().equals(second.getPluginId()) && first.getCode() == second.getCode();
+	}
+
+	private Path getAbsolutionPath(final String fileName) {
+		final Path path = Paths.get(RESOURCE_PATH, fileName);
+		final Path absolutePath = path.toAbsolutePath();
 		return absolutePath;
 	}
 
@@ -102,15 +189,14 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	 *
 	 * @see
 	 * org.eclipse.jdt.ui.tests.refactoring.RefactoringTest#getFileContents(java
-	 * .lang.String) Had to override this method because, since this plug-in is
-	 * a fragment (at least I think that this is the reason), it doesn't have an
-	 * activator and the bundle is resolving to the eclipse refactoring test
-	 * bundle.
+	 * .lang.String) Had to override this method because, since this plug-in is a
+	 * fragment (at least I think that this is the reason), it doesn't have an
+	 * activator and the bundle is resolving to the eclipse refactoring test bundle.
 	 */
 	@Override
-	public String getFileContents(String fileName) throws IOException {
-		Path absolutePath = this.getAbsolutionPath(fileName);
-		byte[] encoded = Files.readAllBytes(absolutePath);
+	public String getFileContents(final String fileName) throws IOException {
+		final Path absolutePath = this.getAbsolutionPath(fileName);
+		final byte[] encoded = Files.readAllBytes(absolutePath);
 		return new String(encoded, Charset.defaultCharset());
 	}
 
@@ -120,13 +206,11 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	@Override
-	protected Refactoring getRefactoring(IJavaElement... elements) throws JavaModelException {
-		ConvertNullToOptionalRefactoringProcessor processor = Util.createNullToOptionalRefactoringProcessor(elements,
-				RefactoringSettings
-						.testDefaults() /*
-										 * here the test defaults are injected
-										 */,
-				Optional.empty());
+	protected Refactoring getRefactoring(final IJavaElement... elements) throws JavaModelException {
+		final ConvertNullToOptionalRefactoringProcessor processor = Util.createNullToOptionalRefactoringProcessor(
+				elements, RefactoringSettings.testDefaults() /*
+																 * here the test defaults are injected
+																 */, Optional.empty());
 		return new ProcessorBasedRefactoring(processor);
 	}
 
@@ -135,43 +219,48 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		return REFACTORING_PATH;
 	}
 
-	private ConvertNullToOptionalRefactoringProcessor getRefactoringProcessor(ICompilationUnit icu)
+	private ConvertNullToOptionalRefactoringProcessor getRefactoringProcessor(final ICompilationUnit icu)
 			throws JavaModelException {
 		// we know it's a ProcessorBasedRefactoring since we overriding
 		// getRefactoring()
 		// in this class.
-		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
+		final ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
 
 		// we know it's a ConvertNullToOptionalRefactoringProcessor since we
 		// overriding
 		// getRefactoring() in this class.
-		ConvertNullToOptionalRefactoringProcessor refactoringProcessor = (ConvertNullToOptionalRefactoringProcessor) refactoring
+		final ConvertNullToOptionalRefactoringProcessor refactoringProcessor = (ConvertNullToOptionalRefactoringProcessor) refactoring
 				.getProcessor();
 		return refactoringProcessor;
 	}
 
-	private void propagationHelper(Set<Set<String>> expectedPassingSets, Set<Set<String>> expectedFailingSet,
-			Choice turnOff, RefactoringStatus expectedStatus) throws Exception {
+	private void propagationHelper(final Set<Set<String>> expectedPassingSets,
+			final Set<Set<String>> expectedFailingSet, final Choice turnOff, final RefactoringStatus expectedStatus)
+			throws Exception {
 
 		System.out.println();
 		// compute the actual results.
-		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+		final ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 
-		ConvertNullToOptionalRefactoringProcessor refactoring = this.getRefactoringProcessor(icu);
+		final ConvertNullToOptionalRefactoringProcessor refactoring = this.getRefactoringProcessor(icu);
 
 		if (turnOff != null)
 			refactoring.settings().set(false, turnOff);
 
-		RefactoringStatus status = refactoring.checkFinalConditions(new NullProgressMonitor(), null);
+		final RefactoringStatus status = refactoring.checkFinalConditions(new NullProgressMonitor(), null);
 
 		System.out.println(refactoring.settings());
 
 		// assert that the actual severity matches that of the expected.
 		assertEquals(expectedStatus.getSeverity(), status.getSeverity());
 
+		final Set<Entities> sets = refactoring.getEntities();
+
 		// Here we are getting all the sets of type dependent entities
-		Set<Entity> passingSets = refactoring.getPassingEntities();
-		Set<Entity> failingSet = refactoring.getFailingEntities();
+		final Set<Entities> passingSets = sets.stream().filter(entity -> !entity.status().hasError())
+				.collect(Collectors.toSet());
+		final Set<Entities> failingSet = sets.stream().filter(entity -> entity.status().hasError())
+				.collect(Collectors.toSet());
 
 		// print to console
 		System.out.println(this.getName() + " - SEVERITY: " + status.getSeverity());
@@ -191,10 +280,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		System.out.println("}");
 
 		// convert to sets of strings
-		Set<Set<String>> actualPassingSets = passingSets.stream().map(entity -> entity.element().stream()
+		final Set<Set<String>> actualPassingSets = passingSets.stream().map(entity -> entity.elements().stream()
 				.map(element -> element.getElementName()).collect(Collectors.toSet())).collect(Collectors.toSet());
 
-		Set<Set<String>> actualFailingSet = failingSet.stream().map(entity -> entity.element().stream()
+		final Set<Set<String>> actualFailingSet = failingSet.stream().map(entity -> entity.elements().stream()
 				.map(element -> element.getElementName()).collect(Collectors.toSet())).collect(Collectors.toSet());
 
 		assertNotNull(actualPassingSets);
@@ -208,8 +297,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	@Override
-	public void setFileContents(String fileName, String contents) throws IOException {
-		Path absolutePath = this.getAbsolutionPath(fileName);
+	public void setFileContents(final String fileName, final String contents) throws IOException {
+		final Path absolutePath = this.getAbsolutionPath(fileName);
 		Files.write(absolutePath, contents.getBytes());
 	}
 
@@ -283,16 +372,32 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 
-	public void testCastExpressionFailNoSeed() throws Exception {
-		this.propagationHelper(setOf(), setOf(), null, RefactoringStatus.createErrorStatus(""));
+	public void testBridgeEnhancedForStatementExpression() throws Exception {
+		this.transformationHelper(null, this.createExpectedStatus(new MockEntryData[] {
+				new MockEntryData(RefactoringStatus.INFO, EnumSet.of(ENHANCED_FOR), ENHANCED_FOR) }));
 	}
 
-	public void testCastExpressionFailureMethod() throws Exception {
-		this.propagationHelper(setOf(), setOf(setOf("x"), setOf("m")), null, RefactoringStatus.createErrorStatus(""));
+	public void testCastExpressionBridgeOffMethod() throws Exception {
+		this.propagationHelper(setOf(), setOf(setOf("a", "x")), Choice.BRIDGE_STATIC_OPERATORS,
+				this.createExpectedStatus(new MockEntryData[] { new MockEntryData(RefactoringStatus.ERROR,
+						EnumSet.of(CAST_EXPRESSION, NO_BRIDGING_ALLOWED), NO_BRIDGING_ALLOWED) }));
 	}
 
-	public void testCastExpressionFailureVariable() throws Exception {
-		this.propagationHelper(setOf(), setOf(setOf("a"), setOf("b")), null, RefactoringStatus.createErrorStatus(""));
+	public void testCastExpressionBridgeOffVarDecl() throws Exception {
+		this.propagationHelper(setOf(), setOf(setOf("a")), Choice.BRIDGE_STATIC_OPERATORS,
+				this.createExpectedStatus(new MockEntryData[] { new MockEntryData(RefactoringStatus.ERROR,
+						EnumSet.of(CAST_EXPRESSION, NO_BRIDGING_ALLOWED), NO_BRIDGING_ALLOWED) }));
+	}
+
+	public void testCastExpressionBridgeOnMethod() throws Exception {
+		this.propagationHelper(setOf(setOf("a", "x", "b")), setOf(), null,
+				this.createExpectedStatus(new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.INFO, EnumSet.of(CAST_EXPRESSION), CAST_EXPRESSION) }));
+	}
+
+	public void testCastExpressionBridgeOnVarDecl() throws Exception {
+		this.propagationHelper(setOf(setOf("a", "b")), setOf(), null, this.createExpectedStatus(new MockEntryData[] {
+				new MockEntryData(RefactoringStatus.INFO, EnumSet.of(CAST_EXPRESSION), CAST_EXPRESSION) }));
 	}
 
 	public void testComparisonLocalVariable() throws Exception {
@@ -335,7 +440,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testImplicitlyNullFieldConstructorInit() throws Exception {
-		this.transformationHelper(null, RefactoringStatus.createErrorStatus("No nulls to refactor."));
+		this.transformationHelper(null,
+				RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHavePassedThePreconditions));
 	}
 
 	public void testImplicitlyNullFieldNoConstructorInit() throws Exception {
@@ -392,7 +498,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testSettingsFieldsOff() throws Exception {
-		this.propagationHelper(setOf(), setOf(), Choice.REFACTOR_FIELDS, RefactoringStatus.createErrorStatus(""));
+		this.propagationHelper(setOf(), setOf(), Choice.REFACTOR_FIELDS,
+				RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHavePassedThePreconditions));
 	}
 
 	public void testSettingsFieldsOn() throws Exception {
@@ -402,7 +509,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testSettingsImplicitOff() throws Exception {
 		this.propagationHelper(setOf(), setOf(), Choice.CONSIDER_IMPLICITLY_NULL_FIELDS,
-				RefactoringStatus.createErrorStatus(""));
+				RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHavePassedThePreconditions));
 	}
 
 	public void testSettingsImplicitOn() throws Exception {
@@ -433,6 +540,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testSettingsParametersOn() throws Exception {
 		this.propagationHelper(setOf(setOf("x")), setOf(), null, new RefactoringStatus());
+	}
+
+	public void testTransformationEnhancedForStatement() throws Exception {
+		this.transformationHelper(null, new RefactoringStatus());
 	}
 
 	public void testTransformationFieldAccessAssignment() throws Exception {
@@ -475,28 +586,32 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 
-	private void transformationHelper(Choice turnOff, RefactoringStatus expectedStatus) throws Exception {
-		ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+	private void transformationHelper(final Choice turnOff, final RefactoringStatus expectedStatus) throws Exception {
+		final ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 
-		ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
-		ConvertNullToOptionalRefactoringProcessor processor = (ConvertNullToOptionalRefactoringProcessor) refactoring
+		final ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
+		final ConvertNullToOptionalRefactoringProcessor processor = (ConvertNullToOptionalRefactoringProcessor) refactoring
 				.getProcessor();
 
 		if (turnOff != null)
 			processor.settings().set(false, turnOff);
 
-		RefactoringStatus finalStatus = refactoring.checkFinalConditions(new NullProgressMonitor());
+		final RefactoringStatus finalStatus = refactoring.checkFinalConditions(new NullProgressMonitor());
 		this.getLogger().info("Final status: " + finalStatus);
 
 		assertTrue("Precondition checking returned the expected RefactoringStatus: " + expectedStatus + ".",
-				finalStatus.getSeverity() == expectedStatus.getSeverity());
-		this.performChange(refactoring, false);
+				this.equivalentRefactoringStatus(finalStatus, expectedStatus));
 
-		String outputTestFileName = this.getOutputTestFileName("A");
-		String actual = icu.getSource();
+		if (!finalStatus.hasFatalError())
+			this.performChange(refactoring, false);
+		else
+			this.performChange(new NullChange());
+
+		final String outputTestFileName = this.getOutputTestFileName("A");
+		final String actual = icu.getSource();
 		assertTrue("Actual output should compile.", compiles(actual));
 
-		String expected = this.getFileContents(outputTestFileName);
+		final String expected = this.getFileContents(outputTestFileName);
 		assertEqualLines(expected, actual);
 	}
 }

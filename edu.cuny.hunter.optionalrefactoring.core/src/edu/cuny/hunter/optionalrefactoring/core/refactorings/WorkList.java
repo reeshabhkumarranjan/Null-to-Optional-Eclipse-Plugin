@@ -16,7 +16,7 @@ public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJ
 	 */
 	private static final long serialVersionUID = 5357933777896982471L;
 
-	private static boolean isValidTypeSignature(String sig) {
+	private static boolean isValidTypeSignature(final String sig) {
 		if (Signature.getTypeSignatureKind(sig) == Signature.BASE_TYPE_SIGNATURE)
 			return true;
 		else if (Signature.getTypeSignatureKind(sig) == Signature.ARRAY_TYPE_SIGNATURE)
@@ -32,7 +32,7 @@ public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJ
 	private final Map<IJavaElement, ValuedComputationNode> elemToNode = new HashMap<>();
 
 	@Override
-	public boolean add(IJavaElement element) {
+	public boolean add(final IJavaElement element) {
 		// try {
 		// this.sanityCheck(element);
 		// } catch (final JavaModelException e) {
@@ -76,9 +76,9 @@ public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJ
 		}
 	}
 
-	public boolean addAll(Set<IJavaElement> c) {
+	public boolean addAll(final Set<IJavaElement> c) {
 		boolean changed = false;
-		for (IJavaElement element : c)
+		for (final IJavaElement element : c)
 			changed |= this.add(element);
 		return changed;
 	}
@@ -164,7 +164,7 @@ public class WorkList extends LinkedHashSet<IJavaElement> implements Iterable<IJ
 	// }
 	// }
 
-	private ComputationNode union(ComputationNode root1, ComputationNode root2) {
+	private ComputationNode union(final ComputationNode root1, final ComputationNode root2) {
 		final ComputationNode ret = new UnionComputationNode();
 		ret.makeParent(root1);
 		ret.makeParent(root2);

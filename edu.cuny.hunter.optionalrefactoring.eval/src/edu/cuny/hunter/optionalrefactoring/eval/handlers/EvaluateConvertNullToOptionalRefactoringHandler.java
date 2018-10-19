@@ -27,7 +27,7 @@ import org.osgi.framework.FrameworkUtil;
 import com.google.common.collect.Lists;
 
 import edu.cuny.citytech.refactoring.common.eval.handlers.EvaluateRefactoringHandler;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entity;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
@@ -92,8 +92,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							.checkAllConditions(new NullProgressMonitor());
 					resultsTimeCollector.stop();
 
-					Set<Entity> passingSets = processor.getPassingEntities();
-					Set<Entity> failingEntities = processor.getFailingEntities();
+					Set<Entities> passingSets = processor.getEntities();
 
 					System.out.print("{");
 					passingSets.forEach(set -> {
@@ -102,7 +101,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					});
 					System.out.println("}");
 
-					for (Entity set : passingSets) {
+					for (Entities set : passingSets) {
 						// Let's print some information about what's inside
 						setSummaryPrinter.printRecord(set.hashCode(), set.status());
 						for (IJavaElement element : set)

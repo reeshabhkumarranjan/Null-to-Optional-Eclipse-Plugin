@@ -20,7 +20,7 @@ public abstract class ComputationNode implements Visitable {
 
 	public List<ComputationNode> getAllChildren() {
 		final List<ComputationNode> ret = new ArrayList<>(this.children);
-		for (ComputationNode child : this.children)
+		for (final ComputationNode child : this.children)
 			ret.addAll(child.getAllChildren());
 		return ret;
 	}
@@ -36,7 +36,7 @@ public abstract class ComputationNode implements Visitable {
 
 		// Return the elements corresponding to those nodes.
 		final Set<IJavaElement> ret = new LinkedHashSet<>();
-		for (Object it : family) {
+		for (final Object it : family) {
 			final ComputationNode member = (ComputationNode) it;
 			if (member instanceof ValuedComputationNode)
 				ret.add(((ValuedComputationNode) member).getVal());
@@ -56,7 +56,7 @@ public abstract class ComputationNode implements Visitable {
 		return last;
 	}
 
-	public void makeParent(ComputationNode node) {
+	public void makeParent(final ComputationNode node) {
 		node.parent = this;
 		this.children.add(node);
 	}

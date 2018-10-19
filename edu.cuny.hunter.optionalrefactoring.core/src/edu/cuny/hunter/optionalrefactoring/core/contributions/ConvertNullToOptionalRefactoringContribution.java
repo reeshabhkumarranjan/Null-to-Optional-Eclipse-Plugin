@@ -15,13 +15,14 @@ import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptiona
 public class ConvertNullToOptionalRefactoringContribution extends JavaUIRefactoringContribution {
 
 	@Override
-	public RefactoringDescriptor createDescriptor(String id, String project, String description, String comment,
-			@SuppressWarnings("rawtypes") Map arguments, int flags) throws IllegalArgumentException {
+	public RefactoringDescriptor createDescriptor(final String id, final String project, final String description,
+			final String comment, @SuppressWarnings("rawtypes") final Map arguments, final int flags)
+			throws IllegalArgumentException {
 		return new ConvertNullToOptionalRefactoringDescriptor(id, project, description, comment, arguments, flags);
 	}
 
 	@Override
-	public Refactoring createRefactoring(JavaRefactoringDescriptor descriptor, RefactoringStatus status)
+	public Refactoring createRefactoring(final JavaRefactoringDescriptor descriptor, final RefactoringStatus status)
 			throws CoreException {
 		return descriptor.createRefactoring(status);
 	}
