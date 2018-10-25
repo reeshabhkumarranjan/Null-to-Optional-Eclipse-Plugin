@@ -185,9 +185,8 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod meth = Util.resolveElement(methDecl);
 		// Get the top most method
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
-		if (top == null)
-			throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, meth);
-		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(methDecl, top, this.settings);
+		final EnumSet<PreconditionFailure> pf = top == null ? 
+				EnumSet.of(PreconditionFailure.NON_SOURCE_CODE) : PreconditionFailure.check(methDecl, top, this.settings);
 		final Action action = Action.infer(methDecl, top, pf, this.settings);
 		if (pf.isEmpty())
 			this.addCandidate(top, methDecl, pf, action);
@@ -282,10 +281,8 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod meth = Util.resolveElement(node);
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
-		if (top == null)
-			throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, meth);
-
-		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, top, this.settings);
+		final EnumSet<PreconditionFailure> pf = top == null ? 
+				EnumSet.of(PreconditionFailure.NON_SOURCE_CODE) : PreconditionFailure.check(node, top, this.settings);
 		final Action action = Action.infer(node, top, pf, this.settings);
 		if (pf.isEmpty())
 			this.addCandidate(top, node, pf, action);
@@ -317,10 +314,8 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod meth = Util.resolveElement(node);
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
-		if (top == null)
-			throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, meth);
-
-		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, top, this.settings);
+		final EnumSet<PreconditionFailure> pf = top == null ? 
+				EnumSet.of(PreconditionFailure.NON_SOURCE_CODE) : PreconditionFailure.check(node, top, this.settings);
 		final Action action = Action.infer(node, top, pf, this.settings);
 		if (pf.isEmpty())
 			this.addCandidate(top, node, pf, action);
