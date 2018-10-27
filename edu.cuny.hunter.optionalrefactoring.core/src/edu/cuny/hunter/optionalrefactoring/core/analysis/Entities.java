@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.AST;
@@ -30,9 +29,11 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 
 import com.google.common.collect.Streams;
 
+import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.ASTNodeFinder;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -53,16 +54,21 @@ public class Entities implements Iterable<IJavaElement> {
 		}
 	}
 
-	public static Entities createWithInstances(final Set<IJavaElement> elements, final Set<Instance> instances) {
+	public static Entities create(final Set<IJavaElement> elements, final Set<Instance> instances, 
+			final RefactoringSettings settings) {
 		final Map<IJavaElement, Set<Instance>> mappedInstances = elements.stream()
 				.collect(Collectors.toMap(element -> element,
 						element -> instances.stream().filter(instance -> elements.contains(instance.element))
 								.filter(instance -> instance.element.equals(element)).collect(Collectors.toSet()),
 						(left, right) -> Streams.concat(left.stream(), right.stream()).collect(Collectors.toSet())));
-		final RefactoringStatus status = new RefactoringStatus();
-		instances.stream().filter(instance -> elements.contains(instance.element))
-				.filter(instance -> !instance.failures.isEmpty()).map(Util::createStatusEntry)
-				.collect(Collectors.toList()).forEach(entry -> status.addEntry(entry));
+		RefactoringStatus status = instances.stream()
+				.filter(instance -> elements.contains(instance.element))
+				.flatMap(instance -> instance.failures.stream().map(failure -> new RefactoringStatusEntry(failure.getSeverity(settings), 
+						failure.getMessage(),
+						new N2ORefactoringStatusContext(instance.element, Util.getSourceRange(instance.node), failure), 
+						ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID,
+						failure.getCode())))
+				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
 		return new Entities(status, elements, mappedInstances);
 	}
 

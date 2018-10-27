@@ -1,7 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
-import java.util.EnumSet;
-
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -12,13 +10,13 @@ public class N2ORefactoringStatusContext extends RefactoringStatusContext {
 
 	private final IJavaElement element;
 	private final ISourceRange sourceRange;
-	private final EnumSet<PreconditionFailure> preconditionFailures;
+	private final PreconditionFailure preconditionFailure;
 
 	public N2ORefactoringStatusContext(final IJavaElement element, final ISourceRange range,
-			final EnumSet<PreconditionFailure> failures) {
+			final PreconditionFailure failure) {
 		this.element = element;
 		this.sourceRange = range;
-		this.preconditionFailures = failures;
+		this.preconditionFailure = failure;
 	}
 
 	public IClassFile getClassFile() {
@@ -34,8 +32,8 @@ public class N2ORefactoringStatusContext extends RefactoringStatusContext {
 		return this.element;
 	}
 
-	public EnumSet<PreconditionFailure> getPreconditionFailures() {
-		return this.preconditionFailures;
+	public PreconditionFailure getPreconditionFailure() {
+		return this.preconditionFailure;
 	}
 
 	public ISourceRange getSourceRange() {

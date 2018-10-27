@@ -33,6 +33,7 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
@@ -113,7 +114,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	void ascend(final CastExpression node) throws CoreException {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
 		final Action action = Action.infer(node, pf, this.settings);
-		if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, node);
 		else
 			/*
@@ -213,7 +214,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	void descend(final CastExpression node) throws CoreException {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
 		final Action action = Action.infer(node, pf, this.settings);
-		if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, node);
 		else
 			/*
@@ -232,7 +233,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		final Action action = Action.infer(node, element, pf, this.settings);
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
-		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, node);
 		else
 			this.addInstance(element, node, pf, action);
@@ -251,7 +252,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			return;
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
 		final Action action = Action.infer(node, pf, this.settings);
-		if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, node);
 		else
 			this.addInstance(null, node, pf, action);
@@ -276,7 +277,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		final Action action = Action.infer(node, element, pf, this.settings);
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
-		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, node);
 		else
 			this.addInstance(element, node, pf, action);
@@ -309,7 +310,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 						final Action action = Action.infer(svd, element, pf, N2ONodeProcessor.this.settings);
 						if (pf.isEmpty())
 							N2ONodeProcessor.this.addCandidate(element, svd, pf, action);
-						else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+						else if (pf.stream().anyMatch(f -> f.getSeverity(N2ONodeProcessor.this.settings) >= RefactoringStatus.ERROR))
 							throw new HarvesterASTException(pf, svd);
 						else
 							N2ONodeProcessor.this.addInstance(element, svd, pf, action);
@@ -341,7 +342,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		final Action action = Action.infer(node, element, pf, this.settings);
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
-		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, node);
 		else
 			this.addInstance(element, node, pf, action);

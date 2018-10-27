@@ -5,7 +5,6 @@ package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
 import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.CAST_EXPRESSION;
 import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.ENHANCED_FOR;
-import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.NO_BRIDGING_ALLOWED;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.setOf;
 
 import java.io.IOException;
@@ -13,7 +12,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -57,7 +55,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	private static class MockEntryData {
 		Integer severity;
 		String message;
-		EnumSet<PreconditionFailure> pf;
+		PreconditionFailure pf;
 		Integer code;
 
 		/**
@@ -66,11 +64,11 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		 * @param m  message from highest precedence failure
 		 * @param c  code from highest precedence failure
 		 */
-		MockEntryData(final Integer s, final EnumSet<PreconditionFailure> pf, final PreconditionFailure f) {
+		MockEntryData(final Integer s, final PreconditionFailure f) {
 			/* we take the precondition failure code with the lowest integer value */
 			this.severity = s;
 			this.message = f.getMessage();
-			this.pf = pf;
+			this.pf = f;
 			this.code = f.getCode();
 		}
 	}
@@ -173,8 +171,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	private boolean equivalentRefactoringStatusEntry(final RefactoringStatusEntry first,
 			final RefactoringStatusEntry second) {
 		return first.getSeverity() == second.getSeverity() && first.getMessage().equals(second.getMessage())
-				&& ((N2ORefactoringStatusContext) first.getContext()).getPreconditionFailures()
-						.equals(((N2ORefactoringStatusContext) second.getContext()).getPreconditionFailures())
+				&& ((N2ORefactoringStatusContext) first.getContext()).getPreconditionFailure()
+						.equals(((N2ORefactoringStatusContext) second.getContext()).getPreconditionFailure())
 				&& first.getPluginId().equals(second.getPluginId()) && first.getCode() == second.getCode();
 	}
 
@@ -374,30 +372,34 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testBridgeEnhancedForStatementExpression() throws Exception {
 		this.transformationHelper(null, this.createExpectedStatus(new MockEntryData[] {
-				new MockEntryData(RefactoringStatus.INFO, EnumSet.of(ENHANCED_FOR), ENHANCED_FOR) }));
+				new MockEntryData(RefactoringStatus.INFO, ENHANCED_FOR) }));
 	}
 
 	public void testCastExpressionBridgeOffMethod() throws Exception {
-		this.propagationHelper(setOf(), setOf(setOf("a", "x")), Choice.BRIDGE_STATIC_OPERATORS,
-				this.createExpectedStatus(new MockEntryData[] { new MockEntryData(RefactoringStatus.ERROR,
-						EnumSet.of(CAST_EXPRESSION, NO_BRIDGING_ALLOWED), NO_BRIDGING_ALLOWED) }));
+		this.propagationHelper(setOf(), setOf(setOf("a", "x")), Choice.REFACTOR_THROUGH_JAVA_OPERATORS,
+				this.createExpectedStatus(new MockEntryData[] { 
+						new MockEntryData(RefactoringStatus.ERROR, CAST_EXPRESSION)
+						}));
 	}
 
 	public void testCastExpressionBridgeOffVarDecl() throws Exception {
-		this.propagationHelper(setOf(), setOf(setOf("a")), Choice.BRIDGE_STATIC_OPERATORS,
-				this.createExpectedStatus(new MockEntryData[] { new MockEntryData(RefactoringStatus.ERROR,
-						EnumSet.of(CAST_EXPRESSION, NO_BRIDGING_ALLOWED), NO_BRIDGING_ALLOWED) }));
+		this.propagationHelper(setOf(), setOf(setOf("a")), Choice.REFACTOR_THROUGH_JAVA_OPERATORS,
+				this.createExpectedStatus(new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.ERROR, CAST_EXPRESSION)
+					}));
 	}
 
 	public void testCastExpressionBridgeOnMethod() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "x", "b")), setOf(), null,
 				this.createExpectedStatus(new MockEntryData[] {
-						new MockEntryData(RefactoringStatus.INFO, EnumSet.of(CAST_EXPRESSION), CAST_EXPRESSION) }));
+						new MockEntryData(RefactoringStatus.INFO, CAST_EXPRESSION) 
+					}));
 	}
 
 	public void testCastExpressionBridgeOnVarDecl() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b")), setOf(), null, this.createExpectedStatus(new MockEntryData[] {
-				new MockEntryData(RefactoringStatus.INFO, EnumSet.of(CAST_EXPRESSION), CAST_EXPRESSION) }));
+				new MockEntryData(RefactoringStatus.INFO, CAST_EXPRESSION) 
+			}));
 	}
 
 	public void testComparisonLocalVariable() throws Exception {

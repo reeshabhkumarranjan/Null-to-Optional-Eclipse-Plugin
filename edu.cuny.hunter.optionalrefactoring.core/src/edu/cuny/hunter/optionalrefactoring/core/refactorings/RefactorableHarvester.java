@@ -176,7 +176,7 @@ public class RefactorableHarvester {
 				 */
 				this.entities.addAll(Util
 						.getElementForest(this.trimForest(this.workList.getComputationForest(), this.notRefactorable))
-						.stream().map(set -> Entities.createWithInstances(set, this.instances))
+						.stream().map(set -> Entities.create(set, this.instances, this.settings))
 						.collect(Collectors.toSet()));
 				this.notRefactorable.addAll(this.workList.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
@@ -195,7 +195,7 @@ public class RefactorableHarvester {
 		 * It is a set of sets of type-dependent entities. You start with the seeds, you
 		 * grow the seeds into these sets.
 		 */
-		this.entities.addAll(candidateSets.stream().map(set -> Entities.createWithInstances(set, this.instances))
+		this.entities.addAll(candidateSets.stream().map(set -> Entities.create(set, this.instances, this.settings))
 				.collect(Collectors.toSet()));
 
 		return this.entities.stream().map(Entities::status).collect(RefactoringStatus::new, RefactoringStatus::merge,

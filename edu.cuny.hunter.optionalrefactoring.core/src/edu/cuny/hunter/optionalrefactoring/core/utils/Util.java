@@ -7,7 +7,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,13 +73,10 @@ import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.N2ORefactoringStatusContext;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
@@ -156,38 +152,6 @@ public interface Util {
 				return refactoring.getName();
 			}
 		};
-	}
-
-	/**
-	 * @param element     The IJavaElement being processed into a StatusEntry.
-	 * @param sourceRange The ISourceRange of the entity that is interesting.
-	 * @param failures    An {@link java.util.EnumSet} of
-	 *                    {@link edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure}
-	 *                    that were triggered.
-	 * @return {@link org.eclipse.ltk.core.refactoring.RefactoringStatusEntry}
-	 *         containing a
-	 *         {@link edu.cuny.hunter.optionalrefactoring.core.analysis.N2ORefactoringStatusContext}
-	 */
-	static RefactoringStatusEntry createStatusEntry(final Instance instance) {
-
-		final IJavaElement element = instance.element;
-		final ISourceRange sourceRange = getSourceRange(instance.node);
-		final EnumSet<PreconditionFailure> failures = instance.failures;
-
-		final int severity = failures.stream().anyMatch(PreconditionFailure.fatal()::contains) ? RefactoringStatus.FATAL
-				: failures.stream().anyMatch(PreconditionFailure.error()::contains) ? RefactoringStatus.ERROR
-						: RefactoringStatus.INFO;
-
-		/* we take the precondition failure code with the lowest integer value */
-		final Optional<PreconditionFailure> pf = failures.stream().filter(PreconditionFailure.info()::contains)
-				.min((x, y) -> Integer.compare(x.getCode(), y.getCode()));
-
-		final int code = pf.map(PreconditionFailure::getCode).orElse(0);
-
-		return new RefactoringStatusEntry(severity,
-				pf.map(PreconditionFailure::getMessage).orElse(Messages.CreatingChange),
-				new N2ORefactoringStatusContext(element, sourceRange, failures),
-				ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, code);
 	}
 
 	static boolean equalASTNodes(final CastExpression left, final ASTNode right) {

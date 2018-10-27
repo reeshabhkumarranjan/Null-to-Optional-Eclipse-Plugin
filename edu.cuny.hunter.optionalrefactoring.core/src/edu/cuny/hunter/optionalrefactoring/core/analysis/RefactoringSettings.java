@@ -57,15 +57,19 @@ public class RefactoringSettings {
 		 */
 		PERFORM_TRANSFORMATION,
 		/**
-		 * Including this means that we want to bridge Cast Expressions, Arithmetic,
+		 * Including this means that we want to transform to accommodate Cast Expressions, Arithmetic,
 		 * Boolean, InstanceOf, BitWise operators where possible.
 		 */
-		BRIDGE_STATIC_OPERATORS,
+		REFACTOR_THROUGH_JAVA_OPERATORS,
 		/**
 		 * Including this means that we want to refactor return type of methods that are
 		 * transitively null-type dependent to Optional
 		 */
 		REFACTOR_METHOD_RETURN_TYPES,
+		/**
+		 * Including this means that we want to refactor entities of Object type.
+		 */
+		REFACTOR_OBJECT_INSTANCES
 	}
 
 	public static RefactoringSettings testDefaults() {
@@ -93,8 +97,8 @@ public class RefactoringSettings {
 		return this.settings.contains(Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS);
 	}
 
-	public boolean bridgesOperators() {
-		return this.settings.contains(Choice.BRIDGE_STATIC_OPERATORS);
+	public boolean refactorThruOperators() {
+		return this.settings.contains(Choice.REFACTOR_THROUGH_JAVA_OPERATORS);
 	}
 
 	public void createFromEnv() {
@@ -158,5 +162,9 @@ public class RefactoringSettings {
 	@Override
 	public String toString() {
 		return this.settings.toString();
+	}
+
+	public boolean refactorsObjects() {
+		return this.settings.contains(Choice.REFACTOR_OBJECT_INSTANCES);
 	}
 }

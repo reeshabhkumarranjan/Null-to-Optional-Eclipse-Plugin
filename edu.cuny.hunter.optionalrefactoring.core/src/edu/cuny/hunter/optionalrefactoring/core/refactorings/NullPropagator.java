@@ -42,12 +42,12 @@ import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -146,7 +146,7 @@ class NullPropagator extends N2ONodeProcessor {
 	void ascend(final EnhancedForStatement node) throws CoreException {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
 		final Action action = Action.infer(node, pf, this.settings);
-		if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, node);
 		// if the Expression itself is a candidate for transformation to Optional type,
 		// we need to bridge it here (as opposed to being a collection parameterized
@@ -167,11 +167,13 @@ class NullPropagator extends N2ONodeProcessor {
 				final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node.getExpression(), element,
 						this.settings);
 				final Action action = Action.infer(node.getExpression(), element, pf, this.settings);
-				if (!pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED)) {
+				if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR)) 
+					throw new HarvesterASTException(pf, node); 
+				else {
 					this.addInstance(element, node, pf, action);
 					this.processAscent(node.getParent());
-				} else
-					throw new HarvesterASTException(pf, node);
+				}
+					
 			}
 	}
 
@@ -190,7 +192,7 @@ class NullPropagator extends N2ONodeProcessor {
 		final Action action = Action.infer(methDecl, top, pf, this.settings);
 		if (pf.isEmpty())
 			this.addCandidate(top, methDecl, pf, action);
-		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, methDecl);
 		else
 			this.addInstance(top, node, pf, action); // if we need to bridge it, we need the original return statement
@@ -255,7 +257,7 @@ class NullPropagator extends N2ONodeProcessor {
 			if (pf.isEmpty()) {
 				NullPropagator.this.addCandidate(element, vdf, pf, action);
 				this.processDescent(vdf.getInitializer());
-			} else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				throw new HarvesterASTException(pf, vdf);
 			else
 				NullPropagator.this.addInstance(element, vdf, pf, action);
@@ -286,7 +288,7 @@ class NullPropagator extends N2ONodeProcessor {
 		final Action action = Action.infer(node, top, pf, this.settings);
 		if (pf.isEmpty())
 			this.addCandidate(top, node, pf, action);
-		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, node);
 		else
 			this.addInstance(top, node, pf, action);
@@ -300,7 +302,7 @@ class NullPropagator extends N2ONodeProcessor {
 		final Action action = Action.infer(node, element, pf, this.settings);
 		if (pf.isEmpty())
 			NullPropagator.this.addCandidate(element, node, pf, action);
-		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, node);
 		else
 			NullPropagator.this.addInstance(element, node, pf, action);
@@ -319,7 +321,7 @@ class NullPropagator extends N2ONodeProcessor {
 		final Action action = Action.infer(node, top, pf, this.settings);
 		if (pf.isEmpty())
 			this.addCandidate(top, node, pf, action);
-		else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			throw new HarvesterASTException(pf, node);
 		else
 			this.addInstance(top, node, pf, action);
@@ -346,7 +348,7 @@ class NullPropagator extends N2ONodeProcessor {
 			if (pf.isEmpty()) {
 				this.addCandidate(element, node, pf, action);
 				this.processDescent(vdf.getInitializer());
-			} else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				throw new HarvesterASTException(pf, node);
 			else
 				NullPropagator.this.addInstance(element, node, pf, action);
@@ -364,7 +366,7 @@ class NullPropagator extends N2ONodeProcessor {
 			if (pf.isEmpty()) {
 				this.addCandidate(element, node, pf, action);
 				this.processDescent(node.getInitializer());
-			} else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				throw new HarvesterASTException(pf, node);
 			else
 				this.addInstance(element, node, pf, action);
@@ -382,7 +384,7 @@ class NullPropagator extends N2ONodeProcessor {
 			if (pf.isEmpty()) {
 				this.addCandidate(element, node, pf, action);
 				this.processDescent(vdf.getInitializer());
-			} else if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				throw new HarvesterASTException(pf, node);
 			else
 				NullPropagator.this.addInstance(element, node, pf, action);
@@ -421,10 +423,8 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null) {
-			final EnumSet<PreconditionFailure> pf = this.settings.bridgeExternalCode()
-					? EnumSet.of(PreconditionFailure.NON_SOURCE_CODE)
-					: EnumSet.of(PreconditionFailure.NON_SOURCE_CODE, PreconditionFailure.NO_BRIDGING_ALLOWED);
-			if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
+			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				throw new HarvesterASTException(pf, this.name);
 			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
@@ -444,10 +444,8 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null) {
-			final EnumSet<PreconditionFailure> pf = this.settings.bridgeExternalCode()
-					? EnumSet.of(PreconditionFailure.NON_SOURCE_CODE)
-					: EnumSet.of(PreconditionFailure.NON_SOURCE_CODE, PreconditionFailure.NO_BRIDGING_ALLOWED);
-			if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
+			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				throw new HarvesterASTException(pf, this.name);
 			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
@@ -463,10 +461,8 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 		if (top == null) {
-			final EnumSet<PreconditionFailure> pf = this.settings.bridgeExternalCode()
-					? EnumSet.of(PreconditionFailure.NON_SOURCE_CODE)
-					: EnumSet.of(PreconditionFailure.NON_SOURCE_CODE, PreconditionFailure.NO_BRIDGING_ALLOWED);
-			if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
+			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				throw new HarvesterASTException(pf, this.name);
 			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		}
@@ -486,10 +482,8 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null) {
-			final EnumSet<PreconditionFailure> pf = this.settings.bridgeExternalCode()
-					? EnumSet.of(PreconditionFailure.NON_SOURCE_CODE)
-					: EnumSet.of(PreconditionFailure.NON_SOURCE_CODE, PreconditionFailure.NO_BRIDGING_ALLOWED);
-			if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
+			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				throw new HarvesterASTException(pf, this.name);
 			this.addInstance(meth, node, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
@@ -506,10 +500,8 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null) {
-			final EnumSet<PreconditionFailure> pf = this.settings.bridgeExternalCode()
-					? EnumSet.of(PreconditionFailure.NON_SOURCE_CODE)
-					: EnumSet.of(PreconditionFailure.NON_SOURCE_CODE, PreconditionFailure.NO_BRIDGING_ALLOWED);
-			if (pf.contains(PreconditionFailure.NO_BRIDGING_ALLOWED))
+			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
+			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				throw new HarvesterASTException(pf, this.name);
 			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else

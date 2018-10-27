@@ -23,6 +23,7 @@ import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -61,12 +62,6 @@ public enum PreconditionFailure {
 	 *
 	 */
 	JAVA_MODEL_ERROR(2, Messages.Harvester_JavaModelError),
-	/**
-	 * This element represents an entity that is excluded by the Refactoring
-	 * settings. No more propagation should take place, and we should trash the
-	 * worklist.
-	 */
-	NO_BRIDGING_ALLOWED(3, Messages.Bridging_Excluded),
 	/**
 	 * We've hit a precondition failure, but the set can be bridged.
 	 */
@@ -112,8 +107,6 @@ public enum PreconditionFailure {
 
 	public static EnumSet<PreconditionFailure> check(final CastExpression node, final RefactoringSettings settings) {
 		final EnumSet<PreconditionFailure> value = EnumSet.noneOf(PreconditionFailure.class);
-		if (!settings.bridgesOperators())
-			value.add(NO_BRIDGING_ALLOWED);
 		return value;
 	}
 
@@ -125,8 +118,6 @@ public enum PreconditionFailure {
 	public static EnumSet<PreconditionFailure> check(final EnhancedForStatement node,
 			final RefactoringSettings settings) {
 		final EnumSet<PreconditionFailure> pf = EnumSet.of(ENHANCED_FOR);
-		if (!settings.bridgesOperators())
-			pf.add(NO_BRIDGING_ALLOWED);
 		return pf;
 	}
 
@@ -150,8 +141,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -161,8 +150,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -172,16 +159,12 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = EnumSet.noneOf(PreconditionFailure.class);
 		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)) {
 			value.add(NON_SOURCE_CODE);
-			if (!settings.bridgeExternalCode())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
 
 	public static EnumSet<PreconditionFailure> check(final InfixExpression node, final RefactoringSettings settings) {
 		final EnumSet<PreconditionFailure> value = EnumSet.of(COMPARISON_OP);
-		if (!settings.bridgesOperators())
-			value.add(NO_BRIDGING_ALLOWED);
 		return value;
 	}
 
@@ -190,8 +173,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsMethods()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -201,8 +182,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsMethods()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -212,8 +191,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -223,8 +200,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsParameters()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -234,8 +209,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -245,8 +218,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsMethods()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -256,8 +227,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsLocalVariables()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -267,8 +236,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -278,8 +245,6 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsLocalVariables()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
@@ -289,23 +254,10 @@ public enum PreconditionFailure {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsLocalVariables()) {
 			value.add(EXCLUDED_ENTITY);
-			if (!settings.bridgesExcluded())
-				value.add(NO_BRIDGING_ALLOWED);
 		}
 		return value;
 	}
 
-	public static EnumSet<PreconditionFailure> error() {
-		return EnumSet.of(NO_BRIDGING_ALLOWED);
-	}
-
-	public static EnumSet<PreconditionFailure> fatal() {
-		return EnumSet.of(MISSING_BINDING, JAVA_MODEL_ERROR);
-	}
-
-	public static EnumSet<PreconditionFailure> info() {
-		return EnumSet.complementOf(EnumSet.of(MISSING_BINDING, JAVA_MODEL_ERROR, NO_BRIDGING_ALLOWED));
-	}
 
 	private final Integer code;
 	private final String message;
@@ -321,5 +273,29 @@ public enum PreconditionFailure {
 
 	public String getMessage() {
 		return this.message;
+	}
+
+	public int getSeverity(RefactoringSettings settings) {
+		switch (this) {
+		case CAST_EXPRESSION:
+			return settings.refactorThruOperators() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+		case COMPARISON_OP:
+			return settings.refactorThruOperators() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+		case ENHANCED_FOR:
+			return settings.refactorThruOperators() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+		case EXCLUDED_ENTITY:
+			return settings.bridgesExcluded() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+		case INSTANCEOF_OP:
+			return settings.refactorThruOperators() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+		case JAVA_MODEL_ERROR:
+			return RefactoringStatus.FATAL;
+		case MISSING_BINDING:
+			return RefactoringStatus.FATAL;
+		case NON_SOURCE_CODE:
+			return settings.bridgeExternalCode() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+		case OBJECT_TYPE:
+			return settings.refactorsObjects() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+		default: return RefactoringStatus.OK;
+		}
 	}
 }
