@@ -32,13 +32,14 @@ import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
-import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -54,10 +55,15 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 class NullSeeder extends N2ONodeProcessor {
 
 	private ASTNode currentNull;
+	private final RefactoringStatus status = new RefactoringStatus();
 
 	public NullSeeder(final ASTNode node, final RefactoringSettings settings, final IProgressMonitor monitor,
 			final IJavaSearchScope scope) throws HarvesterASTException {
 		super(node, settings, monitor, scope);
+	}
+	
+	public RefactoringStatus getErrors() {
+		return this.status;
 	}
 
 	@Override
@@ -165,13 +171,13 @@ class NullSeeder extends N2ONodeProcessor {
 		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
 			final EnumSet<PreconditionFailure> pf = node.getParent() instanceof FieldDeclaration
 					? PreconditionFailure.check(node, (IField) element, this.settings)
-					: PreconditionFailure.check(node, element, this.settings);
-			final Action action = Action.infer(node, element, pf, this.settings);
-			if (pf.isEmpty())
-				this.addCandidate(element, node, pf, action);
-			else if (pf.contains(PreconditionFailure.EXCLUDED_ENTITY)
-					|| pf.contains(PreconditionFailure.NON_SOURCE_CODE))
-				throw new HarvesterASTException(pf, node);
+							: PreconditionFailure.check(node, element, this.settings);
+					final Action action = Action.infer(node, element, pf, this.settings);
+					if (pf.isEmpty())
+						this.addCandidate(element, node, pf, action);
+					else if (pf.contains(PreconditionFailure.EXCLUDED_ENTITY)
+							|| pf.contains(PreconditionFailure.NON_SOURCE_CODE))
+						throw new HarvesterASTException(pf, node);
 		}
 	}
 
@@ -181,20 +187,17 @@ class NullSeeder extends N2ONodeProcessor {
 	 */
 	@Override
 	boolean process() throws CoreException {
-		final ArrayList<CoreException> thrownInVisitor = new ArrayList<>();
+
+		
+
+		final List<NullLiteral> nll = new ArrayList<>();
+		final List<VariableDeclarationFragment> infdl = new ArrayList<>();
+
 		final ASTVisitor visitor = new ASTVisitor() {
 			@Override
-			public boolean visit(final NullLiteral nl) {
-				// set the currently-being-traversed node for this object
-				NullSeeder.this.currentNull = nl;
-				try { // try to process the node
-					NullSeeder.this.processAscent(nl.getParent());
-				} catch (final HarvesterException e) { // catch any exceptions
-					Util.LOGGER.warning(Messages.Harvester_NullLiteralFailed + "\n" + e.getMessage());
-				} catch (final CoreException e) {
-					thrownInVisitor.add(e);
-				}
-				return super.visit(nl);
+			public boolean visit(final NullLiteral node) {
+				nll.add(node);
+				return super.visit(node);
 			}
 
 			/*
@@ -202,71 +205,82 @@ class NullSeeder extends N2ONodeProcessor {
 			 *
 			 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core. dom.
 			 * VariableDeclarationFragment) here we are just processing to find
-			 * un-initialized (implicitly null) Field declarations. All processing is done
-			 * inside the visitor.
+			 * potentially un-initialized (implicitly null) Field declarations.
 			 */
 			@Override
 			public boolean visit(final VariableDeclarationFragment node) {
-				if (NullSeeder.this.settings.refactorsFields()) {
-					NullSeeder.this.currentNull = node;
-					try {
-						final IVariableBinding binding = Util.resolveBinding(node);
-						final IJavaElement element = Util.resolveElement(node);
-						if (element instanceof IField)
-							if (NullSeeder.this.settings.seedsImplicit()) {
-								final List<Boolean> fici = new LinkedList<>();
-								NullSeeder.this.rootNode.accept(new ASTVisitor() {
-									@Override
-									public boolean visit(final MethodDeclaration node) {
-										if (node.isConstructor()) {
-											final Set<Boolean> initialized = new LinkedHashSet<>();
-											node.accept(new ASTVisitor() {
-												@Override
-												public boolean visit(final Assignment node) {
-													final Expression expr = node.getLeftHandSide();
-													IVariableBinding targetField = null;
-													switch (expr.getNodeType()) {
-													case ASTNode.FIELD_ACCESS:
-														targetField = ((FieldAccess) expr).resolveFieldBinding();
-														break;
-													case ASTNode.SIMPLE_NAME:
-													case ASTNode.QUALIFIED_NAME:
-														targetField = (IVariableBinding) ((Name) expr).resolveBinding();
-													}
-													if (binding.isEqualTo(targetField))
-														initialized.add(Boolean.TRUE);
-													return super.visit(node);
-												}
-											});
-											if (initialized.contains(Boolean.TRUE))
-												fici.add(Boolean.TRUE);
-											else
-												fici.add(Boolean.FALSE);
-										}
-										return super.visit(node);
-									}
-								});
-								final boolean fieldIsConstructorInitialized = fici.isEmpty() ? false
-										: fici.stream().reduce(Boolean.TRUE, Boolean::logicalAnd);
-								if (node.getInitializer() == null && !fieldIsConstructorInitialized)
-									/*
-									 * this element gets added to the Map candidates with boolean true indicating an
-									 * implicit null also, if the type of the declaration is primitive, we ignore it
-									 */
-									if (!binding.getVariableDeclaration().getType().isPrimitive())
-										NullSeeder.this.candidates.add(element);
-							}
-					} catch (final HarvesterException e) {
-						Util.LOGGER.warning(Messages.Harvester_NullLiteralFailed + "\n" + e.getMessage());
-						thrownInVisitor.add(e);
-					}
-				}
+				if (node.getParent().getNodeType() == ASTNode.FIELD_DECLARATION)
+					if (node.getInitializer() == null)
+						if (NullSeeder.this.settings.refactorsFields())
+							if (NullSeeder.this.settings.seedsImplicit())
+								infdl.add(node);
 				return super.visit(node);
 			}
 		};
+
 		this.rootNode.accept(visitor);
-		if (!thrownInVisitor.isEmpty())
-			throw thrownInVisitor.get(0);
+
+		for (NullLiteral node : nll) {
+			try {
+				this.currentNull = node;
+				this.processAscent(node.getParent());
+			} catch (HarvesterException e) {
+				if (e.getFailure().stream().anyMatch(f -> f.getSeverity(this.settings) > RefactoringStatus.ERROR)) 
+					throw e;
+				this.status.merge(e.getFailure().stream().map(failure -> 
+				Util.createStatusEntry(this.settings, 
+						new Instance(null, currentNull, e.getFailure(), Action.NIL), 
+						failure))
+						.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge));
+			}
+		}
+
+		for (VariableDeclarationFragment node : infdl) {
+			this.currentNull = node;
+			final IVariableBinding binding = Util.resolveBinding(node);
+			final IField element = (IField) Util.resolveElement(node);
+			final List<Boolean> fici = new LinkedList<>();
+			this.rootNode.accept(new ASTVisitor() {
+				@Override
+				public boolean visit(final MethodDeclaration node) {
+					if (node.isConstructor()) {
+						final Set<Boolean> initialized = new LinkedHashSet<>();
+						node.accept(new ASTVisitor() {
+							@Override
+							public boolean visit(final Assignment node) {
+								final Expression expr = node.getLeftHandSide();
+								IVariableBinding targetField = null;
+								switch (expr.getNodeType()) {
+								case ASTNode.FIELD_ACCESS:
+									targetField = ((FieldAccess) expr).resolveFieldBinding();
+									break;
+								case ASTNode.SIMPLE_NAME:
+								case ASTNode.QUALIFIED_NAME:
+									targetField = (IVariableBinding) ((Name) expr).resolveBinding();
+								}
+								if (binding.isEqualTo(targetField))
+									initialized.add(Boolean.TRUE);
+								return super.visit(node);
+							}
+						});
+						if (initialized.contains(Boolean.TRUE))
+							fici.add(Boolean.TRUE);
+						else
+							fici.add(Boolean.FALSE);
+					}
+					return super.visit(node);
+				}
+			});
+			final boolean fieldIsConstructorInitialized = fici.isEmpty() ? false
+					: fici.stream().reduce(Boolean.TRUE, Boolean::logicalAnd);
+			if (!fieldIsConstructorInitialized)
+				/*
+				 * this element gets added to the Map candidates with boolean true indicating an
+				 * implicit null also, if the type of the declaration is primitive, we ignore it
+				 */
+				if (!binding.getVariableDeclaration().getType().isPrimitive())
+					this.candidates.add(element);
+		}
 		return !this.candidates.isEmpty();
 	}
 }

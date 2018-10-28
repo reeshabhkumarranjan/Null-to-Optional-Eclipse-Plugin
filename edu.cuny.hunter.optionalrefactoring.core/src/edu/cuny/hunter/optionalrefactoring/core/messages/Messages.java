@@ -22,7 +22,7 @@ public class Messages extends NLS {
 	public static String CompilingSource;
 	public static String CreatingChange;
 	public static String CUContainsCompileErrors;
-	public static String NoNullsHavePassedThePreconditions;
+	public static String NoNullsHaveBeenFound;
 	public static String Util_MemberNotFound;
 	public static String Worklist_IllegalWorklistElement;
 	public static String Harvester_NullLiteralFailed;

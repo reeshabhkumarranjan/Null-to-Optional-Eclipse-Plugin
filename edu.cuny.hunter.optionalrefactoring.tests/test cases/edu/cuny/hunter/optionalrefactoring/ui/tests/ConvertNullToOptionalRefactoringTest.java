@@ -60,9 +60,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		/**
 		 * @param s  RefactoringStatus severity
-		 * @param pf set of failures
-		 * @param m  message from highest precedence failure
-		 * @param c  code from highest precedence failure
+		 * @param f PreconditionFailure
 		 */
 		MockEntryData(final Integer s, final PreconditionFailure f) {
 			/* we take the precondition failure code with the lowest integer value */
@@ -443,7 +441,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testImplicitlyNullFieldConstructorInit() throws Exception {
 		this.transformationHelper(null,
-				RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHavePassedThePreconditions));
+				RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHaveBeenFound));
 	}
 
 	public void testImplicitlyNullFieldNoConstructorInit() throws Exception {
@@ -501,7 +499,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testSettingsFieldsOff() throws Exception {
 		this.propagationHelper(setOf(), setOf(), Choice.REFACTOR_FIELDS,
-				RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHavePassedThePreconditions));
+				this.createExpectedStatus(new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.ERROR, PreconditionFailure.EXCLUDED_ENTITY)
+				}));
 	}
 
 	public void testSettingsFieldsOn() throws Exception {
@@ -511,7 +511,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testSettingsImplicitOff() throws Exception {
 		this.propagationHelper(setOf(), setOf(), Choice.CONSIDER_IMPLICITLY_NULL_FIELDS,
-				RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHavePassedThePreconditions));
+				RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHaveBeenFound));
 	}
 
 	public void testSettingsImplicitOn() throws Exception {

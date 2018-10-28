@@ -213,7 +213,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 			if (this.entities.stream().filter(entity -> !entity.status().hasError()).collect(Collectors.toSet())
 					.isEmpty())
-				return new NullChange(Messages.NoNullsHavePassedThePreconditions);
+				return new NullChange(Messages.NoNullsHaveBeenFound);
 
 			final int count = (int) this.entities.stream().flatMap(entity -> entity.elements().stream()).count();
 

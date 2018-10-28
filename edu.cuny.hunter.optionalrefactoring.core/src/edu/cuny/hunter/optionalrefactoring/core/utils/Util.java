@@ -73,10 +73,13 @@ import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.N2ORefactoringStatusContext;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
@@ -629,5 +632,14 @@ public interface Util {
 	@SafeVarargs
 	static <T> Set<T> setOf(final T... o) {
 		return Stream.of(o).collect(Collectors.toCollection(LinkedHashSet::new));
+	}
+
+	public static RefactoringStatusEntry createStatusEntry(final RefactoringSettings settings, Entities.Instance instance,
+			PreconditionFailure failure) {
+		return new RefactoringStatusEntry(failure.getSeverity(settings), 
+				failure.getMessage(),
+				new N2ORefactoringStatusContext(instance.element, getSourceRange(instance.node), failure), 
+				ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID,
+				failure.getCode());
 	}
 }

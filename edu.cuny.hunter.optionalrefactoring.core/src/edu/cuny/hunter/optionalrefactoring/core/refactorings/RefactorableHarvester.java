@@ -113,9 +113,12 @@ public class RefactorableHarvester {
 		// null
 		// expressions.
 		final NullSeeder seeder = new NullSeeder(this.refactoringRootNode, this.settings, this.monitor, this.scopeRoot);
-		// if no nulls pass the preconditions, return an Error status
-		if (!seeder.process())
-			return RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHavePassedThePreconditions);
+		// if no nulls pass the preconditions, return the Error status but if no nulls were found at all, return a Fatal Error Status
+		if (!seeder.process()) {
+			return seeder.getErrors().isOK() ?	// it's empty of precondition failures
+					RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHaveBeenFound) :
+						seeder.getErrors();
+		}
 		// otherwise get the passing null type dependent entities
 		this.instances.addAll(seeder.getInstances());
 		// and put just the IJavaElements into the workList

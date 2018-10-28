@@ -29,11 +29,9 @@ import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 
 import com.google.common.collect.Streams;
 
-import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.utils.ASTNodeFinder;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -63,11 +61,7 @@ public class Entities implements Iterable<IJavaElement> {
 						(left, right) -> Streams.concat(left.stream(), right.stream()).collect(Collectors.toSet())));
 		RefactoringStatus status = instances.stream()
 				.filter(instance -> elements.contains(instance.element))
-				.flatMap(instance -> instance.failures.stream().map(failure -> new RefactoringStatusEntry(failure.getSeverity(settings), 
-						failure.getMessage(),
-						new N2ORefactoringStatusContext(instance.element, Util.getSourceRange(instance.node), failure), 
-						ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID,
-						failure.getCode())))
+				.flatMap(instance -> instance.failures.stream().map(failure -> Util.createStatusEntry(settings, instance, failure)))
 				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
 		return new Entities(status, elements, mappedInstances);
 	}
