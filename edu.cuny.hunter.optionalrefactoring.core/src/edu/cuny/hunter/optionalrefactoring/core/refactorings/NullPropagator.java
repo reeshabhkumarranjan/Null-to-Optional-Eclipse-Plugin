@@ -162,8 +162,7 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod element = Util.resolveElement(node);
 		if (containedIn(node.arguments(), this.name))
 			this.findFormalsForVariable(node);
-		else if (node.getExpression() != null)
-			if (containedIn(node.getExpression(), this.name)) {
+		else if (node.getExpression() != null && containedIn(node.getExpression(), this.name)) {
 				final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node.getExpression(), element,
 						this.settings);
 				final Action action = Action.infer(node.getExpression(), element, pf, this.settings);
@@ -173,8 +172,8 @@ class NullPropagator extends N2ONodeProcessor {
 					this.addInstance(element, node, pf, action);
 					this.processAscent(node.getParent());
 				}
-					
-			}
+		} else
+			this.processAscent(node.getParent());
 	}
 
 	@Override
@@ -210,6 +209,8 @@ class NullPropagator extends N2ONodeProcessor {
 	void ascend(final SuperMethodInvocation node) throws CoreException {
 		if (containedIn(node.arguments(), this.name))
 			this.findFormalsForVariable(node);
+		else
+			this.processAscent(node.getParent());
 	}
 
 	@Override

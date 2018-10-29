@@ -91,7 +91,7 @@ public class RefactoringSettings {
 
 	private final EnumSet<Choice> settings;
 
-	private RefactoringSettings(final EnumSet<Choice> settings) {
+	public RefactoringSettings(final EnumSet<Choice> settings) {
 		this.settings = settings;
 	}
 

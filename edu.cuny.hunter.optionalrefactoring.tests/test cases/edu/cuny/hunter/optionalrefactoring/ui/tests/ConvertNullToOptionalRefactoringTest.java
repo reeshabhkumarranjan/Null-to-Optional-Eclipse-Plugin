@@ -215,10 +215,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	@Override
 	protected Refactoring getRefactoring(final IJavaElement... elements) throws JavaModelException {
+		final EnumSet<RefactoringSettings.Choice> choices = EnumSet.allOf(RefactoringSettings.Choice.class);
 		final ConvertNullToOptionalRefactoringProcessor processor = Util.createNullToOptionalRefactoringProcessor(
-				elements, RefactoringSettings.testDefaults() /*
-																 * here the test defaults are injected
-																 */, Optional.empty());
+				elements, new RefactoringSettings(choices) /* here the test defaults are injected*/, Optional.empty());
 		return new ProcessorBasedRefactoring(processor);
 	}
 
@@ -393,14 +392,14 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testCastExpressionBridgeOffVarDecl() throws Exception {
-		this.propagationHelper(setOf(), setOf(setOf("a")), EnumSet.of(Choice.REFACTOR_THROUGH_JAVA_OPERATORS),
+		this.propagationHelper(setOf(), setOf(), EnumSet.of(Choice.REFACTOR_THROUGH_JAVA_OPERATORS, Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS),
 				this.createExpectedStatus(new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.ERROR, CAST_EXPRESSION)
-					}));
+						}));
 	}
 
 	public void testCastExpressionBridgeOnMethod() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "x", "b")), setOf(), EnumSet.noneOf(Choice.class),
+		this.propagationHelper(setOf(setOf("a", "x", "b", "m")), setOf(), EnumSet.noneOf(Choice.class),
 				this.createExpectedStatus(new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.INFO, CAST_EXPRESSION) 
 					}));
@@ -518,7 +517,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testSettingsFieldsOff() throws Exception {
-		this.propagationHelper(setOf(), setOf(), EnumSet.of(Choice.REFACTOR_FIELDS),
+		this.propagationHelper(setOf(), setOf(), EnumSet.of(Choice.REFACTOR_FIELDS, Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS),
 				this.createExpectedStatus(new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.ERROR, PreconditionFailure.EXCLUDED_ENTITY)
 				}));
