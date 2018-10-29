@@ -1,10 +1,10 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import java.util.EnumSet;
-
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.CastExpression;
@@ -14,6 +14,7 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.InfixExpression;
+import org.eclipse.jdt.core.dom.InstanceofExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
@@ -23,6 +24,8 @@ import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
+import org.eclipse.jdt.internal.corext.dom.ASTNodes;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 /**
  * @author oren The types of transformations that can be made on the AST.
@@ -63,7 +66,11 @@ public enum Action {
 	/**
 	 * Wrap a value in an Optional.ofNullable
 	 */
-	BRIDGE_VALUE_IN;
+	BRIDGE_VALUE_IN,
+	/**
+	 * Unwrap node.getExpression() and wrap node
+	 */
+	UNWRAP_AND_WRAP;
 
 	public static Action infer(final ArrayAccess node, final EnumSet<PreconditionFailure> pf,
 			final RefactoringSettings settings) {
@@ -75,9 +82,25 @@ public enum Action {
 		return NIL;
 	}
 
+	/**
+	 * Determines appropriate action for CastExpression depending on the PreconditionFailures
+	 * 
+	 * @param node
+	 * @param pf
+	 * @param settings
+	 * @return
+	 */
 	public static Action infer(final CastExpression node, final EnumSet<PreconditionFailure> pf,
 			final RefactoringSettings settings) {
-		return NIL;
+		Action a = NIL;
+		if (!pf.stream().anyMatch(f -> f.getSeverity(settings) == RefactoringStatus.ERROR)) {
+			if (settings.refactorThruOperators()) {
+				a = UNWRAP_AND_WRAP;
+			} else if (settings.bridgesExcluded()) {
+				a = BRIDGE_VALUE_OUT;
+			}
+		}
+		return a;
 	}
 
 	/**
@@ -114,9 +137,16 @@ public enum Action {
 		return BRIDGE_VALUE_OUT;
 	}
 
+	@SuppressWarnings("restriction")
 	public static Action infer(final FieldAccess node, final IField element, final EnumSet<PreconditionFailure> pf,
 			final RefactoringSettings settings) {
-		return NIL;
+		Action a = NIL;
+		if (ASTNodes.getParent(node, ASTNode.ASSIGNMENT) != null) {
+			// case: Assignment left side
+			// case: Assignment right side
+		}
+		// case: invocation argument
+		return a;
 	}
 
 	public static Action infer(final FieldDeclaration node, final IField element, final EnumSet<PreconditionFailure> pf,
@@ -124,9 +154,30 @@ public enum Action {
 		return NIL;
 	}
 
+	public static Action infer(final InstanceofExpression node, final EnumSet<PreconditionFailure> pf,
+			final RefactoringSettings settings) {
+		Action a = NIL;
+		if (!pf.stream().anyMatch(f -> f.getSeverity(settings) == RefactoringStatus.ERROR)) {
+			if (settings.refactorThruOperators()) {
+				a = UNWRAP_AND_WRAP;
+			} else if (settings.bridgesExcluded()) {
+				a = BRIDGE_VALUE_OUT;
+			}
+		}
+		return a;
+	}
+	
 	public static Action infer(final InfixExpression node, final EnumSet<PreconditionFailure> pf,
 			final RefactoringSettings settings) {
-		return NIL;
+		Action a = NIL;
+		if (!pf.stream().anyMatch(f -> f.getSeverity(settings) == RefactoringStatus.ERROR)) {
+			if (settings.refactorThruOperators()) {
+				a = UNWRAP_AND_WRAP;
+			} else if (settings.bridgesExcluded()) {
+				a = BRIDGE_VALUE_OUT;
+			}
+		}
+		return a;
 	}
 
 	public static Action infer(final MethodDeclaration node, final IMethod element,
