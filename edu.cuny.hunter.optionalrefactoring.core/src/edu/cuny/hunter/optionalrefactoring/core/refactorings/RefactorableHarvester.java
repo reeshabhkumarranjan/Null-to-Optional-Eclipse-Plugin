@@ -25,6 +25,7 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -78,10 +79,11 @@ public class RefactorableHarvester {
 		// null
 		// expressions.
 		final NullSeeder seeder = new NullSeeder(this.element, this.refactoringRootNode, this.settings, this.monitor, this.scopeRoot);
-		// if no nulls pass the preconditions, return the Error status but if no nulls were found at all, return a Fatal Error Status
+		// if no nulls pass the preconditions, return the Seeder status immediately
 		if (!seeder.process()) {
 			return seeder.getErrors();
 		}
+		RefactoringStatus status = seeder.getErrors();
 		// otherwise get the passing null type dependent entities
 		// and put just the IJavaElements into the workList
 		this.workList.addAll(seeder.getCandidates());
@@ -110,7 +112,7 @@ public class RefactorableHarvester {
 
 						// now we have the ASTNode corresponding to the match.
 						// process the matching ASTNode.
-						final NullPropagator processor = new NullPropagator((IJavaElement) match.getElement(), node,
+						final NullPropagator processor = new NullPropagator(searchElement, node,
 								RefactorableHarvester.this.scopeRoot, RefactorableHarvester.this.settings,
 								RefactorableHarvester.this.monitor);
 
@@ -135,13 +137,14 @@ public class RefactorableHarvester {
 				if (e.getFailure() >= RefactoringStatus.FATAL)
 					throw e;
 				/*
-				 * we move the current WorkList entities to the set of entities with appropriate
-				 * RefactoringStatus
+				 * we create a RefactoringStatus for the elements that failed with Error severity before we remove them
 				 */
-				this.entities.addAll(Util
-						.getElementForest(this.trimForest(this.workList.getComputationForest(), this.notRefactorable))
-						.stream().map(set -> Entities.create(set, this.instances, this.settings))
-						.collect(Collectors.toSet()));
+				HarvesterASTException hae = (HarvesterASTException)e;
+				RefactoringStatus s = hae.getInstances().stream()
+						.flatMap(instance -> instance.failures.stream()
+							.map(failure -> Util.createStatusEntry(this.settings, instance, failure)))
+						.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
+				status.merge(s);
 				this.notRefactorable.addAll(this.workList.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
 				this.instances.removeIf(instance -> this.notRefactorable.contains(instance.element));
@@ -164,8 +167,8 @@ public class RefactorableHarvester {
 
 		RefactoringStatus rs = this.entities.stream().map(Entities::status).collect(RefactoringStatus::new, RefactoringStatus::merge,
 				RefactoringStatus::merge);
-		rs.merge(seeder.getErrors());
-		return rs;
+		status.merge(rs);
+		return status;
 	}
 
 	private void reset() {

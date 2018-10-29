@@ -18,39 +18,48 @@ public class HarvesterASTException extends HarvesterException {
 	 */
 	private static final long serialVersionUID = -1668833316083844951L;
 
-	private final ASTNode problem;
+	private final ASTNode failingNode;
 	private final Set<IJavaElement> candidates;
 	private final Set<Instance> instances;
 
-	public HarvesterASTException(final ASTNode problem, final Set<IJavaElement> candidates, Set<Instance> instances) {
-		super(problem.toString(), RefactoringStatus.ERROR);
-		this.problem = problem;
+	public HarvesterASTException(final ASTNode node, final Set<IJavaElement> candidates, Set<Instance> instances) {
+		super(node.toString(), RefactoringStatus.ERROR);
+		this.failingNode = node;
 		this.candidates = candidates;
 		this.instances = instances;
 	}
 
 	public HarvesterASTException(final PreconditionFailure failure, final ASTNode problem) {
 		super(failure.getMessage(), RefactoringStatus.FATAL);
-		this.problem = problem;
+		this.failingNode = problem;
 		this.candidates = null;
 		this.instances = null;
 	}
 
+	/**
+	 * @return the node which the processor was visiting when the Error severity failure was generated
+	 */
 	public ASTNode getNode() {
-		return this.problem;
+		return this.failingNode;
 	}
 	
+	/**
+	 * @return the set of elements seeder or propagated while processing
+	 */
 	public Set<IJavaElement> getCandidates() {
 		return this.candidates;
 	}
 	
+	/**
+	 * @return the set of Instances encountered while processing
+	 */
 	public Set<Instance> getInstances() {
 		return this.instances;
 	}
 
 	@Override
 	public String toString() {
-		final CompilationUnit root = (CompilationUnit) this.problem.getRoot();
+		final CompilationUnit root = (CompilationUnit) this.failingNode.getRoot();
 		final ICompilationUnit icu = (ICompilationUnit) root.getJavaElement();
 
 		final StringBuffer ret = new StringBuffer();
@@ -62,19 +71,19 @@ public class HarvesterASTException extends HarvesterException {
 				: icu.getElementName());
 
 		ret.append("\t"); //$NON-NLS-1$
-		ret.append(root.getLineNumber(this.problem.getStartPosition()));
+		ret.append(root.getLineNumber(this.failingNode.getStartPosition()));
 		ret.append("\t"); //$NON-NLS-1$
-		ret.append(this.problem.getStartPosition());
+		ret.append(this.failingNode.getStartPosition());
 		ret.append("\t"); //$NON-NLS-1$
-		ret.append(this.problem.getLength());
+		ret.append(this.failingNode.getLength());
 		ret.append("\t"); //$NON-NLS-1$
 		ret.append(this.getClass().getName());
 		ret.append("\t"); //$NON-NLS-1$
 		ret.append(this.getMessage());
 		ret.append("\t"); //$NON-NLS-1$
-		ret.append(ASTNode.nodeClassForType(this.problem.getNodeType()).getName());
+		ret.append(ASTNode.nodeClassForType(this.failingNode.getNodeType()).getName());
 		ret.append("\t"); //$NON-NLS-1$
-		ret.append(this.problem.toString().replace('\n', ' '));
+		ret.append(this.failingNode.toString().replace('\n', ' '));
 		ret.append("\t\t\t"); //$NON-NLS-1$
 
 		return ret.toString();

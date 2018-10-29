@@ -12,6 +12,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -242,7 +243,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	private void propagationHelper(final Set<Set<String>> expectedPassingSets,
-			final Set<Set<String>> expectedFailingSet, final Choice turnOff, final RefactoringStatus expectedStatus)
+			final Set<Set<String>> expectedFailingSet, final EnumSet<Choice> turnOff, final RefactoringStatus expectedStatus)
 			throws Exception {
 
 		System.out.println();
@@ -251,8 +252,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		final ConvertNullToOptionalRefactoringProcessor refactoring = this.getRefactoringProcessor(icu);
 
-		if (turnOff != null)
-			refactoring.settings().set(false, turnOff);
+		if (!turnOff.isEmpty())
+			turnOff.forEach(choice -> refactoring.settings().set(false, choice));
 
 		final RefactoringStatus status = refactoring.checkFinalConditions(new NullProgressMonitor(), null);
 
@@ -310,7 +311,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testAnonymousClassDeclaration() throws Exception {
-		this.propagationHelper(setOf(setOf("o")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("o")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentField() throws Exception {
@@ -318,44 +319,44 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testAssignmentFieldArray() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldSimpleName() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldStaticQualified() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldStaticSimpleName() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldSuper() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldSuperQualified() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldThis() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldThisQualified() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldTransitive() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b", "c"), setOf("controlNullDependent"), setOf("d", "e")), setOf(),
-				null, new RefactoringStatus());
+				EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentLocalVariable() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentLocalVariable2() throws Exception {
@@ -367,11 +368,11 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testAssignmentLocalVariableArray() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentLocalVariableTransitive() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("c", "d", "e", "f", "g"), setOf("control")), setOf(), null,
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("c", "d", "e", "f", "g"), setOf("control")), setOf(), EnumSet.noneOf(Choice.class),
 				new RefactoringStatus());
 	}
 
@@ -385,35 +386,35 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testCastExpressionBridgeOffMethod() throws Exception {
-		this.propagationHelper(setOf(), setOf(setOf("a", "x")), Choice.REFACTOR_THROUGH_JAVA_OPERATORS,
+		this.propagationHelper(setOf(), setOf(), EnumSet.of(Choice.REFACTOR_THROUGH_JAVA_OPERATORS, Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS),
 				this.createExpectedStatus(new MockEntryData[] { 
 						new MockEntryData(RefactoringStatus.ERROR, CAST_EXPRESSION)
 						}));
 	}
 
 	public void testCastExpressionBridgeOffVarDecl() throws Exception {
-		this.propagationHelper(setOf(), setOf(setOf("a")), Choice.REFACTOR_THROUGH_JAVA_OPERATORS,
+		this.propagationHelper(setOf(), setOf(setOf("a")), EnumSet.of(Choice.REFACTOR_THROUGH_JAVA_OPERATORS),
 				this.createExpectedStatus(new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.ERROR, CAST_EXPRESSION)
 					}));
 	}
 
 	public void testCastExpressionBridgeOnMethod() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "x", "b")), setOf(), null,
+		this.propagationHelper(setOf(setOf("a", "x", "b")), setOf(), EnumSet.noneOf(Choice.class),
 				this.createExpectedStatus(new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.INFO, CAST_EXPRESSION) 
 					}));
 	}
 	
 	public void testSettingsImplicitOnPrimitive() throws Exception {
-		this.propagationHelper(setOf(), setOf(), null, this.createExpectedStatus(
+		this.propagationHelper(setOf(), setOf(), EnumSet.noneOf(Choice.class), this.createExpectedStatus(
 				new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.WARNING, Messages.NoNullsHaveBeenFound)
 				}));
 	}
 
 	public void testCastExpressionBridgeOnVarDecl() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b")), setOf(), null, 
+		this.propagationHelper(setOf(setOf("a", "b")), setOf(), EnumSet.noneOf(Choice.class), 
 				this.createExpectedStatus(new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.INFO, CAST_EXPRESSION) 
 				}));
@@ -433,28 +434,28 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testDeclarationField() throws Exception {
 		this.propagationHelper(setOf(setOf("e"), setOf("earray"), setOf("einitializedarray"), setOf("f"),
-				setOf("farray"), setOf("finitializedarray")), setOf(), null, new RefactoringStatus());
+				setOf("farray"), setOf("finitializedarray")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testDeclarationFieldArray() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testDeclarationFieldTransitive() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b"), setOf("c", "d", "e"), setOf("controlNullDependent")), setOf(),
-				null, new RefactoringStatus());
+				EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testDeclarationLocalVariable() throws Exception {
-		this.propagationHelper(setOf(setOf("a")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testDeclarationLocalVariableArray() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testDeclarationLocalVariableTransitive() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b", "c"), setOf("d", "e"), setOf("control")), setOf(), null,
+		this.propagationHelper(setOf(setOf("a", "b", "c"), setOf("d", "e"), setOf("control")), setOf(), EnumSet.noneOf(Choice.class),
 				new RefactoringStatus());
 	}
 
@@ -472,30 +473,30 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testImplicitlyNullVariableDecl() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testInvocationConstructor() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b", "d", "g", "k"), setOf("f", "i", "m"), setOf("o")), setOf(), null,
+		this.propagationHelper(setOf(setOf("a", "b", "d", "g", "k"), setOf("f", "i", "m"), setOf("o")), setOf(), EnumSet.noneOf(Choice.class),
 				new RefactoringStatus());
 	}
 
 	public void testInvocationMethod() throws Exception {
-		this.propagationHelper(setOf(setOf("o"), setOf("m", "i", "f"), setOf("k", "g", "d", "b", "a")), setOf(), null,
+		this.propagationHelper(setOf(setOf("o"), setOf("m", "i", "f"), setOf("k", "g", "d", "b", "a")), setOf(), EnumSet.noneOf(Choice.class),
 				new RefactoringStatus());
 	}
 
 	public void testInvocationSuperConstructor() throws Exception {
-		this.propagationHelper(setOf(setOf("g", "d", "b", "a"), setOf("i", "f")), setOf(), null,
+		this.propagationHelper(setOf(setOf("g", "d", "b", "a"), setOf("i", "f")), setOf(), EnumSet.noneOf(Choice.class),
 				new RefactoringStatus());
 	}
 
 	public void testMainMethod() throws Exception {
-		this.propagationHelper(setOf(), setOf(), null, RefactoringStatus.createErrorStatus(""));
+		this.propagationHelper(setOf(), setOf(), EnumSet.noneOf(Choice.class), RefactoringStatus.createErrorStatus(""));
 	}
 
 	public void testNewStatement() throws Exception {
-		this.propagationHelper(setOf(setOf("k", "g", "d", "b", "a"), setOf("m", "i", "f"), setOf("o")), setOf(), null,
+		this.propagationHelper(setOf(setOf("k", "g", "d", "b", "a"), setOf("m", "i", "f"), setOf("o")), setOf(), EnumSet.noneOf(Choice.class),
 				new RefactoringStatus());
 	}
 
@@ -513,60 +514,60 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testReturnStatement() throws Exception {
 		this.propagationHelper(setOf(setOf("nullReturner", "extendedNullReturner", "composedNullReturner"),
-				setOf("controlNullReturner")), setOf(), null, new RefactoringStatus());
+				setOf("controlNullReturner")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testSettingsFieldsOff() throws Exception {
-		this.propagationHelper(setOf(), setOf(), Choice.REFACTOR_FIELDS,
+		this.propagationHelper(setOf(), setOf(), EnumSet.of(Choice.REFACTOR_FIELDS),
 				this.createExpectedStatus(new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.ERROR, PreconditionFailure.EXCLUDED_ENTITY)
 				}));
 	}
 
 	public void testSettingsFieldsOn() throws Exception {
-		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES,
+		this.propagationHelper(setOf(setOf("x")), setOf(), EnumSet.of(Choice.REFACTOR_METHOD_RETURN_TYPES),
 				new RefactoringStatus());
 	}
 
 	public void testSettingsImplicitOff() throws Exception {
-		this.propagationHelper(setOf(), setOf(), Choice.CONSIDER_IMPLICITLY_NULL_FIELDS,
+		this.propagationHelper(setOf(), setOf(), EnumSet.of(Choice.CONSIDER_IMPLICITLY_NULL_FIELDS),
 				RefactoringStatus.createWarningStatus(Messages.NoNullsHaveBeenFound));
 	}
 
 	public void testSettingsImplicitOn() throws Exception {
-		this.propagationHelper(setOf(setOf("x")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("x")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testSettingsLocalVarsOff() throws Exception {
-		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.REFACTOR_LOCAL_VARS, 
+		this.propagationHelper(setOf(setOf("m")), setOf(), EnumSet.of(Choice.REFACTOR_LOCAL_VARS), 
 				this.createExpectedStatus(new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.EXCLUDED_ENTITY)
 				}));
 	}
 
 	public void testSettingsLocalVarsOn() throws Exception {
-		this.propagationHelper(setOf(setOf("x")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES,
+		this.propagationHelper(setOf(setOf("x")), setOf(), EnumSet.of(Choice.REFACTOR_METHOD_RETURN_TYPES),
 				new RefactoringStatus());
 	}
 
 	public void testSettingsMethodReturnOff() throws Exception {
-		this.propagationHelper(setOf(setOf("a")), setOf(), Choice.REFACTOR_METHOD_RETURN_TYPES,
+		this.propagationHelper(setOf(setOf("a")), setOf(), EnumSet.of(Choice.REFACTOR_METHOD_RETURN_TYPES),
 				new RefactoringStatus());
 	}
 
 	public void testSettingsMethodReturnOn() throws Exception {
-		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.REFACTOR_FIELDS, 
+		this.propagationHelper(setOf(setOf("m")), setOf(), EnumSet.of(Choice.REFACTOR_FIELDS), 
 				this.createExpectedStatus(new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.EXCLUDED_ENTITY)
 				}));
 	}
 
 	public void testSettingsParametersOff() throws Exception {
-		this.propagationHelper(setOf(setOf("o")), setOf(), Choice.REFACTOR_METHOD_PARAMS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("o")), setOf(), EnumSet.of(Choice.REFACTOR_METHOD_PARAMS), new RefactoringStatus());
 	}
 
 	public void testSettingsParametersOn() throws Exception {
-		this.propagationHelper(setOf(setOf("x")), setOf(), null, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("x")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testTransformationEnhancedForStatement() throws Exception {

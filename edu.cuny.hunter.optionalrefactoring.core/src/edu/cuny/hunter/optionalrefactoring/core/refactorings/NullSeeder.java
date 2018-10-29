@@ -64,7 +64,7 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 	
 	/**
-	 * @return RefactoringStatus.WARNING if no errors, otherwise returns RefactoringStatus.ERROR
+	 * @return RefactoringStatus.WARNING if no seeding done, otherwise returns appropriate RefactoringStatus
 	 */
 	public RefactoringStatus getErrors() {
 		return this.status.isOK() && this.candidates.isEmpty() ? 

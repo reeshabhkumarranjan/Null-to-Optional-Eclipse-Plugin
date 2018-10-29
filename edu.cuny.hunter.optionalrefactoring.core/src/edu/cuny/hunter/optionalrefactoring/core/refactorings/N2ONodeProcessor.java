@@ -91,14 +91,14 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	}
 
 	void endProcessing(IJavaElement element, ASTNode node, EnumSet<PreconditionFailure> pf) throws HarvesterASTException {
-		IJavaElement target = element == null ? this.rootElement : element;
+		IJavaElement failingElement = element == null ? this.rootElement : element;
 		/*
 		 * dump the instance queue into instances, with the appropriate resolved element
 		 */
 		this.instances.addAll(this.instanceQueue.stream()
-				.map(instance -> new Instance(target, instance.node, instance.failures, instance.action))
+				.map(instance -> new Instance(failingElement, instance.node, instance.failures, instance.action))
 				.collect(Collectors.toSet()));
-		this.addInstance(target, node, pf, Action.NIL);
+		this.addInstance(failingElement, node, pf, Action.NIL);
 		throw new HarvesterASTException(node, this.candidates, this.instances);
 	}
 

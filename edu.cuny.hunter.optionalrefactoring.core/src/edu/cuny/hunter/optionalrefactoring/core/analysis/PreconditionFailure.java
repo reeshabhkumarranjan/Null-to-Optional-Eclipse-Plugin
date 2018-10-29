@@ -278,15 +278,19 @@ public enum PreconditionFailure {
 	public int getSeverity(RefactoringSettings settings) {
 		switch (this) {
 		case CAST_EXPRESSION:
-			return settings.refactorThruOperators() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+			return settings.refactorThruOperators() ? RefactoringStatus.INFO : 
+				settings.bridgesExcluded() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
 		case COMPARISON_OP:
-			return settings.refactorThruOperators() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+			return settings.refactorThruOperators() ? RefactoringStatus.INFO :
+				settings.bridgesExcluded() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
 		case ENHANCED_FOR:
-			return settings.refactorThruOperators() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+			return settings.refactorThruOperators() ? RefactoringStatus.INFO : 
+				settings.bridgesExcluded() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
 		case EXCLUDED_ENTITY:
 			return settings.bridgesExcluded() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
 		case INSTANCEOF_OP:
-			return settings.refactorThruOperators() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+			return settings.refactorThruOperators() ? RefactoringStatus.INFO : 
+				settings.bridgesExcluded() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
 		case JAVA_MODEL_ERROR:
 			return RefactoringStatus.FATAL;
 		case MISSING_BINDING:

@@ -73,9 +73,15 @@ public class RefactoringSettings {
 	}
 
 	public static RefactoringSettings testDefaults() {
-		return new RefactoringSettings(EnumSet.of(Choice.REFACTOR_FIELDS, Choice.CONSIDER_IMPLICITLY_NULL_FIELDS,
-				Choice.BRIDGE_EXTERNAL, Choice.REFACTOR_LOCAL_VARS, Choice.REFACTOR_METHOD_PARAMS,
-				Choice.REFACTOR_METHOD_RETURN_TYPES, Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS, Choice.REFACTOR_THROUGH_JAVA_OPERATORS));
+		return new RefactoringSettings(EnumSet.of(
+				Choice.REFACTOR_FIELDS, 
+				Choice.CONSIDER_IMPLICITLY_NULL_FIELDS,
+				Choice.BRIDGE_EXTERNAL, 
+				Choice.REFACTOR_LOCAL_VARS, 
+				Choice.REFACTOR_METHOD_PARAMS,
+				Choice.REFACTOR_METHOD_RETURN_TYPES, 
+				Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS, 
+				Choice.REFACTOR_THROUGH_JAVA_OPERATORS));
 	}
 
 	public static RefactoringSettings userDefaults() {
