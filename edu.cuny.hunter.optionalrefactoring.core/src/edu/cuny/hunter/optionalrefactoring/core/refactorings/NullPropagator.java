@@ -92,9 +92,9 @@ class NullPropagator extends N2ONodeProcessor {
 
 	private final Expression name;
 
-	public NullPropagator(final ASTNode node, final IJavaElement element, final IJavaSearchScope scope,
+	public NullPropagator(final IJavaElement element, final ASTNode node, final IJavaSearchScope scope,
 			final RefactoringSettings settings, final IProgressMonitor monitor) throws CoreException {
-		super(node, settings, monitor, scope);
+		super(element, node, settings, monitor, scope);
 		this.name = (Expression) node;
 	}
 
@@ -147,7 +147,7 @@ class NullPropagator extends N2ONodeProcessor {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
 		final Action action = Action.infer(node, pf, this.settings);
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(null, node, pf);
 		// if the Expression itself is a candidate for transformation to Optional type,
 		// we need to bridge it here (as opposed to being a collection parameterized
 		// with an optional type)
@@ -168,7 +168,7 @@ class NullPropagator extends N2ONodeProcessor {
 						this.settings);
 				final Action action = Action.infer(node.getExpression(), element, pf, this.settings);
 				if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR)) 
-					throw new HarvesterASTException(pf, node); 
+					this.endProcessing(element, node, pf);
 				else {
 					this.addInstance(element, node, pf, action);
 					this.processAscent(node.getParent());
@@ -193,7 +193,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (pf.isEmpty())
 			this.addCandidate(top, methDecl, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, methDecl);
+			this.endProcessing(top == null ? meth : top, methDecl, pf);
 		else
 			this.addInstance(top, node, pf, action); // if we need to bridge it, we need the original return statement
 	}
@@ -237,7 +237,7 @@ class NullPropagator extends N2ONodeProcessor {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
 		final Action action = Action.infer(node, element, pf, this.settings);
 		if (!pf.isEmpty())
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(element, node, pf);
 		this.addInstance(element, node, pf, action);
 	}
 
@@ -258,7 +258,7 @@ class NullPropagator extends N2ONodeProcessor {
 				NullPropagator.this.addCandidate(element, vdf, pf, action);
 				this.processDescent(vdf.getInitializer());
 			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				throw new HarvesterASTException(pf, vdf);
+				this.endProcessing(element, vdf, pf);
 			else
 				NullPropagator.this.addInstance(element, vdf, pf, action);
 		}
@@ -289,7 +289,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (pf.isEmpty())
 			this.addCandidate(top, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(top == null ? meth : top, node, pf);
 		else
 			this.addInstance(top, node, pf, action);
 	}
@@ -303,7 +303,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (pf.isEmpty())
 			NullPropagator.this.addCandidate(element, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(element, node, pf);
 		else
 			NullPropagator.this.addInstance(element, node, pf, action);
 		// take care of remote usage.
@@ -322,7 +322,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (pf.isEmpty())
 			this.addCandidate(top, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(top == null ? meth : top, node, pf);
 		else
 			this.addInstance(top, node, pf, action);
 	}
@@ -349,7 +349,7 @@ class NullPropagator extends N2ONodeProcessor {
 				this.addCandidate(element, node, pf, action);
 				this.processDescent(vdf.getInitializer());
 			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				throw new HarvesterASTException(pf, node);
+				this.endProcessing(element, node, pf);
 			else
 				NullPropagator.this.addInstance(element, node, pf, action);
 		}
@@ -367,7 +367,7 @@ class NullPropagator extends N2ONodeProcessor {
 				this.addCandidate(element, node, pf, action);
 				this.processDescent(node.getInitializer());
 			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				throw new HarvesterASTException(pf, node);
+				this.endProcessing(element, node, pf);
 			else
 				this.addInstance(element, node, pf, action);
 		}
@@ -385,7 +385,7 @@ class NullPropagator extends N2ONodeProcessor {
 				this.addCandidate(element, node, pf, action);
 				this.processDescent(vdf.getInitializer());
 			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				throw new HarvesterASTException(pf, node);
+				this.endProcessing(element, node, pf);
 			else
 				NullPropagator.this.addInstance(element, node, pf, action);
 		}
@@ -425,7 +425,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				throw new HarvesterASTException(pf, this.name);
+				this.endProcessing(meth, this.name, pf);
 			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
 			this.findFormalsForVariable(top, paramNumber);
@@ -446,7 +446,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				throw new HarvesterASTException(pf, this.name);
+				this.endProcessing(meth, this.name, pf);
 			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
@@ -463,7 +463,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				throw new HarvesterASTException(pf, this.name);
+				this.endProcessing(meth, this.name, pf);
 			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		}
 
@@ -484,7 +484,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				throw new HarvesterASTException(pf, this.name);
+				this.endProcessing(meth, this.name, pf);
 			this.addInstance(meth, node, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
@@ -502,7 +502,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				throw new HarvesterASTException(pf, this.name);
+				this.endProcessing(meth, this.name, pf);
 			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));

@@ -325,7 +325,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 */
 	private RefactoringStatus process(final ICompilationUnit icu, final SubMonitor subMonitor) throws CoreException {
 		final CompilationUnit compilationUnit = this.getCompilationUnit(icu, subMonitor.split(1));
-		final RefactorableHarvester harvester = RefactorableHarvester.of(icu, compilationUnit, this.refactoringScope,
+		final RefactorableHarvester harvester = new RefactorableHarvester(icu, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
 		final RefactoringStatus status = harvester.harvestRefactorableContexts();
 		this.entities.addAll(harvester.getEntities());
@@ -341,7 +341,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 */
 	private RefactoringStatus process(final IField field, final SubMonitor subMonitor) throws CoreException {
 		final CompilationUnit compilationUnit = this.getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
-		final RefactorableHarvester harvester = RefactorableHarvester.of(field, compilationUnit, this.refactoringScope,
+		final RefactorableHarvester harvester = new RefactorableHarvester(field, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
 		final RefactoringStatus status = harvester.harvestRefactorableContexts();
 		this.entities.addAll(harvester.getEntities());
@@ -357,7 +357,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	private RefactoringStatus process(final IInitializer initializer, final SubMonitor subMonitor)
 			throws CoreException {
 		final CompilationUnit compilationUnit = this.getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
-		final RefactorableHarvester harvester = RefactorableHarvester.of(initializer, compilationUnit,
+		final RefactorableHarvester harvester = new RefactorableHarvester(initializer, compilationUnit,
 				this.refactoringScope, this.settings, subMonitor);
 		final RefactoringStatus status = harvester.harvestRefactorableContexts();
 		this.entities.addAll(harvester.getEntities());
@@ -387,7 +387,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 */
 	private RefactoringStatus process(final IMethod method, final SubMonitor subMonitor) throws CoreException {
 		final CompilationUnit compilationUnit = this.getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
-		final RefactorableHarvester harvester = RefactorableHarvester.of(method, compilationUnit, this.refactoringScope,
+		final RefactorableHarvester harvester = new RefactorableHarvester(method, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
 		final RefactoringStatus status = harvester.harvestRefactorableContexts();
 		this.entities.addAll(harvester.getEntities());
@@ -433,7 +433,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	 */
 	private RefactoringStatus process(final IType type, final SubMonitor subMonitor) throws CoreException {
 		final CompilationUnit compilationUnit = this.getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
-		final RefactorableHarvester harvester = RefactorableHarvester.of(type, compilationUnit, this.refactoringScope,
+		final RefactorableHarvester harvester = new RefactorableHarvester(type, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
 		final RefactoringStatus status = harvester.harvestRefactorableContexts();
 		this.entities.addAll(harvester.getEntities());

@@ -2,8 +2,7 @@ package p;
 
 public class A {
 	
-	/*Settings includes METHOD_RETURNS
-	passes with m*/
+	/*Settings has fields excluded, should return INFO status*/
 	
 	Object a = null;
 	

@@ -106,7 +106,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final CastExpression node, final RefactoringSettings settings) {
-		final EnumSet<PreconditionFailure> value = EnumSet.noneOf(PreconditionFailure.class);
+		final EnumSet<PreconditionFailure> value = EnumSet.of(CAST_EXPRESSION);
 		return value;
 	}
 

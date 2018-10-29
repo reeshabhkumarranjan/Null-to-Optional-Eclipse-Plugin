@@ -50,6 +50,15 @@ public class Entities implements Iterable<IJavaElement> {
 			this.failures = pf;
 			this.action = a;
 		}
+		
+		@Override
+		public boolean equals(Object _other) {
+			Instance other = (Instance)_other;
+			return this.element.equals(other.element) &&
+					Util.getSourceRange(this.node).equals(Util.getSourceRange(other.node)) &&
+					this.failures.equals(other.failures) &&
+					this.action.equals(other.action);
+		}
 	}
 
 	public static Entities create(final Set<IJavaElement> elements, final Set<Instance> instances, 

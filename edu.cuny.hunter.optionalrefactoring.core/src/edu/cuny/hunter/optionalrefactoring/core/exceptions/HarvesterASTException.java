@@ -1,11 +1,14 @@
 package edu.cuny.hunter.optionalrefactoring.core.exceptions;
 
-import java.util.EnumSet;
+import java.util.Set;
 
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 
 public class HarvesterASTException extends HarvesterException {
@@ -16,19 +19,33 @@ public class HarvesterASTException extends HarvesterException {
 	private static final long serialVersionUID = -1668833316083844951L;
 
 	private final ASTNode problem;
+	private final Set<IJavaElement> candidates;
+	private final Set<Instance> instances;
 
-	public HarvesterASTException(final EnumSet<PreconditionFailure> failures, final ASTNode problem) {
-		super(problem.toString(), failures);
+	public HarvesterASTException(final ASTNode problem, final Set<IJavaElement> candidates, Set<Instance> instances) {
+		super(problem.toString(), RefactoringStatus.ERROR);
 		this.problem = problem;
+		this.candidates = candidates;
+		this.instances = instances;
 	}
 
 	public HarvesterASTException(final PreconditionFailure failure, final ASTNode problem) {
-		super(problem.toString(), failure);
+		super(failure.getMessage(), RefactoringStatus.FATAL);
 		this.problem = problem;
+		this.candidates = null;
+		this.instances = null;
 	}
 
 	public ASTNode getNode() {
 		return this.problem;
+	}
+	
+	public Set<IJavaElement> getCandidates() {
+		return this.candidates;
+	}
+	
+	public Set<Instance> getInstances() {
+		return this.instances;
 	}
 
 	@Override

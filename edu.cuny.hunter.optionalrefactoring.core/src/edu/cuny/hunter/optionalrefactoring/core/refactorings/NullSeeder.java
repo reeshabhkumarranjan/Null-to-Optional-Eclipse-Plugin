@@ -40,6 +40,7 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -57,13 +58,18 @@ class NullSeeder extends N2ONodeProcessor {
 	private ASTNode currentNull;
 	private final RefactoringStatus status = new RefactoringStatus();
 
-	public NullSeeder(final ASTNode node, final RefactoringSettings settings, final IProgressMonitor monitor,
-			final IJavaSearchScope scope) throws HarvesterASTException {
-		super(node, settings, monitor, scope);
+	public NullSeeder(final IJavaElement element, final ASTNode node, final RefactoringSettings settings, 
+			final IProgressMonitor monitor, final IJavaSearchScope scope) throws HarvesterException {
+		super(element, node, settings, monitor, scope);
 	}
 	
+	/**
+	 * @return RefactoringStatus.WARNING if no errors, otherwise returns RefactoringStatus.ERROR
+	 */
 	public RefactoringStatus getErrors() {
-		return this.status;
+		return this.status.isOK() && this.candidates.isEmpty() ? 
+				RefactoringStatus.createWarningStatus(Messages.NoNullsHaveBeenFound) : 
+					status;
 	}
 
 	@Override
@@ -79,7 +85,7 @@ class NullSeeder extends N2ONodeProcessor {
 			final IMethod method = Util.resolveElement(node, argPos);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
-				throw new HarvesterASTException(EnumSet.of(PreconditionFailure.NON_SOURCE_CODE), this.currentNull);
+				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
 
 			this.findFormalsForVariable(top, argPos);
 		}
@@ -93,7 +99,7 @@ class NullSeeder extends N2ONodeProcessor {
 			final IMethod method = Util.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
-				throw new HarvesterASTException(EnumSet.of(PreconditionFailure.NON_SOURCE_CODE), this.currentNull);
+				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
 
 			this.findFormalsForVariable(top, argPos);
 		}
@@ -107,7 +113,7 @@ class NullSeeder extends N2ONodeProcessor {
 			final IMethod method = Util.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
-				throw new HarvesterASTException(EnumSet.of(PreconditionFailure.NON_SOURCE_CODE), this.currentNull);
+				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
 
 			this.findFormalsForVariable(top, argPos);
 		}
@@ -130,7 +136,7 @@ class NullSeeder extends N2ONodeProcessor {
 			final IMethod method = Util.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
-				throw new HarvesterASTException(EnumSet.of(PreconditionFailure.NON_SOURCE_CODE), this.currentNull);
+				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
 
 			this.findFormalsForVariable(top, argPos);
 		}
@@ -144,7 +150,7 @@ class NullSeeder extends N2ONodeProcessor {
 			final IMethod method = Util.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
-				throw new HarvesterASTException(EnumSet.of(PreconditionFailure.NON_SOURCE_CODE), this.currentNull);
+				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
 
 			this.findFormalsForVariable(top, argPos);
 		}
@@ -177,7 +183,7 @@ class NullSeeder extends N2ONodeProcessor {
 						this.addCandidate(element, node, pf, action);
 					else if (pf.contains(PreconditionFailure.EXCLUDED_ENTITY)
 							|| pf.contains(PreconditionFailure.NON_SOURCE_CODE))
-						throw new HarvesterASTException(pf, node);
+						this.endProcessing(element, node, pf);
 		}
 	}
 
@@ -225,12 +231,12 @@ class NullSeeder extends N2ONodeProcessor {
 				this.currentNull = node;
 				this.processAscent(node.getParent());
 			} catch (HarvesterException e) {
-				if (e.getFailure().stream().anyMatch(f -> f.getSeverity(this.settings) > RefactoringStatus.ERROR)) 
+				if (e.getFailure() > RefactoringStatus.ERROR)
 					throw e;
-				this.status.merge(e.getFailure().stream().map(failure -> 
-				Util.createStatusEntry(this.settings, 
-						new Instance(null, currentNull, e.getFailure(), Action.NIL), 
-						failure))
+				Set<Instance> i = ((HarvesterASTException)e).getInstances();
+				this.status.merge(i.stream().flatMap(instance -> instance.failures.stream()
+						.map(failure ->
+							Util.createStatusEntry(this.settings, instance, failure)))
 						.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge));
 			}
 		}

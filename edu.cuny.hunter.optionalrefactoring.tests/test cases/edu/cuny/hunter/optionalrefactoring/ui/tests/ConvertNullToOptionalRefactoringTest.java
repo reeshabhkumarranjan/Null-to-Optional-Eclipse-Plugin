@@ -55,7 +55,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	private static class MockEntryData {
 		Integer severity;
 		String message;
-		PreconditionFailure pf;
+		Optional<PreconditionFailure> pf;
 		Integer code;
 
 		/**
@@ -66,8 +66,15 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			/* we take the precondition failure code with the lowest integer value */
 			this.severity = s;
 			this.message = f.getMessage();
-			this.pf = f;
+			this.pf = Optional.ofNullable(f);
 			this.code = f.getCode();
+		}
+		
+		MockEntryData(final Integer s, final String msg) {
+			this.severity = s;
+			this.message = msg;
+			this.pf = Optional.empty();
+			this.code = RefactoringStatusEntry.NO_CODE;
 		}
 	}
 
@@ -123,7 +130,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		final RefactoringStatus rs = new RefactoringStatus();
 		for (final MockEntryData tuple : list)
 			rs.addEntry(new RefactoringStatusEntry(tuple.severity, tuple.message,
-					new N2ORefactoringStatusContext(null, null, tuple.pf),
+					tuple.pf.isPresent() ? new N2ORefactoringStatusContext(null, null, tuple.pf.get()) : null,
 					ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, tuple.code));
 		return rs;
 	}
@@ -132,15 +139,15 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	 * Checks if an expected RefactoringStatus mocked by test is equal to a
 	 * RefactoringStatus from the Refactoring.
 	 *
-	 * @param first
-	 * @param second
+	 * @param actual
+	 * @param expected
 	 * @return
 	 */
-	private boolean equivalentRefactoringStatus(final RefactoringStatus first, final RefactoringStatus second) {
-		if (first.isOK() || first.hasFatalError())
-			return first.getSeverity() == second.getSeverity();
+	private boolean equivalentRefactoringStatus(final RefactoringStatus actual, final RefactoringStatus expected) {
+		if (actual.isOK() || actual.hasFatalError())
+			return actual.getSeverity() == expected.getSeverity();
 		else
-			return first.getSeverity() == second.getSeverity() && Stream.of(first.getEntries()).allMatch(left -> // check
+			return actual.getSeverity() == expected.getSeverity() && Stream.of(actual.getEntries()).allMatch(left -> // check
 																													// if
 																													// all
 																													// the
@@ -149,9 +156,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 																													// present
 																													// in
 																													// second
-			Stream.of(second.getEntries()).anyMatch(right -> this.equivalentRefactoringStatusEntry(left, right)))
-					&& Stream.of(second.getEntries()).allMatch(left -> // check if all the second are present in first
-					Stream.of(first.getEntries())
+			Stream.of(expected.getEntries()).anyMatch(right -> this.equivalentRefactoringStatusEntry(left, right)))
+					&& Stream.of(expected.getEntries()).allMatch(left -> // check if all the second are present in first
+					Stream.of(actual.getEntries())
 							.anyMatch(right -> this.equivalentRefactoringStatusEntry(left, right)));
 	}
 
@@ -162,16 +169,20 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	 * PreconditionFailures is the same, and does not check the element or
 	 * sourceRange.
 	 *
-	 * @param first
-	 * @param second
+	 * @param actual
+	 * @param expected
 	 * @return
 	 */
-	private boolean equivalentRefactoringStatusEntry(final RefactoringStatusEntry first,
-			final RefactoringStatusEntry second) {
-		return first.getSeverity() == second.getSeverity() && first.getMessage().equals(second.getMessage())
-				&& ((N2ORefactoringStatusContext) first.getContext()).getPreconditionFailure()
-						.equals(((N2ORefactoringStatusContext) second.getContext()).getPreconditionFailure())
-				&& first.getPluginId().equals(second.getPluginId()) && first.getCode() == second.getCode();
+	private boolean equivalentRefactoringStatusEntry(final RefactoringStatusEntry actual,
+			final RefactoringStatusEntry expected) {
+		return actual.getSeverity() == expected.getSeverity() && 
+				actual.getMessage().equals(expected.getMessage()) && 
+				actual.getSeverity() == RefactoringStatus.WARNING ? 
+						actual.getContext() == expected.getContext() && actual.getContext() == null : // No context because no seeding occurred 
+					((N2ORefactoringStatusContext) actual.getContext()).getPreconditionFailure()
+						.equals(((N2ORefactoringStatusContext) expected.getContext()).getPreconditionFailure()) && 
+				actual.getPluginId().equals(expected.getPluginId()) && 
+				actual.getCode() == expected.getCode();
 	}
 
 	private Path getAbsolutionPath(final String fileName) {
@@ -393,11 +404,19 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 						new MockEntryData(RefactoringStatus.INFO, CAST_EXPRESSION) 
 					}));
 	}
+	
+	public void testSettingsImplicitOnPrimitive() throws Exception {
+		this.propagationHelper(setOf(), setOf(), null, this.createExpectedStatus(
+				new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.WARNING, Messages.NoNullsHaveBeenFound)
+				}));
+	}
 
 	public void testCastExpressionBridgeOnVarDecl() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b")), setOf(), null, this.createExpectedStatus(new MockEntryData[] {
-				new MockEntryData(RefactoringStatus.INFO, CAST_EXPRESSION) 
-			}));
+		this.propagationHelper(setOf(setOf("a", "b")), setOf(), null, 
+				this.createExpectedStatus(new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.INFO, CAST_EXPRESSION) 
+				}));
 	}
 
 	public void testComparisonLocalVariable() throws Exception {
@@ -441,7 +460,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testImplicitlyNullFieldConstructorInit() throws Exception {
 		this.transformationHelper(null,
-				RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHaveBeenFound));
+				RefactoringStatus.createWarningStatus(Messages.NoNullsHaveBeenFound));
 	}
 
 	public void testImplicitlyNullFieldNoConstructorInit() throws Exception {
@@ -511,7 +530,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testSettingsImplicitOff() throws Exception {
 		this.propagationHelper(setOf(), setOf(), Choice.CONSIDER_IMPLICITLY_NULL_FIELDS,
-				RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHaveBeenFound));
+				RefactoringStatus.createWarningStatus(Messages.NoNullsHaveBeenFound));
 	}
 
 	public void testSettingsImplicitOn() throws Exception {
@@ -519,7 +538,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testSettingsLocalVarsOff() throws Exception {
-		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.REFACTOR_LOCAL_VARS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.REFACTOR_LOCAL_VARS, 
+				this.createExpectedStatus(new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.EXCLUDED_ENTITY)
+				}));
 	}
 
 	public void testSettingsLocalVarsOn() throws Exception {
@@ -533,7 +555,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testSettingsMethodReturnOn() throws Exception {
-		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.REFACTOR_FIELDS, new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("m")), setOf(), Choice.REFACTOR_FIELDS, 
+				this.createExpectedStatus(new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.EXCLUDED_ENTITY)
+				}));
 	}
 
 	public void testSettingsParametersOff() throws Exception {

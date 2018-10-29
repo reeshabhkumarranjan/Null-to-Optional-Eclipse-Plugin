@@ -48,7 +48,6 @@ import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.Initializer;
 import org.eclipse.jdt.core.dom.InstanceofExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -60,7 +59,6 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
-import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
@@ -68,7 +66,6 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
 import org.eclipse.jdt.internal.corext.refactoring.rename.MethodChecks;
-import org.eclipse.jdt.internal.corext.refactoring.structure.ASTNodeSearchUtil;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.Refactoring;
@@ -78,7 +75,6 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.N2ORefactoringStatusContext;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
@@ -97,7 +93,7 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOption
 @SuppressWarnings("restriction")
 public interface Util {
 
-	public static final Logger LOGGER = Logger.getLogger(ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID + ":"
+	static final Logger LOGGER = Logger.getLogger(ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID + ":"
 			+ Instant.now().truncatedTo(ChronoUnit.MINUTES));
 
 	// temporary development method for console logging extracted results
@@ -107,7 +103,7 @@ public interface Util {
 		System.out.print("}");
 	}
 
-	public static ConvertNullToOptionalRefactoringProcessor createNullToOptionalRefactoringProcessor(
+	static ConvertNullToOptionalRefactoringProcessor createNullToOptionalRefactoringProcessor(
 			final IJavaElement[] elements, final RefactoringSettings refactoringSettings,
 			final Optional<IProgressMonitor> monitor) throws JavaModelException {
 		final CodeGenerationSettings settings = JavaPreferencesSettings
@@ -117,19 +113,19 @@ public interface Util {
 		return processor;
 	}
 
-	public static ProcessorBasedRefactoring createRefactoring() throws JavaModelException {
+	static ProcessorBasedRefactoring createRefactoring() throws JavaModelException {
 		final RefactoringProcessor processor = new ConvertNullToOptionalRefactoringProcessor();
 		return new ProcessorBasedRefactoring(processor);
 	}
 
-	public static ProcessorBasedRefactoring createRefactoring(final IJavaElement[] elements,
+	static ProcessorBasedRefactoring createRefactoring(final IJavaElement[] elements,
 			final Optional<IProgressMonitor> monitor) throws JavaModelException {
 		final ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(elements,
 				RefactoringSettings.userDefaults()/* here user defaults are injected */, monitor);
 		return new ProcessorBasedRefactoring(processor);
 	}
 
-	public static edu.cuny.citytech.refactoring.common.core.Refactoring createRefactoring(
+	static edu.cuny.citytech.refactoring.common.core.Refactoring createRefactoring(
 			final Refactoring refactoring) {
 		return new edu.cuny.citytech.refactoring.common.core.Refactoring() {
 
@@ -228,28 +224,12 @@ public interface Util {
 	static boolean equalASTNodes(final VariableDeclarationStatement left, final ASTNode right) {
 		return new ASTMatcher().match(left, right);
 	}
-
-	public static FieldDeclaration findASTNode(final IField declaration, final CompilationUnit cu)
-			throws JavaModelException {
-		return ASTNodeSearchUtil.getFieldDeclarationNode(declaration, cu);
+	
+	static ASTNode findASTNode(final CompilationUnit cu, final IMember element) throws JavaModelException {
+		return org.eclipse.jdt.core.dom.NodeFinder.perform(cu, element.getNameRange());
 	}
 
-	public static Initializer findASTNode(final IInitializer initializer, final CompilationUnit cu)
-			throws JavaModelException {
-		return ASTNodeSearchUtil.getInitializerNode(initializer, cu);
-	}
-
-	public static MethodDeclaration findASTNode(final IMethod declaration, final CompilationUnit cu)
-			throws JavaModelException {
-		return ASTNodeSearchUtil.getMethodDeclarationNode(declaration, cu);
-	}
-
-	public static TypeDeclaration findASTNode(final IType declaration, final CompilationUnit cu)
-			throws JavaModelException {
-		return ASTNodeSearchUtil.getTypeDeclarationNode(declaration, cu);
-	}
-
-	public static ASTNode getASTNode(final IJavaElement elem, final IProgressMonitor monitor) throws CoreException {
+	static ASTNode getASTNode(final IJavaElement elem, final IProgressMonitor monitor) throws CoreException {
 		final IMember mem = getIMember(elem);
 		final ICompilationUnit icu = mem.getCompilationUnit();
 		if (icu == null)
@@ -258,7 +238,7 @@ public interface Util {
 		return root;
 	}
 
-	public static CompilationUnit getCompilationUnit(final ICompilationUnit icu, final IProgressMonitor monitor) {
+	static CompilationUnit getCompilationUnit(final ICompilationUnit icu, final IProgressMonitor monitor) {
 		final ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setSource(icu);
 		parser.setResolveBindings(true);
@@ -266,14 +246,14 @@ public interface Util {
 		return ret;
 	}
 
-	public static Set<Set<IJavaElement>> getElementForest(final Set<ComputationNode> computationForest) {
+	static Set<Set<IJavaElement>> getElementForest(final Set<ComputationNode> computationForest) {
 		final Set<Set<IJavaElement>> ret = new LinkedHashSet<>();
 		for (final ComputationNode tree : computationForest)
 			ret.add(tree.getComputationTreeElements());
 		return ret;
 	}
 
-	public static ASTNode getExactASTNode(final CompilationUnit root, final SearchMatch match) {
+	static ASTNode getExactASTNode(final CompilationUnit root, final SearchMatch match) {
 		final ArrayList<ASTNode> ret = new ArrayList<>(1);
 		final ASTVisitor visitor = new ASTVisitor() {
 			@Override
@@ -288,19 +268,19 @@ public interface Util {
 		return ret.get(0);
 	}
 
-	public static ASTNode getExactASTNode(final IJavaElement elem, final SearchMatch match,
+	static ASTNode getExactASTNode(final IJavaElement elem, final SearchMatch match,
 			final IProgressMonitor monitor) {
 		final IMember mem = getIMember(elem);
 		final CompilationUnit root = Util.getCompilationUnit(mem.getCompilationUnit(), monitor);
 		return getExactASTNode(root, match);
 	}
 
-	public static ASTNode getExactASTNode(final SearchMatch match, final IProgressMonitor monitor) {
+	static ASTNode getExactASTNode(final SearchMatch match, final IProgressMonitor monitor) {
 		final IJavaElement elem = (IJavaElement) match.getElement();
 		return Util.getExactASTNode(elem, match, monitor);
 	}
 
-	public static IMember getIMember(final IJavaElement elem) {
+	static IMember getIMember(final IJavaElement elem) {
 
 		if (elem == null)
 			throw new IllegalArgumentException(Messages.Util_MemberNotFound);
@@ -316,11 +296,11 @@ public interface Util {
 		return getIMember(elem.getParent());
 	}
 
-	public static MethodDeclaration getMethodDeclaration(final ASTNode node) {
+	static MethodDeclaration getMethodDeclaration(final ASTNode node) {
 		return (MethodDeclaration) ASTNodes.getParent(node, ASTNode.METHOD_DECLARATION);
 	}
 
-	public static int getParamNumber(final List<ASTNode> arguments, final Expression name) {
+	static int getParamNumber(final List<ASTNode> arguments, final Expression name) {
 		ASTNode curr = name;
 		while (curr != null) {
 			final int inx = arguments.indexOf(curr);
@@ -634,7 +614,7 @@ public interface Util {
 		return Stream.of(o).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
-	public static RefactoringStatusEntry createStatusEntry(final RefactoringSettings settings, Entities.Instance instance,
+	static RefactoringStatusEntry createStatusEntry(final RefactoringSettings settings, Entities.Instance instance,
 			PreconditionFailure failure) {
 		return new RefactoringStatusEntry(failure.getSeverity(settings), 
 				failure.getMessage(),

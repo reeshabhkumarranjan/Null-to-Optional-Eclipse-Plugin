@@ -7,18 +7,11 @@ import java.util.stream.Collectors;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IField;
-import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.Initializer;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -33,7 +26,6 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
-import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -55,35 +47,7 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  */
 public class RefactorableHarvester {
 
-	public static RefactorableHarvester of(final ICompilationUnit i, final CompilationUnit c,
-			final IJavaSearchScope scope, final RefactoringSettings settings, final IProgressMonitor monitor) {
-		return new RefactorableHarvester(c, scope, settings, monitor);
-	}
-
-	public static RefactorableHarvester of(final IField f, final CompilationUnit c, final IJavaSearchScope scope,
-			final RefactoringSettings settings, final IProgressMonitor monitor) throws JavaModelException {
-		final FieldDeclaration fieldDecl = Util.findASTNode(f, c);
-		return new RefactorableHarvester(fieldDecl, scope, settings, monitor);
-	}
-
-	public static RefactorableHarvester of(final IInitializer i, final CompilationUnit c, final IJavaSearchScope scope,
-			final RefactoringSettings settings, final IProgressMonitor monitor) throws JavaModelException {
-		final Initializer initializer = Util.findASTNode(i, c);
-		return new RefactorableHarvester(initializer, scope, settings, monitor);
-	}
-
-	public static RefactorableHarvester of(final IMethod m, final CompilationUnit c, final IJavaSearchScope scope,
-			final RefactoringSettings settings, final IProgressMonitor monitor) throws JavaModelException {
-		final MethodDeclaration methodDecl = Util.findASTNode(m, c);
-		return new RefactorableHarvester(methodDecl, scope, settings, monitor);
-	}
-
-	public static RefactorableHarvester of(final IType t, final CompilationUnit c, final IJavaSearchScope scope,
-			final RefactoringSettings settings, final IProgressMonitor monitor) throws JavaModelException {
-		final TypeDeclaration typeDecl = Util.findASTNode(t, c);
-		return new RefactorableHarvester(typeDecl, scope, settings, monitor);
-	}
-
+	private final IJavaElement element;
 	private final ASTNode refactoringRootNode;
 	private final IJavaSearchScope scopeRoot;
 	private final RefactoringSettings settings;
@@ -94,9 +58,10 @@ public class RefactorableHarvester {
 	private final Set<Instance> instances = new LinkedHashSet<>();
 	private final Set<Entities> entities = new LinkedHashSet<>();
 
-	private RefactorableHarvester(final ASTNode rootNode, final IJavaSearchScope scope,
-			final RefactoringSettings settings, final IProgressMonitor m) {
-		this.refactoringRootNode = rootNode;
+	public RefactorableHarvester(final IJavaElement element, final CompilationUnit cu, final IJavaSearchScope scope, 
+			final RefactoringSettings settings, final IProgressMonitor m) throws JavaModelException {
+		this.element = element;
+		this.refactoringRootNode = element instanceof ICompilationUnit ? cu : Util.findASTNode(cu, (IMember)element) ;
 		this.monitor = m;
 		this.scopeRoot = scope;
 		this.settings = settings;
@@ -112,15 +77,12 @@ public class RefactorableHarvester {
 		// this worklist starts with the immediate type-dependent entities on
 		// null
 		// expressions.
-		final NullSeeder seeder = new NullSeeder(this.refactoringRootNode, this.settings, this.monitor, this.scopeRoot);
+		final NullSeeder seeder = new NullSeeder(this.element, this.refactoringRootNode, this.settings, this.monitor, this.scopeRoot);
 		// if no nulls pass the preconditions, return the Error status but if no nulls were found at all, return a Fatal Error Status
 		if (!seeder.process()) {
-			return seeder.getErrors().isOK() ?	// it's empty of precondition failures
-					RefactoringStatus.createFatalErrorStatus(Messages.NoNullsHaveBeenFound) :
-						seeder.getErrors();
+			return seeder.getErrors();
 		}
 		// otherwise get the passing null type dependent entities
-		this.instances.addAll(seeder.getInstances());
 		// and put just the IJavaElements into the workList
 		this.workList.addAll(seeder.getCandidates());
 
@@ -148,7 +110,7 @@ public class RefactorableHarvester {
 
 						// now we have the ASTNode corresponding to the match.
 						// process the matching ASTNode.
-						final NullPropagator processor = new NullPropagator(node, (IJavaElement) match.getElement(),
+						final NullPropagator processor = new NullPropagator((IJavaElement) match.getElement(), node,
 								RefactorableHarvester.this.scopeRoot, RefactorableHarvester.this.settings,
 								RefactorableHarvester.this.monitor);
 
@@ -170,8 +132,7 @@ public class RefactorableHarvester {
 						requestor, this.monitor);
 
 			} catch (final HarvesterException e) {
-				if (e.getFailure().contains(PreconditionFailure.JAVA_MODEL_ERROR)
-						|| e.getFailure().contains(PreconditionFailure.MISSING_BINDING))
+				if (e.getFailure() >= RefactoringStatus.FATAL)
 					throw e;
 				/*
 				 * we move the current WorkList entities to the set of entities with appropriate
@@ -201,9 +162,10 @@ public class RefactorableHarvester {
 		this.entities.addAll(candidateSets.stream().map(set -> Entities.create(set, this.instances, this.settings))
 				.collect(Collectors.toSet()));
 
-		return this.entities.stream().map(Entities::status).collect(RefactoringStatus::new, RefactoringStatus::merge,
+		RefactoringStatus rs = this.entities.stream().map(Entities::status).collect(RefactoringStatus::new, RefactoringStatus::merge,
 				RefactoringStatus::merge);
-
+		rs.merge(seeder.getErrors());
+		return rs;
 	}
 
 	private void reset() {

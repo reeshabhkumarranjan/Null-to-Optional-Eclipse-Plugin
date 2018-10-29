@@ -49,6 +49,7 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  */
 abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
+	final IJavaElement rootElement;
 	final RefactoringSettings settings;
 	final IProgressMonitor monitor;
 	final IJavaSearchScope scope;
@@ -56,14 +57,16 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	private final Set<Instance> instances = new LinkedHashSet<>();
 	private final Set<Instance> instanceQueue = new LinkedHashSet<>();
 
-	N2ONodeProcessor(final ASTNode node, final RefactoringSettings settings, final IProgressMonitor monitor,
-			final IJavaSearchScope scope) throws HarvesterASTException {
+	@SuppressWarnings("serial")
+	N2ONodeProcessor(final IJavaElement element, final ASTNode node, final RefactoringSettings settings, final IProgressMonitor monitor,
+			final IJavaSearchScope scope) throws HarvesterException {
 		super(node);
+		this.rootElement = element;
 		if (!node.getAST().hasResolvedBindings())
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		this.settings = settings;
-		this.monitor = monitor;
-		this.scope = scope;
+			throw new HarvesterException(PreconditionFailure.MISSING_BINDING.getMessage(), RefactoringStatus.FATAL) {};
+			this.settings = settings;
+			this.monitor = monitor;
+			this.scope = scope;
 	}
 
 	void addCandidate(final IJavaElement element, final ASTNode node, final EnumSet<PreconditionFailure> pf,
@@ -85,6 +88,18 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			this.instanceQueue.add(new Instance(element, node, pf, action));
 		else
 			this.instances.add(new Instance(element, node, pf, action));
+	}
+
+	void endProcessing(IJavaElement element, ASTNode node, EnumSet<PreconditionFailure> pf) throws HarvesterASTException {
+		IJavaElement target = element == null ? this.rootElement : element;
+		/*
+		 * dump the instance queue into instances, with the appropriate resolved element
+		 */
+		this.instances.addAll(this.instanceQueue.stream()
+				.map(instance -> new Instance(target, instance.node, instance.failures, instance.action))
+				.collect(Collectors.toSet()));
+		this.addInstance(target, node, pf, Action.NIL);
+		throw new HarvesterASTException(node, this.candidates, this.instances);
 	}
 
 	@Override
@@ -115,7 +130,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
 		final Action action = Action.infer(node, pf, this.settings);
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(null, node, pf);
 		else
 			/*
 			 * for an ASTNode without it's own IJavaElement add it to a queue, which gets
@@ -215,7 +230,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
 		final Action action = Action.infer(node, pf, this.settings);
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(null, node, pf);
 		else
 			/*
 			 * for an ASTNode without it's own IJavaElement add it to a queue, which gets
@@ -234,7 +249,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(element, node, pf);
 		else
 			this.addInstance(element, node, pf, action);
 	}
@@ -253,7 +268,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
 		final Action action = Action.infer(node, pf, this.settings);
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(null, node, pf);
 		else
 			this.addInstance(null, node, pf, action);
 		this.processDescent(node.getLeftOperand());
@@ -278,7 +293,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(element, node, pf);
 		else
 			this.addInstance(element, node, pf, action);
 	}
@@ -311,7 +326,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 						if (pf.isEmpty())
 							N2ONodeProcessor.this.addCandidate(element, svd, pf, action);
 						else if (pf.stream().anyMatch(f -> f.getSeverity(N2ONodeProcessor.this.settings) >= RefactoringStatus.ERROR))
-							throw new HarvesterASTException(pf, svd);
+							N2ONodeProcessor.this.endProcessing(element, node, pf);
 						else
 							N2ONodeProcessor.this.addInstance(element, svd, pf, action);
 					}
@@ -343,7 +358,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			throw new HarvesterASTException(pf, node);
+			this.endProcessing(element, node, pf);
 		else
 			this.addInstance(element, node, pf, action);
 	}
