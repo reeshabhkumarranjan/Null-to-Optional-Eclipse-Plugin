@@ -623,7 +623,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		if (turnOff != null)
 			processor.settings().set(false, turnOff);
 
-		final RefactoringStatus finalStatus = refactoring.checkFinalConditions(new NullProgressMonitor());
+		final RefactoringStatus finalStatus = refactoring.checkAllConditions(new NullProgressMonitor());
 		this.getLogger().info("Final status: " + finalStatus);
 
 		assertTrue("Precondition checking returned the expected RefactoringStatus: " + expectedStatus + ".",
