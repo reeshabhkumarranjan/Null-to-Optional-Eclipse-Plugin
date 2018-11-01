@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
@@ -358,52 +359,8 @@ public interface Util {
 		}
 	}
 
-	static boolean isGeneratedCode(final IJavaElement element) throws HarvesterJavaModelException {
-		switch (element.getElementType()) {
-		case IJavaElement.LOCAL_VARIABLE: {
-			final ILocalVariable ilv = (ILocalVariable) element;
-			try {
-				return ilv.getDeclaringMember().getDeclaringType().getCompilationUnit().getCorrespondingResource()
-						.isDerived();
-			} catch (final JavaModelException e) {
-				throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, element);
-			}
-		}
-		case IJavaElement.FIELD: {
-			final IField iField = (IField) element;
-			try {
-				return iField.getDeclaringType().getCompilationUnit().getCorrespondingResource().isDerived();
-			} catch (final JavaModelException e) {
-				throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, element);
-			}
-		}
-		case IJavaElement.TYPE: {
-			final IType iType = (IType) element;
-			try {
-				return iType.getCompilationUnit().getCorrespondingResource().isDerived();
-			} catch (final JavaModelException e) {
-				throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, element);
-			}
-		}
-		case IJavaElement.METHOD: {
-			final IMethod iMethod = (IMethod) element;
-			try {
-				return iMethod.getDeclaringType().getCompilationUnit().getCorrespondingResource().isDerived();
-			} catch (final JavaModelException e) {
-				throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, element);
-			}
-		}
-		case IJavaElement.INITIALIZER: {
-			final IInitializer ii = (IInitializer) element;
-			try {
-				return ii.getDeclaringType().getCompilationUnit().getCorrespondingResource().isDerived();
-			} catch (final JavaModelException e) {
-				throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, element);
-			}
-		}
-		default:
-			throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, element);
-		}
+	static boolean isGeneratedCode(final IJavaElement element) {
+		return element.getResource().isDerived(IResource.CHECK_ANCESTORS);
 	}
 
 	@SafeVarargs
