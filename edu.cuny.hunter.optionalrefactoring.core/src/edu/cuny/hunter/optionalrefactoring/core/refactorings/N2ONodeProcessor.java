@@ -3,8 +3,6 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IField;
@@ -55,7 +53,6 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	final IJavaSearchScope scope;
 	final Set<IJavaElement> candidates = new LinkedHashSet<>();
 	private final Set<Instance> instances = new LinkedHashSet<>();
-	private final Set<Instance> instanceQueue = new LinkedHashSet<>();
 
 	@SuppressWarnings("serial")
 	N2ONodeProcessor(final IJavaElement element, final ASTNode node, final RefactoringSettings settings, final IProgressMonitor monitor,
@@ -71,34 +68,16 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	void addCandidate(final IJavaElement element, final ASTNode node, final EnumSet<PreconditionFailure> pf,
 			final Action action) {
-		/*
-		 * dump the instance queue into instances, with the appropriate resolved element
-		 */
-		this.instances.addAll(this.instanceQueue.stream()
-				.map(instance -> new Instance(element, instance.node, instance.failures, instance.action))
-				.collect(Collectors.toSet()));
-		this.instanceQueue.clear();
 		this.candidates.add(element);
-		this.addInstance(element, node, pf, action);
+		this.addInstance(this.rootNode, pf, action);
 	}
 
-	void addInstance(final IJavaElement element, final ASTNode node, final EnumSet<PreconditionFailure> pf,
-			final Action action) {
-		if (element == null)
-			this.instanceQueue.add(new Instance(element, node, pf, action));
-		else
-			this.instances.add(new Instance(element, node, pf, action));
+	void addInstance(final ASTNode node, final EnumSet<PreconditionFailure> pf, final Action action) {
+			this.instances.add(new Instance(this.rootElement, node, pf, action));
 	}
 
 	void endProcessing(IJavaElement element, ASTNode node, EnumSet<PreconditionFailure> pf) throws HarvesterASTException {
-		IJavaElement failingElement = element == null ? this.rootElement : element;
-		/*
-		 * dump the instance queue into instances, with the appropriate resolved element
-		 */
-		this.instances.addAll(this.instanceQueue.stream()
-				.map(instance -> new Instance(failingElement, instance.node, instance.failures, instance.action))
-				.collect(Collectors.toSet()));
-		this.addInstance(failingElement, node, pf, Action.NIL);
+		this.addInstance(node, pf, Action.NIL);
 		throw new HarvesterASTException(node, this.candidates, this.instances);
 	}
 
@@ -137,7 +116,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			 * associated with the resolved element eventually upon becoming added to the
 			 * candidate set
 			 */
-			this.addInstance(null, node, pf, action);
+			this.addInstance(node, pf, action);
 		this.processAscent(node.getParent());
 	}
 
@@ -237,7 +216,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			 * associated with the resolved element eventually upon becoming added to the
 			 * candidate set
 			 */
-			this.addInstance(null, node, pf, action);
+			this.addInstance(node, pf, action);
 		this.processDescent(node.getExpression());
 	}
 
@@ -251,7 +230,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(element, node, pf);
 		else
-			this.addInstance(element, node, pf, action);
+			this.addInstance(node, pf, action);
 	}
 
 	/**
@@ -270,7 +249,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(null, node, pf);
 		else
-			this.addInstance(null, node, pf, action);
+			this.addInstance(node, pf, action);
 		this.processDescent(node.getLeftOperand());
 		this.processDescent(node.getRightOperand());
 	}
@@ -295,7 +274,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(element, node, pf);
 		else
-			this.addInstance(element, node, pf, action);
+			this.addInstance(node, pf, action);
 	}
 
 	void findFormalsForVariable(final IMethod correspondingMethod, final int paramNumber) throws CoreException {
@@ -328,7 +307,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 						else if (pf.stream().anyMatch(f -> f.getSeverity(N2ONodeProcessor.this.settings) >= RefactoringStatus.ERROR))
 							N2ONodeProcessor.this.endProcessing(element, node, pf);
 						else
-							N2ONodeProcessor.this.addInstance(element, svd, pf, action);
+							N2ONodeProcessor.this.addInstance(svd, pf, action);
 					}
 					for (final Object element2 : visitor.getExpressions()) {
 						final Expression exp = (Expression) element2;
@@ -354,12 +333,13 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	private void process(final Name node) throws HarvesterException {
 		final IJavaElement element = Util.resolveElement(node);
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
-		final Action action = Action.infer(node, element, pf, this.settings);
+		final Action action = pf.contains(PreconditionFailure.NON_SOURCE_CODE) ? Action.BRIDGE_VALUE_OUT
+				: Action.NIL;
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(element, node, pf);
 		else
-			this.addInstance(element, node, pf, action);
+			this.addInstance(node, pf, action);
 	}
 }

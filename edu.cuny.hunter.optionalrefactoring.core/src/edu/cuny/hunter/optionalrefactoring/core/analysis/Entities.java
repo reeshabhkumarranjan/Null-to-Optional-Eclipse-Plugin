@@ -12,6 +12,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Assignment;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -32,7 +33,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import com.google.common.collect.Streams;
 
-import edu.cuny.hunter.optionalrefactoring.core.utils.ASTNodeFinder;
+import org.eclipse.jdt.core.dom.NodeFinder;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 @SuppressWarnings("restriction")
@@ -90,6 +91,12 @@ public class Entities implements Iterable<IJavaElement> {
 		this.instances = mappedInstances;
 	}
 
+	@Override
+	public String toString() {
+		return this.elements.stream().map(IJavaElement::getElementName)
+			.collect(Collectors.joining(", ", "{", "}"));
+	}
+	
 	public void addRewrite(final CompilationUnitRewrite rewrite, final IJavaElement element) {
 		if (this.rewriteMap.containsKey(rewrite))
 			this.rewriteMap.get(rewrite).add(element);
@@ -302,13 +309,12 @@ public class Entities implements Iterable<IJavaElement> {
 
 	public void transform() throws CoreException {
 		for (final CompilationUnitRewrite rewrite : this.rewriteMap.keySet()) {
-			final ASTNodeFinder finder = ASTNodeFinder.create(rewrite.getRoot());
+			final CompilationUnit cu = rewrite.getRoot();
 			for (final IJavaElement element : this.rewriteMap.get(rewrite)) {
 				final Set<Instance> instances = this.instances.get(element);
 				for (final Instance i : instances) {
-					final ASTNode node = finder.find(i.node);
-					final Action action = this.determine(node, element);
-					this.process(node, action, rewrite);
+					final ASTNode node = NodeFinder.perform(cu, Util.getSourceRange(i.node));
+					this.process(node, i.action, rewrite);
 				}
 			}
 			final ImportRewrite iRewrite = rewrite.getImportRewrite();
