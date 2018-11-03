@@ -33,7 +33,6 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 
 import edu.cuny.citytech.refactoring.common.tests.RefactoringTest;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.N2ORefactoringStatusContext;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
@@ -41,6 +40,7 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.Cho
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
 import junit.framework.TestSuite;

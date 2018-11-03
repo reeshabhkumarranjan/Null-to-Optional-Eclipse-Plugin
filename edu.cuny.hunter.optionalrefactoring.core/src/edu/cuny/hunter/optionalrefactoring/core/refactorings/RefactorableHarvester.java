@@ -21,11 +21,10 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -141,7 +140,7 @@ public class RefactorableHarvester {
 				HarvesterASTException hae = (HarvesterASTException)e;
 				RefactoringStatus s = hae.getInstances().stream()
 						.flatMap(instance -> instance.failures.stream()
-							.map(failure -> Util.createStatusEntry(this.settings, instance, failure)))
+							.map(failure -> Util.createStatusEntry(this.settings, failure, instance.element, instance.node)))
 						.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
 				status.merge(s);
 				this.notRefactorable.addAll(this.workList.getCurrentComputationTreeElements());

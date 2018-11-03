@@ -249,23 +249,6 @@ class NullPropagator extends N2ONodeProcessor {
 	}
 
 	@Override
-	void descend(final FieldDeclaration node) throws CoreException {
-		for (final Object o : node.fragments()) {
-			final VariableDeclarationFragment vdf = (VariableDeclarationFragment) o;
-			final IField element = (IField) Util.resolveElement(vdf);
-			final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(vdf, element, this.settings);
-			final Action action = Action.infer(vdf, element, pf, this.settings);
-			if (pf.isEmpty()) {
-				NullPropagator.this.addCandidate(element, vdf, pf, action);
-				this.processDescent(vdf.getInitializer());
-			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				this.endProcessing(element, vdf, pf);
-			else
-				NullPropagator.this.addInstance(vdf, pf, action);
-		}
-	}
-
-	@Override
 	void descend(final MethodDeclaration node) throws CoreException {
 		final Set<ReturnStatement> ret = new LinkedHashSet<>();
 		node.accept(new ASTVisitor() {
@@ -336,60 +319,6 @@ class NullPropagator extends N2ONodeProcessor {
 				final SwitchCase sc = (SwitchCase) o;
 				this.processDescent(sc.getExpression());
 			}
-	}
-
-	@Override
-	void descend(final VariableDeclarationExpression node) throws CoreException {
-		@SuppressWarnings("unchecked")
-		final List<VariableDeclarationFragment> list = node.fragments();
-		for (final VariableDeclarationFragment vdf : list) {
-			final IJavaElement element = Util.resolveElement(vdf);
-			final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
-			final Action action = Action.infer(node, element, pf, this.settings);
-			if (pf.isEmpty()) {
-				this.addCandidate(element, node, pf, action);
-				this.processDescent(vdf.getInitializer());
-			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				this.endProcessing(element, node, pf);
-			else
-				NullPropagator.this.addInstance(node, pf, action);
-		}
-	}
-
-	@Override
-	void descend(final VariableDeclarationFragment node) throws CoreException {
-		final IJavaElement element = Util.resolveElement(node);
-		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
-			final EnumSet<PreconditionFailure> pf = node.getParent() instanceof FieldDeclaration
-					? PreconditionFailure.check(node, (IField) element, this.settings)
-					: PreconditionFailure.check(node, element, this.settings);
-			final Action action = Action.infer(node, element, pf, this.settings);
-			if (pf.isEmpty()) {
-				this.addCandidate(element, node, pf, action);
-				this.processDescent(node.getInitializer());
-			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				this.endProcessing(element, node, pf);
-			else
-				this.addInstance(node, pf, action);
-		}
-	}
-
-	@Override
-	void descend(final VariableDeclarationStatement node) throws CoreException {
-		@SuppressWarnings("unchecked")
-		final List<VariableDeclarationFragment> list = node.fragments();
-		for (final VariableDeclarationFragment vdf : list) {
-			final IJavaElement element = Util.resolveElement(vdf);
-			final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
-			final Action action = Action.infer(node, element, pf, this.settings);
-			if (pf.isEmpty()) {
-				this.addCandidate(element, node, pf, action);
-				this.processDescent(vdf.getInitializer());
-			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				this.endProcessing(element, node, pf);
-			else
-				NullPropagator.this.addInstance(node, pf, action);
-		}
 	}
 
 	private void findFormalsForVariable(final ClassInstanceCreation node) throws JavaModelException, CoreException {

@@ -2,6 +2,7 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -16,6 +17,7 @@ import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.dom.Name;
@@ -23,7 +25,9 @@ import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
+import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -34,11 +38,11 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -156,6 +160,33 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	void ascend(final SingleVariableDeclaration node) throws CoreException {
 		this.descend(node);
 	}
+	
+	/* (non-Javadoc)
+	 * @see edu.cuny.hunter.optionalrefactoring.core.refactorings.ASTNodeProcessor#ascend(org.eclipse.jdt.core.dom.FieldDeclaration)
+	 * 	 * When we ascend to an <code>FieldDeclaration</code> node, we stop ascending, and descend to process it.
+	 */
+	@Override
+	void ascend(final FieldDeclaration node) throws CoreException {
+		this.descend(node);
+	}
+	
+	/* (non-Javadoc)
+	 * @see edu.cuny.hunter.optionalrefactoring.core.refactorings.ASTNodeProcessor#ascend(org.eclipse.jdt.core.dom.FieldDeclaration)
+	 * 	 * When we ascend to an <code>VariableDeclarationExpression</code> node, we stop ascending, and descend to process it.
+	 */
+	@Override
+	void ascend(final VariableDeclarationExpression node) throws CoreException {
+		this.descend(node);
+	}
+	
+	/* (non-Javadoc)
+	 * @see edu.cuny.hunter.optionalrefactoring.core.refactorings.ASTNodeProcessor#ascend(org.eclipse.jdt.core.dom.FieldDeclaration)
+	 * 	 * When we ascend to an <code>VariableDeclarationStatement</code> node, we stop ascending, and descend to process it.
+	 */
+	@Override
+	void ascend(final VariableDeclarationStatement node) throws CoreException {
+		this.descend(node);
+	}
 
 	@Override
 	void ascend(final SuperFieldAccess node) throws CoreException {
@@ -163,15 +194,22 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	}
 
 	/**
-	 * When we ascend to an <code>VariableDeclarationFragment</code> node, we stop
-	 * ascending, and descend to process it.
 	 *
 	 * @param node
 	 * @throws CoreException
 	 */
 	@Override
 	void ascend(final VariableDeclarationFragment node) throws CoreException {
-		this.descend(node);
+		final IJavaElement element = Util.resolveElement(node);
+		EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
+		Action action = Action.infer(node, element, pf, this.settings);
+		if (pf.isEmpty()) {
+			this.addCandidate(element, node, pf, action);
+			this.processAscent(node.getParent());
+		} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
+			this.endProcessing(element, node, pf);
+		else
+			this.addInstance(node, pf, action);
 	}
 
 	/**
@@ -233,6 +271,15 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			this.addInstance(node, pf, action);
 	}
 
+	@Override
+	void descend(final FieldDeclaration node) throws CoreException {
+		@SuppressWarnings("unchecked")
+		List<VariableDeclarationFragment> list = node.fragments();
+		for (final VariableDeclarationFragment vdf : list) {
+			this.descend(vdf);
+		}
+	}
+
 	/**
 	 * When processing an <code>InfixExpression</code> node comparison we only care
 	 * about equality / inequality with <code>null</code>.
@@ -275,6 +322,42 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			this.endProcessing(element, node, pf);
 		else
 			this.addInstance(node, pf, action);
+	}
+
+	@Override
+	void descend(final VariableDeclarationExpression node) throws CoreException {
+		@SuppressWarnings("unchecked")
+		final List<VariableDeclarationFragment> list = node.fragments();
+		for (final VariableDeclarationFragment vdf : list) {
+			this.descend(vdf);
+		}
+	}
+
+	@Override
+	void descend(final VariableDeclarationFragment node) throws CoreException {
+		final IJavaElement element = Util.resolveElement(node);
+		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
+			final EnumSet<PreconditionFailure> pf = node.getParent() instanceof FieldDeclaration
+					? PreconditionFailure.check(node, (IField) element, this.settings)
+					: PreconditionFailure.check(node, element, this.settings);
+			final Action action = Action.infer(node, element, pf, this.settings);
+			if (pf.isEmpty()) {
+				this.addCandidate(element, node, pf, action);
+				this.processDescent(node.getInitializer());
+			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
+				this.endProcessing(element, node, pf);
+			else
+				this.addInstance(node, pf, action);
+		}
+	}
+
+	@Override
+	void descend(final VariableDeclarationStatement node) throws CoreException {
+		@SuppressWarnings("unchecked")
+		final List<VariableDeclarationFragment> list = node.fragments();
+		for (final VariableDeclarationFragment vdf : list) {
+			this.descend(vdf);
+		}
 	}
 
 	void findFormalsForVariable(final IMethod correspondingMethod, final int paramNumber) throws CoreException {

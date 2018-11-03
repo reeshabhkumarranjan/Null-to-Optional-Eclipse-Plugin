@@ -49,17 +49,16 @@ public enum Action {
 	/**
 	 * Transform to a parameterized optional return type and wrap return value;
 	 */
-	CHANGE_N2O_METH_DECL,
+	CHANGE_N2O_RETURN,
 	/**
 	 * Transform the value of a variable or invocation with optional type to it's
 	 * raw type or null
 	 */
 	BRIDGE_VALUE_OUT,
 	/**
-	 * Transform the literal on the right hand side of an assignment into an
-	 * optional.
+	 * Wrap a literal into an optional.
 	 */
-	CHANGE_N2O_LITERAL,
+	BRIDGE_LITERAL_IN,
 	/**
 	 * Wrap a value in an Optional.ofNullable
 	 */

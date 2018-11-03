@@ -1,4 +1,4 @@
-package edu.cuny.hunter.optionalrefactoring.core.analysis;
+package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -12,8 +12,12 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Assignment;
+import org.eclipse.jdt.core.dom.BooleanLiteral;
+import org.eclipse.jdt.core.dom.CharacterLiteral;
+import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -21,7 +25,10 @@ import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.Type;
+import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
@@ -34,16 +41,22 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import com.google.common.collect.Streams;
 
 import org.eclipse.jdt.core.dom.NodeFinder;
+import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.NumberLiteral;
+
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 @SuppressWarnings("restriction")
 public class Entities implements Iterable<IJavaElement> {
 
 	public static class Instance {
-		public final IJavaElement element;
-		public final ASTNode node;
-		public final EnumSet<PreconditionFailure> failures;
-		public final Action action;
+		final IJavaElement element;
+		final ASTNode node;
+		final EnumSet<PreconditionFailure> failures;
+		final Action action;
 
 		public Instance(final IJavaElement e, final ASTNode n, final EnumSet<PreconditionFailure> pf, final Action a) {
 			this.element = e;
@@ -71,7 +84,7 @@ public class Entities implements Iterable<IJavaElement> {
 						(left, right) -> Streams.concat(left.stream(), right.stream()).collect(Collectors.toSet())));
 		RefactoringStatus status = instances.stream()
 				.filter(instance -> elements.contains(instance.element))
-				.flatMap(instance -> instance.failures.stream().map(failure -> Util.createStatusEntry(settings, instance, failure)))
+				.flatMap(instance -> instance.failures.stream().map(failure -> Util.createStatusEntry(settings, failure, instance.element, instance.node)))
 				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
 		return new Entities(status, elements, mappedInstances);
 	}
@@ -104,7 +117,7 @@ public class Entities implements Iterable<IJavaElement> {
 			this.rewriteMap.put(rewrite, Util.setOf(element));
 	}
 
-	private void bridge(Expression node, final CompilationUnitRewrite rewrite) {
+	private void bridgeOut(Expression node, final CompilationUnitRewrite rewrite) {
 		final Assignment assignment = (Assignment) ASTNodes.getParent(node, ASTNode.ASSIGNMENT);
 		if (assignment != null)
 			node = assignment.getRightHandSide();
@@ -114,14 +127,24 @@ public class Entities implements Iterable<IJavaElement> {
 		astRewrite.replace(node, copy, null);
 	}
 
-	private void bridge(final Name node, final Action action, final CompilationUnitRewrite rewrite) {
+	private void bridgeIn(final Expression node, final CompilationUnitRewrite rewrite) {
 		final AST ast = node.getAST();
 		final ASTRewrite astRewrite = rewrite.getASTRewrite();
-		final ASTNode copy = this.processRightHandSide(ast, action, node);
+		final ASTNode copy = 	node instanceof MethodInvocation ? 			this.ofNullableOptional(ast, node) :
+								node instanceof SuperMethodInvocation ? 	this.ofNullableOptional(ast, node) :
+								node instanceof ClassInstanceCreation ? 	this.ofNullableOptional(ast, node) :
+								node instanceof FieldAccess ? 				this.ofNullableOptional(ast, node) :
+								node instanceof Name ? 						this.ofNullableOptional(ast, node) :
+								node instanceof BooleanLiteral ? 			this.ofOptional(ast, node) :
+								node instanceof CharacterLiteral ? 			this.ofOptional(ast, node) :
+								node instanceof NumberLiteral ? 			this.ofOptional(ast, node) :
+								node instanceof StringLiteral ? 			this.ofOptional(ast, node) :
+								node instanceof TypeLiteral ?				this.ofOptional(ast, node) :
+																			this.emptyOptional(ast);
 		astRewrite.replace(node, copy, null);
 	}
 
-	private void bridge(final VariableDeclarationFragment node, final CompilationUnitRewrite rewrite) {
+	private void bridgeOut(final VariableDeclarationFragment node, final CompilationUnitRewrite rewrite) {
 		final AST ast = node.getAST();
 		final VariableDeclarationFragment copy = (VariableDeclarationFragment) ASTNode.copySubtree(ast, node);
 		copy.setInitializer(this.orElseOptional(ast, node.getInitializer()));
@@ -150,7 +173,7 @@ public class Entities implements Iterable<IJavaElement> {
 				if (this.instances.containsKey(element))
 					return Action.BRIDGE_VALUE_OUT;
 				else
-					return Action.CHANGE_N2O_LITERAL;
+					return Action.BRIDGE_LITERAL_IN;
 		}
 		case ASTNode.SUPER_METHOD_INVOCATION:
 		case ASTNode.METHOD_INVOCATION:
@@ -180,7 +203,7 @@ public class Entities implements Iterable<IJavaElement> {
 		case ASTNode.SINGLE_VARIABLE_DECLARATION:
 			return Action.CHANGE_N2O_PARAM;
 		case ASTNode.METHOD_DECLARATION:
-			return Action.CHANGE_N2O_METH_DECL;
+			return Action.CHANGE_N2O_RETURN;
 		default:
 			return Action.NIL;
 		}
@@ -252,57 +275,25 @@ public class Entities implements Iterable<IJavaElement> {
 			this.transform((VariableDeclarationFragment) node, action, rewrite);
 			break;
 		case BRIDGE_N2O_VAR_DECL:
-			this.bridge((VariableDeclarationFragment) node, rewrite);
+			this.bridgeOut((VariableDeclarationFragment) node, rewrite);
 			break;
-		case CHANGE_N2O_METH_DECL:
-			this.transform((MethodDeclaration) node, action, rewrite);
+		case CHANGE_N2O_RETURN:
+			this.transform((MethodDeclaration) node, rewrite);
 			break;
 		case BRIDGE_VALUE_OUT:
-			this.bridge((Expression) node, rewrite);
+			this.bridgeOut((Expression) node, rewrite);
 			break;
-		case CHANGE_N2O_LITERAL:
-			this.transform((Expression) node, action, rewrite);
+		case BRIDGE_LITERAL_IN:
+			this.bridgeIn((Expression) node, rewrite);
 			break;
 		case BRIDGE_VALUE_IN:
-			this.bridge((Name) node, action, rewrite);
+			this.bridgeIn((Expression) node, rewrite);
 			break;
 		default:
 			break;
 		}
 	}
-
-	private Expression processRightHandSide(final AST ast, final Action action, final Expression expression) {
-		switch (expression.getNodeType()) {
-		case ASTNode.NULL_LITERAL:
-			return this.emptyOptional(ast);
-		case ASTNode.METHOD_INVOCATION:
-		case ASTNode.SUPER_METHOD_INVOCATION:
-		case ASTNode.FIELD_ACCESS:
-		case ASTNode.SIMPLE_NAME:
-		case ASTNode.QUALIFIED_NAME: {
-			switch (action) {
-			case BRIDGE_VALUE_IN:
-				return this.ofNullableOptional(ast, expression);
-			case BRIDGE_VALUE_OUT:
-				return this.orElseOptional(ast, expression);
-			case BRIDGE_N2O_VAR_DECL:
-				return this.ofNullableOptional(ast, expression);
-			default:
-				return expression;
-			}
-		}
-		case ASTNode.BOOLEAN_LITERAL:
-		case ASTNode.CHARACTER_LITERAL:
-		case ASTNode.NUMBER_LITERAL:
-		case ASTNode.STRING_LITERAL:
-		case ASTNode.TYPE_LITERAL:
-		case ASTNode.CLASS_INSTANCE_CREATION:
-			return this.ofOptional(ast, expression);
-		default:
-			return expression;
-		}
-	}
-
+	
 	public RefactoringStatus status() {
 		return this.status;
 	}
@@ -322,33 +313,13 @@ public class Entities implements Iterable<IJavaElement> {
 		}
 	}
 
-	private void transform(Expression node, final Action action, final CompilationUnitRewrite rewrite) {
-		final Assignment assignment = (Assignment) ASTNodes.getParent(node, ASTNode.ASSIGNMENT);
-		if (assignment != null)
-			node = assignment.getRightHandSide();
-		final AST ast = node.getAST();
-		final ASTRewrite astRewrite = rewrite.getASTRewrite();
-		final ASTNode copy = this.processRightHandSide(ast, action, node);
-		astRewrite.replace(node, copy, null);
-	}
-
-	private void transform(final MethodDeclaration node, final Action action, final CompilationUnitRewrite rewrite) {
+	private void transform(final MethodDeclaration node, final CompilationUnitRewrite rewrite) {
 		final AST ast = node.getAST();
 		final ASTRewrite astRewrite = rewrite.getASTRewrite();
 		final MethodDeclaration copy = (MethodDeclaration) ASTNode.copySubtree(ast, node);
 		final Type returnType = copy.getReturnType2();
 		final Type converted = this.getConvertedType(ast, returnType.toString());
 		copy.setReturnType2(converted);
-		copy.accept(new ASTVisitor() {
-			@Override
-			public boolean visit(final ReturnStatement ret) {
-				final Expression expression = ret.getExpression();
-				final Expression wrapped = Entities.this.processRightHandSide(ast, action, expression);
-				if (!wrapped.equals(expression))
-					ret.setExpression(wrapped);
-				return super.visit(ret);
-			}
-		});
 		astRewrite.replace(node, copy, null);
 	}
 
@@ -388,18 +359,13 @@ public class Entities implements Iterable<IJavaElement> {
 			break;
 		}
 		}
-		// now we recover the equivalent VDF node in the copy, and make the
-		// changes
+		// now we recover the equivalent VDF node in the copy, check if it's an uninitialized VarDecl and if so, transform
 		copy.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(final VariableDeclarationFragment recovered) {
 				if (recovered.getName().toString().equals(node.getName().toString())) {
 					final Expression expression = recovered.getInitializer();
-					if (expression != null) { // i.e. we're not on an uninitialized variable decl
-						final Expression wrapped = Entities.this.processRightHandSide(ast, action, expression);
-						if (wrapped != expression)
-							recovered.setInitializer(wrapped);
-					} else if (copy.getNodeType() == ASTNode.FIELD_DECLARATION)
+					if (expression == null) // i.e. we're on an uninitialized variable decl
 						recovered.setInitializer(Entities.this.emptyOptional(ast));
 				}
 				return super.visit(recovered);
