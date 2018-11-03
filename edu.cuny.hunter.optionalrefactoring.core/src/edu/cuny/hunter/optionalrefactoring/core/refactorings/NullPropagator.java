@@ -104,7 +104,7 @@ class NullPropagator extends N2ONodeProcessor {
 		if (containedIn(node.getIndex(), this.name)) {
 			final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
 			final Action action = Action.infer(node, pf, this.settings);
-			this.addInstance(node, pf, action);
+			this.addInstance(null, node, pf, action);
 		} else
 			super.processAscent(node.getParent());
 	}
@@ -121,7 +121,7 @@ class NullPropagator extends N2ONodeProcessor {
 				legal = false;
 				final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
 				final Action action = Action.infer(node, pf, this.settings);
-				this.addInstance(node, pf, action);
+				this.addInstance(null, node, pf, action);
 			}
 		}
 		if (legal)
@@ -152,7 +152,7 @@ class NullPropagator extends N2ONodeProcessor {
 		// we need to bridge it here (as opposed to being a collection parameterized
 		// with an optional type)
 		else if (pf.contains(PreconditionFailure.ENHANCED_FOR))
-			this.addInstance(node, pf, action);
+			this.addInstance(null, node, pf, action);
 		this.descend(node.getParameter());
 	}
 
@@ -169,7 +169,7 @@ class NullPropagator extends N2ONodeProcessor {
 				if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR)) 
 					this.endProcessing(element, node, pf);
 				else {
-					this.addInstance(node, pf, action);
+					this.addInstance(element, node, pf, action);
 					this.processAscent(node.getParent());
 				}
 		} else
@@ -194,7 +194,7 @@ class NullPropagator extends N2ONodeProcessor {
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(top == null ? meth : top, methDecl, pf);
 		else
-			this.addInstance(node, pf, action); // if we need to bridge it, we need the original return statement
+			this.addInstance(top == null ? meth : top, node, pf, action); // if we need to bridge it, we need the original return statement
 	}
 
 	@SuppressWarnings("unchecked")
@@ -239,7 +239,7 @@ class NullPropagator extends N2ONodeProcessor {
 		final Action action = Action.infer(node, element, pf, this.settings);
 		if (!pf.isEmpty())
 			this.endProcessing(element, node, pf);
-		this.addInstance(node, pf, action);
+		this.addInstance(element, node, pf, action);
 	}
 
 	@Override
@@ -275,7 +275,7 @@ class NullPropagator extends N2ONodeProcessor {
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(top == null ? meth : top, node, pf);
 		else
-			this.addInstance(node, pf, action);
+			this.addInstance(top == null ? meth : top, node, pf, action);
 	}
 
 	@Override
@@ -289,7 +289,7 @@ class NullPropagator extends N2ONodeProcessor {
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(element, node, pf);
 		else
-			NullPropagator.this.addInstance(node, pf, action);
+			this.addInstance(element, node, pf, action);
 		// take care of remote usage.
 		// go find variables on the corresponding calls.
 		this.findVariablesForFormal(node);
@@ -308,7 +308,7 @@ class NullPropagator extends N2ONodeProcessor {
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(top == null ? meth : top, node, pf);
 		else
-			this.addInstance(node, pf, action);
+			this.addInstance(top == null ? meth : top, node, pf, action);
 	}
 
 	@Override
@@ -356,7 +356,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(meth, this.name, pf);
-			this.addInstance(this.name, pf, Action.infer(this.name, meth, pf, this.settings));
+			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
 			this.findFormalsForVariable(top, paramNumber);
 	}
@@ -377,7 +377,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(meth, this.name, pf);
-			this.addInstance(this.name, pf, Action.infer(this.name, meth, pf, this.settings));
+			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
@@ -394,7 +394,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(meth, this.name, pf);
-			this.addInstance(this.name, pf, Action.infer(this.name, meth, pf, this.settings));
+			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		}
 
 		else
@@ -415,7 +415,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(meth, this.name, pf);
-			this.addInstance(node, pf, Action.infer(this.name, meth, pf, this.settings));
+			this.addInstance(meth, node, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}
@@ -433,7 +433,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(meth, this.name, pf);
-			this.addInstance(this.name, pf, Action.infer(this.name, meth, pf, this.settings));
+			this.addInstance(meth, this.name, pf, Action.infer(this.name, meth, pf, this.settings));
 		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
 	}

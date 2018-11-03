@@ -378,6 +378,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	public void testDeclarationFieldArray() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
+	
+	public void testVarDeclMultiFragment() throws Exception {
+		this.transformationHelper(EnumSet.noneOf(Choice.class), new RefactoringStatus());
+	}
 
 	public void testDeclarationFieldTransitive() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b"), setOf("c", "d", "e"), setOf("controlNullDependent")), setOf(),
@@ -575,6 +579,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		final String outputTestFileName = this.getOutputTestFileName("A");
 		final String actual = icu.getSource();
+		LOGGER.info(actual);
 		assertTrue("Actual output should compile.", compiles(actual));
 
 		final String expected = this.getFileContents(outputTestFileName);

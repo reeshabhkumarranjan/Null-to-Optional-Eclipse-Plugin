@@ -14,6 +14,7 @@ import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CastExpression;
+import org.eclipse.jdt.core.dom.CharacterLiteral;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
@@ -21,10 +22,14 @@ import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
+import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
@@ -73,15 +78,18 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	void addCandidate(final IJavaElement element, final ASTNode node, final EnumSet<PreconditionFailure> pf,
 			final Action action) {
 		this.candidates.add(element);
-		this.addInstance(this.rootNode, pf, action);
+		this.addInstance(element, node, pf, action);
 	}
 
-	void addInstance(final ASTNode node, final EnumSet<PreconditionFailure> pf, final Action action) {
-			this.instances.add(new Instance(this.rootElement, node, pf, action));
+	void addInstance(IJavaElement _element, final ASTNode node, final EnumSet<PreconditionFailure> pf, final Action action) {
+		IJavaElement element = _element != null ? _element : 
+			candidates.isEmpty() ? this.rootElement : 
+				candidates.toArray(new IJavaElement[candidates.size()])[candidates.size()-1];
+		this.instances.add(new Instance(element, node, pf, action));
 	}
 
 	void endProcessing(IJavaElement element, ASTNode node, EnumSet<PreconditionFailure> pf) throws HarvesterASTException {
-		this.addInstance(node, pf, Action.NIL);
+		this.addInstance(element, node, pf, Action.NIL);
 		throw new HarvesterASTException(node, this.candidates, this.instances);
 	}
 
@@ -120,7 +128,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			 * associated with the resolved element eventually upon becoming added to the
 			 * candidate set
 			 */
-			this.addInstance(node, pf, action);
+			this.addInstance(null, node, pf, action);
 		this.processAscent(node.getParent());
 	}
 
@@ -209,7 +217,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(element, node, pf);
 		else
-			this.addInstance(node, pf, action);
+			this.addInstance(element, node, pf, action);
 	}
 
 	/**
@@ -254,7 +262,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			 * associated with the resolved element eventually upon becoming added to the
 			 * candidate set
 			 */
-			this.addInstance(node, pf, action);
+			this.addInstance(null, node, pf, action);
 		this.processDescent(node.getExpression());
 	}
 
@@ -268,7 +276,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(element, node, pf);
 		else
-			this.addInstance(node, pf, action);
+			this.addInstance(element, node, pf, action);
 	}
 
 	@Override
@@ -296,7 +304,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(null, node, pf);
 		else
-			this.addInstance(node, pf, action);
+			this.addInstance(null, node, pf, action);
 		this.processDescent(node.getLeftOperand());
 		this.processDescent(node.getRightOperand());
 	}
@@ -321,7 +329,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(element, node, pf);
 		else
-			this.addInstance(node, pf, action);
+			this.addInstance(element, node, pf, action);
 	}
 
 	@Override
@@ -347,10 +355,45 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(element, node, pf);
 			else
-				this.addInstance(node, pf, action);
+				this.addInstance(element, node, pf, action);
 		}
 	}
 
+	@Override
+	void descend(final NumberLiteral node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.infer(node, pf, this.settings);
+		this.addInstance(null, node, pf, action);
+	}
+
+	@Override
+	void descend(final CharacterLiteral node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.infer(node, pf, this.settings);
+		this.addInstance(null, node, pf, action);
+	}
+
+	@Override
+	void descend(final StringLiteral node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.infer(node, pf, this.settings);
+		this.addInstance(null, node, pf, action);
+	}
+
+	@Override
+	void descend(final NullLiteral node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.infer(node, pf, this.settings);
+		this.addInstance(null, node, pf, action);
+	}
+
+	@Override
+	void descend(final TypeLiteral node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.infer(node, pf, this.settings);
+		this.addInstance(null, node, pf, action);
+	}
+	
 	@Override
 	void descend(final VariableDeclarationStatement node) throws CoreException {
 		@SuppressWarnings("unchecked")
@@ -390,7 +433,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 						else if (pf.stream().anyMatch(f -> f.getSeverity(N2ONodeProcessor.this.settings) >= RefactoringStatus.ERROR))
 							N2ONodeProcessor.this.endProcessing(element, node, pf);
 						else
-							N2ONodeProcessor.this.addInstance(svd, pf, action);
+							N2ONodeProcessor.this.addInstance(element, svd, pf, action);
 					}
 					for (final Object element2 : visitor.getExpressions()) {
 						final Expression exp = (Expression) element2;
@@ -423,6 +466,6 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(element, node, pf);
 		else
-			this.addInstance(node, pf, action);
+			this.addInstance(element, node, pf, action);
 	}
 }

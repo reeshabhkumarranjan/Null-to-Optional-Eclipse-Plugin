@@ -8,6 +8,7 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.CastExpression;
+import org.eclipse.jdt.core.dom.CharacterLiteral;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
@@ -17,9 +18,13 @@ import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
+import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
@@ -118,11 +123,6 @@ public enum Action {
 		return NIL;
 	}
 
-	public static Action infer(final FieldDeclaration node, final IField element, final EnumSet<PreconditionFailure> pf,
-			final RefactoringSettings settings) {
-		return NIL;
-	}
-
 	public static Action infer(final InfixExpression node, final EnumSet<PreconditionFailure> pf,
 			final RefactoringSettings settings) {
 		return NIL;
@@ -145,7 +145,7 @@ public enum Action {
 
 	public static Action infer(final SingleVariableDeclaration node, final IJavaElement element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return NIL;
+		return CHANGE_N2O_VAR_DECL;
 	}
 
 	public static Action infer(final SuperFieldAccess node, final IField element, final EnumSet<PreconditionFailure> pf,
@@ -158,23 +158,33 @@ public enum Action {
 		return NIL;
 	}
 
-	public static Action infer(final VariableDeclarationExpression node, final IJavaElement element,
-			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return NIL;
-	}
-
 	public static Action infer(final VariableDeclarationFragment node, final IField element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return NIL;
+		return CHANGE_N2O_VAR_DECL;
 	}
 
 	public static Action infer(final VariableDeclarationFragment node, final IJavaElement element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return NIL;
+		return CHANGE_N2O_VAR_DECL;
 	}
 
-	public static Action infer(final VariableDeclarationStatement node, final IJavaElement element,
-			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return NIL;
+	public static Action infer(NumberLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
+		return BRIDGE_LITERAL_IN;
+	}
+
+	public static Action infer(CharacterLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
+		return BRIDGE_LITERAL_IN;
+	}
+
+	public static Action infer(StringLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
+		return BRIDGE_LITERAL_IN;
+	}
+
+	public static Action infer(TypeLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
+		return BRIDGE_LITERAL_IN;
+	}
+
+	public static Action infer(NullLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
+		return BRIDGE_LITERAL_IN;
 	}
 }
