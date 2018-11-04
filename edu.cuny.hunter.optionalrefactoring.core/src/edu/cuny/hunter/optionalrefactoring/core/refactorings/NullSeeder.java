@@ -220,7 +220,7 @@ class NullSeeder extends N2ONodeProcessor {
 				Set<Instance> i = ((HarvesterASTException)e).getInstances();
 				this.status.merge(i.stream().flatMap(instance -> instance.failures.stream()
 						.map(failure ->
-							Util.createStatusEntry(this.settings, failure, instance.element, instance.node)))
+							Util.createStatusEntry(this.settings, failure, instance.element, instance.node, instance.action)))
 						.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge));
 			}
 		}

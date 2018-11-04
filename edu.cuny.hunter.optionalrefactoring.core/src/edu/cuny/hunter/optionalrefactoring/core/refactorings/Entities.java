@@ -84,7 +84,7 @@ public class Entities implements Iterable<IJavaElement> {
 						(left, right) -> Streams.concat(left.stream(), right.stream()).collect(Collectors.toSet())));
 		RefactoringStatus status = instances.stream()
 				.filter(instance -> elements.contains(instance.element))
-				.flatMap(instance -> instance.failures.stream().map(failure -> Util.createStatusEntry(settings, failure, instance.element, instance.node)))
+				.flatMap(instance -> instance.failures.stream().map(failure -> Util.createStatusEntry(settings, failure, instance.element, instance.node, instance.action)))
 				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
 		return new Entities(status, elements, mappedInstances);
 	}

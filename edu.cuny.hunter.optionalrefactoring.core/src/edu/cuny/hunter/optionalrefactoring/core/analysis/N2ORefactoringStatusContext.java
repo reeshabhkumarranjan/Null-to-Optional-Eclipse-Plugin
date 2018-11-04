@@ -11,12 +11,14 @@ public class N2ORefactoringStatusContext extends RefactoringStatusContext {
 	private final IJavaElement element;
 	private final ISourceRange sourceRange;
 	private final PreconditionFailure preconditionFailure;
+	private final Action action;
 
 	public N2ORefactoringStatusContext(final IJavaElement element, final ISourceRange range,
-			final PreconditionFailure failure) {
+			final PreconditionFailure failure, Action action) {
 		this.element = element;
 		this.sourceRange = range;
 		this.preconditionFailure = failure;
+		this.action = action;
 	}
 
 	public IClassFile getClassFile() {
@@ -34,6 +36,10 @@ public class N2ORefactoringStatusContext extends RefactoringStatusContext {
 
 	public PreconditionFailure getPreconditionFailure() {
 		return this.preconditionFailure;
+	}
+	
+	public Action getAction() {
+		return this.action;
 	}
 
 	public ISourceRange getSourceRange() {

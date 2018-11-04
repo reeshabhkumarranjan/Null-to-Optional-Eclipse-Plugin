@@ -140,7 +140,7 @@ public class RefactorableHarvester {
 				HarvesterASTException hae = (HarvesterASTException)e;
 				RefactoringStatus s = hae.getInstances().stream()
 						.flatMap(instance -> instance.failures.stream()
-							.map(failure -> Util.createStatusEntry(this.settings, failure, instance.element, instance.node)))
+							.map(failure -> Util.createStatusEntry(this.settings, failure, instance.element, instance.node, instance.action)))
 						.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
 				status.merge(s);
 				this.notRefactorable.addAll(this.workList.getCurrentComputationTreeElements());

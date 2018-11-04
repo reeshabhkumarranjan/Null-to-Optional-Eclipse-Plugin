@@ -75,6 +75,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.N2ORefactoringStatusContext;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
@@ -572,10 +573,10 @@ public interface Util {
 	}
 
 	static RefactoringStatusEntry createStatusEntry(final RefactoringSettings settings, PreconditionFailure failure,
-			IJavaElement element, ASTNode node) {
+			IJavaElement element, ASTNode node, Action action) {
 		return new RefactoringStatusEntry(failure.getSeverity(settings), 
 				failure.getMessage(),
-				new N2ORefactoringStatusContext(element, getSourceRange(node), failure), 
+				new N2ORefactoringStatusContext(element, getSourceRange(node), failure, action), 
 				ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID,
 				failure.getCode());
 	}
