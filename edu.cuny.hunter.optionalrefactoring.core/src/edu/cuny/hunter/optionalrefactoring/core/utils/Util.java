@@ -575,7 +575,7 @@ public interface Util {
 			PreconditionFailure failure) {
 		return new RefactoringStatusEntry(failure.getSeverity(settings), 
 				failure.getMessage(),
-				new N2ORefactoringStatusContext(instance.element, getSourceRange(instance.node), failure), 
+				new N2ORefactoringStatusContext(instance.element, getSourceRange(instance.node), failure, instance.action), 
 				ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID,
 				failure.getCode());
 	}

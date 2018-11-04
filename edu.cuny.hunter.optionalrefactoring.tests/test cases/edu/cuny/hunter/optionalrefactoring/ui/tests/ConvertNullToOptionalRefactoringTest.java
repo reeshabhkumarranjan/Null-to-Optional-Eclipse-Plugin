@@ -131,7 +131,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		final RefactoringStatus rs = new RefactoringStatus();
 		for (final MockEntryData tuple : list)
 			rs.addEntry(new RefactoringStatusEntry(tuple.severity, tuple.message,
-					tuple.pf.isPresent() ? new N2ORefactoringStatusContext(null, null, tuple.pf.get()) : null,
+					tuple.pf.isPresent() ? new N2ORefactoringStatusContext(null, null, tuple.pf.get(), null) : null,
 					ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, tuple.code));
 		return rs;
 	}
