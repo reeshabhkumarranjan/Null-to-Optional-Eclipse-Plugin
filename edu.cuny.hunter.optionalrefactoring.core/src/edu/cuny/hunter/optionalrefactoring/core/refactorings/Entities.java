@@ -10,10 +10,10 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-
 import com.google.common.collect.Streams;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
@@ -106,7 +106,7 @@ public class Entities implements Iterable<IJavaElement> {
 		for (final CompilationUnitRewrite rewrite : this.rewriteMap.keySet()) {
 			final CompilationUnit cu = rewrite.getRoot();
 			Set<IJavaElement> elements = this.rewriteMap.get(rewrite);
-			N2ONodeTransformer n2ont = new N2ONodeTransformer(cu, elements, this.instances, rewrite.getASTRewrite());
+			N2ONodeTransformer n2ont = new N2ONodeTransformer(cu, elements, this.instances, rewrite);
 			n2ont.process();
 			final ImportRewrite iRewrite = rewrite.getImportRewrite();
 			iRewrite.addImport("java.util.Optional");

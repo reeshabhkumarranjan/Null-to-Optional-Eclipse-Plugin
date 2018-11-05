@@ -78,7 +78,7 @@ public class RefactorableHarvester {
 		// expressions.
 		final NullSeeder seeder = new NullSeeder(this.element, this.refactoringRootNode, this.settings, this.monitor, this.scopeRoot);
 		// if no nulls pass the preconditions, return the Seeder status immediately
-		if (!seeder.process()) {
+		if (!(boolean)seeder.process()) {
 			return seeder.getErrors();
 		}
 		RefactoringStatus status = seeder.getErrors();

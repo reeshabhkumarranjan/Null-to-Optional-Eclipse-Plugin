@@ -286,6 +286,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		for (final VariableDeclarationFragment vdf : list) {
 			this.descend(vdf);
 		}
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CHANGE_N2O_VAR_DECL);
 	}
 
 	/**
@@ -339,6 +340,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		for (final VariableDeclarationFragment vdf : list) {
 			this.descend(vdf);
 		}
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CHANGE_N2O_VAR_DECL);
 	}
 
 	@Override
@@ -401,6 +403,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		for (final VariableDeclarationFragment vdf : list) {
 			this.descend(vdf);
 		}
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CHANGE_N2O_VAR_DECL);
 	}
 
 	void findFormalsForVariable(final IMethod correspondingMethod, final int paramNumber) throws CoreException {
