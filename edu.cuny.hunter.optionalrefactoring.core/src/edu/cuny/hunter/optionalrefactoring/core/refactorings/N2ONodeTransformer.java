@@ -22,8 +22,6 @@ import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
-import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
@@ -32,21 +30,20 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 class N2ONodeTransformer extends ASTNodeProcessor {
 
 	private final Set<Instance> instances;
-	@SuppressWarnings("restriction")
-	private final CompilationUnitRewrite rewrite;
+	private final CompilationUnit rewrite;
 	
-	@SuppressWarnings("restriction")
-	N2ONodeTransformer(CompilationUnit cu, Set<IJavaElement> elements, Map<IJavaElement, 
-			Set<Instance>> instances, CompilationUnitRewrite rewrite2) {
+	N2ONodeTransformer(CompilationUnit cu, Set<IJavaElement> elements, 
+			Map<IJavaElement, Set<Instance>> instances) {
 		super(cu);
 		this.instances = elements.stream()
 				.flatMap(element -> instances.get(element).stream())
 				.collect(Collectors.toSet());
-		this.rewrite = rewrite2;
+		this.rewrite = cu;
 	}
 
 	@Override
 	Object process() throws CoreException {
+		this.rewrite.recordModifications();
 		this.rootNode.accept(new ASTVisitor() {
 			@Override
 			public void preVisit(ASTNode node) {
@@ -59,18 +56,15 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 		return this.rewrite;
 	}
 
-	@SuppressWarnings("restriction")
-	private void bridgeOut(Expression node) {
+	private void bridgeOut(Expression _node) {
+		final Expression node = (Expression) _node.getParent();
 		final AST ast = node.getAST();
-		final ASTRewrite rewrite = this.rewrite.getASTRewrite();
-		final ASTNode copy = this.orElseOptional(ast, node);
-		rewrite.replace(node, copy, null);
+		final Expression copy = this.orElseOptional(ast, node);
+		_node.setStructuralProperty(node.getLocationInParent(), copy);
 	}
 
-	@SuppressWarnings("restriction")
-	private void bridgeIn(final Expression node) {
+	private Expression bridgeIn(final Expression node) {
 		AST ast = node.getAST();
-		ASTRewrite rewrite = this.rewrite.getASTRewrite();
 		Integer type = node.getNodeType();
 		assert(	type == ASTNode.METHOD_INVOCATION 		||
 				type == ASTNode.SUPER_METHOD_INVOCATION ||
@@ -91,25 +85,22 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 		case ASTNode.FIELD_ACCESS:
 		case ASTNode.QUALIFIED_NAME:
 		case ASTNode.SIMPLE_NAME: 
-			rewrite.replace(node, this.ofNullableOptional(ast, node), null); break;
+			return this.ofNullableOptional(ast, node);
 		case ASTNode.BOOLEAN_LITERAL:
 		case ASTNode.CHARACTER_LITERAL:
 		case ASTNode.NUMBER_LITERAL:
 		case ASTNode.STRING_LITERAL:
 		case ASTNode.TYPE_LITERAL: 
-			rewrite.replace(node, this.ofOptional(ast, node), null); break;
+			return this.ofOptional(ast, node);
 		case ASTNode.NULL_LITERAL: 
-			rewrite.replace(node, this.emptyOptional(node.getAST()), null);
+			return this.emptyOptional(node.getAST());
+		default: return node;
 		}
 	}
 
-	@SuppressWarnings("restriction")
 	private void bridgeOut(final VariableDeclarationFragment node) {
 		final AST ast = node.getAST();
-		ASTRewrite rewrite = this.rewrite.getASTRewrite();
-		final VariableDeclarationFragment copy = (VariableDeclarationFragment) ASTNode.copySubtree(ast, node);
-		copy.setInitializer(this.orElseOptional(ast, node.getInitializer()));
-		rewrite.replace(node, copy, null);
+		node.setInitializer(this.orElseOptional(ast, node.getInitializer()));
 	}
 
 	private Expression emptyOptional(final AST ast) {
@@ -196,68 +187,45 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 		return new Object();
 	}
 
-	@SuppressWarnings("restriction")
 	private void transform(final MethodDeclaration node) {
 		final AST ast = node.getAST();
-		final ASTRewrite rewrite = this.rewrite.getASTRewrite();
-		final MethodDeclaration copy = (MethodDeclaration) ASTNode.copySubtree(ast, node);
-		final Type returnType = copy.getReturnType2();
+		final Type returnType = node.getReturnType2();
 		final Type converted = this.getConvertedType(ast, returnType.toString());
-		copy.setReturnType2(converted);
-		rewrite.replace(node, copy, null);
+		node.setReturnType2(converted);
 	}
 
 	@SuppressWarnings("restriction")
 	private void transform(final SingleVariableDeclaration node) {
 		final AST ast = node.getAST();
-		final ASTRewrite rewrite = this.rewrite.getASTRewrite();
-		final SingleVariableDeclaration copy = (SingleVariableDeclaration) ASTNode.copySubtree(ast, node);
-		final Type parameterized = this.getConvertedType(ast, copy.getType().toString());
-		copy.setType(parameterized);
-		rewrite.replace(node, copy, null);
+		final Type parameterized = this.getConvertedType(ast, node.getType().toString());
+		node.setType(parameterized);
 	}
 
-	@SuppressWarnings("restriction")
 	private void transform(final FieldDeclaration node) {
 		final AST ast = node.getAST();
-		final ASTRewrite rewrite = this.rewrite.getASTRewrite();
-		final FieldDeclaration copy = (FieldDeclaration) ASTNode.copySubtree(ast, node);
-		final Type parameterized = this.getConvertedType(ast, copy.getType().toString());
-		copy.setType(parameterized);
-		rewrite.replace(node, copy, null);
+		final Type parameterized = this.getConvertedType(ast, node.getType().toString());
+		node.setType(parameterized);
 	}
 
-	@SuppressWarnings("restriction")
 	private void transform(final VariableDeclarationExpression node) {
 		final AST ast = node.getAST();
-		final ASTRewrite rewrite = this.rewrite.getASTRewrite();
-		final VariableDeclarationExpression copy = (VariableDeclarationExpression) ASTNode.copySubtree(ast, node);
-		final Type parameterized = this.getConvertedType(ast, copy.getType().toString());
-		copy.setType(parameterized);
-		rewrite.replace(node, copy, null);
+		final Type parameterized = this.getConvertedType(ast, node.getType().toString());
+		node.setType(parameterized);
 	}
 
-	@SuppressWarnings("restriction")
 	private void transform(final VariableDeclarationStatement node) {
 		final AST ast = node.getAST();
-		final ASTRewrite rewrite = this.rewrite.getASTRewrite();
-		final VariableDeclarationStatement copy = (VariableDeclarationStatement) ASTNode.copySubtree(ast, node);
-		final Type parameterized = this.getConvertedType(ast, copy.getType().toString());
-		copy.setType(parameterized);
-		rewrite.replace(node, copy, null);
+		final Type parameterized = this.getConvertedType(ast, node.getType().toString());
+		node.setType(parameterized);
 	}
 	
-	@SuppressWarnings("restriction")
 	private void transform(final VariableDeclarationFragment node) {
 		final AST ast = node.getAST();
-		final ASTRewrite rewrite = this.rewrite.getASTRewrite();
-		final VariableDeclarationFragment copy = (VariableDeclarationFragment) ASTNode.copySubtree(ast, node);
-		final Expression expression = copy.getInitializer();
+		final Expression expression = node.getInitializer();
 		if (expression == null) {	// i.e. we're on an uninitialized variable decl
-			copy.setInitializer(this.emptyOptional(ast));
-			rewrite.replace(node, copy, null);
+			node.setInitializer(this.emptyOptional(ast));
 		} else {
-			this.bridgeIn(expression);
+			node.setInitializer(this.bridgeIn(expression));
 		}
 	}
 }

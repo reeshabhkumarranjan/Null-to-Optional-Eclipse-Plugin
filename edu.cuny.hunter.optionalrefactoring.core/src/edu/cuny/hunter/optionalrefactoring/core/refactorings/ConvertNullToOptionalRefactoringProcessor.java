@@ -221,6 +221,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			for (final Entities entity : this.entities) {
 				for (final IJavaElement element : entity) {
 					final ICompilationUnit icu = (ICompilationUnit) element.getAncestor(IJavaElement.COMPILATION_UNIT);
+					entity.addIcu(icu, element);
 					entity.addRewrite(this.getCompilationUnitRewrite(icu, this.getCompilationUnit(icu, pm)), element);
 					pm.worked(1);
 				}

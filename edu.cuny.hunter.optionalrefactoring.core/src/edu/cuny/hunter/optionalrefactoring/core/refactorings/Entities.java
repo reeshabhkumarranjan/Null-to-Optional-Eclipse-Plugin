@@ -7,13 +7,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.TextEdit;
+
 import com.google.common.collect.Streams;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
@@ -66,6 +73,8 @@ public class Entities implements Iterable<IJavaElement> {
 	private final Map<IJavaElement, Set<Instance>> instances;
 
 	private final RefactoringStatus status;
+	
+	private final Map<ICompilationUnit, Set<IJavaElement>> icuMap = new LinkedHashMap<>();
 
 	private final Map<CompilationUnitRewrite, Set<IJavaElement>> rewriteMap = new LinkedHashMap<>();
 
@@ -103,13 +112,32 @@ public class Entities implements Iterable<IJavaElement> {
 	}
 	
 	public void transform() throws CoreException {
-		for (final CompilationUnitRewrite rewrite : this.rewriteMap.keySet()) {
-			final CompilationUnit cu = rewrite.getRoot();
-			Set<IJavaElement> elements = this.rewriteMap.get(rewrite);
-			N2ONodeTransformer n2ont = new N2ONodeTransformer(cu, elements, this.instances, rewrite);
-			n2ont.process();
-			final ImportRewrite iRewrite = rewrite.getImportRewrite();
-			iRewrite.addImport("java.util.Optional");
+		for (final ICompilationUnit icu : this.icuMap.keySet()) {
+			final CompilationUnit cu = Util.getCompilationUnit(icu, new NullProgressMonitor());
+			Document doc = new Document(icu.getSource());
+			Set<IJavaElement> elements = this.icuMap.get(icu);
+			N2ONodeTransformer n2ont = new N2ONodeTransformer(cu, elements, this.instances);
+			CompilationUnit tcu = (CompilationUnit)n2ont.process();
+			ImportDeclaration id = tcu.getAST().newImportDeclaration();
+			id.setName(tcu.getAST().newName(new String[] { "java", "util", "Optional" }));
+			cu.imports().add(id);
+			TextEdit te = tcu.rewrite(doc, icu.getJavaProject().getOptions(true));
+			try {
+				te.apply(doc);
+			} catch (MalformedTreeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (BadLocationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			Util.LOGGER.info(doc.get());
 		}
 	}
+
+	public void addIcu(ICompilationUnit icu, IJavaElement element) {
+		if (this.icuMap.containsKey(icu))
+			this.icuMap.get(icu).add(element);
+		else
+			this.icuMap.put(icu, Util.setOf(element));	}
 }
