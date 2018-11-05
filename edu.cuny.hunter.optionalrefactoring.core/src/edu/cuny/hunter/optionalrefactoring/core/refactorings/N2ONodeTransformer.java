@@ -24,7 +24,6 @@ import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
-import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
@@ -53,7 +52,6 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 		this.rewrite = cu;
 	}
 
-	@SuppressWarnings("restriction")
 	@Override
 	Object process() throws CoreException {
 		this.rewrite.recordModifications();
@@ -71,7 +69,8 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 		try {
 			edits.apply(doc);
 		} catch (MalformedTreeException | BadLocationException e) {
-			throw new CoreException(new Status(Status.ERROR, ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, RefactoringStatus.FATAL, Messages.CompilingSource, e));
+			throw new CoreException(new Status(Status.ERROR, ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, 
+					RefactoringStatus.FATAL, Messages.Transformer_FailedToWriteDocument, e));
 		}
 		return doc;
 	}
@@ -214,7 +213,6 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 		node.setReturnType2(converted);
 	}
 
-	@SuppressWarnings("restriction")
 	private void transform(final SingleVariableDeclaration node) {
 		final AST ast = node.getAST();
 		final Type parameterized = this.getConvertedType(ast, node.getType().toString());
