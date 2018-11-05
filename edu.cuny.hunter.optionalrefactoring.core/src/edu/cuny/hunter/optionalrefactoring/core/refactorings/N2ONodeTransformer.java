@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.dom.AST;
@@ -22,6 +23,7 @@ import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
+import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
@@ -30,11 +32,13 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 class N2ONodeTransformer extends ASTNodeProcessor {
 
 	private final Set<Instance> instances;
+	private final ICompilationUnit icu;
 	private final CompilationUnit rewrite;
 	
-	N2ONodeTransformer(CompilationUnit cu, Set<IJavaElement> elements, 
+	N2ONodeTransformer(ICompilationUnit icu, CompilationUnit cu, Set<IJavaElement> elements, 
 			Map<IJavaElement, Set<Instance>> instances) {
 		super(cu);
+		this.icu = icu;
 		this.instances = elements.stream()
 				.flatMap(element -> instances.get(element).stream())
 				.collect(Collectors.toSet());
@@ -53,7 +57,7 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 				o.map(instance -> N2ONodeTransformer.this.process(node, instance.action));
 			}
 		});
-		return this.rewrite;
+		return new CompilationUnitRewrite(this.icu, this.rewrite);
 	}
 
 	private void bridgeOut(Expression _node) {

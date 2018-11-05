@@ -12,15 +12,9 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
-import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.Document;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.text.edits.MalformedTreeException;
-import org.eclipse.text.edits.TextEdit;
-
 import com.google.common.collect.Streams;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
@@ -76,7 +70,7 @@ public class Entities implements Iterable<IJavaElement> {
 	
 	private final Map<ICompilationUnit, Set<IJavaElement>> icuMap = new LinkedHashMap<>();
 
-	private final Map<CompilationUnitRewrite, Set<IJavaElement>> rewriteMap = new LinkedHashMap<>();
+	private final Map<ICompilationUnit, CompilationUnitRewrite> rewrites = new LinkedHashMap<>();
 
 	private Entities(final RefactoringStatus status, final Set<IJavaElement> elements,
 			final Map<IJavaElement, Set<Instance>> mappedInstances) {
@@ -89,13 +83,6 @@ public class Entities implements Iterable<IJavaElement> {
 	public String toString() {
 		return this.elements.stream().map(IJavaElement::getElementName)
 			.collect(Collectors.joining(", ", "{", "}"));
-	}
-	
-	public void addRewrite(final CompilationUnitRewrite rewrite, final IJavaElement element) {
-		if (this.rewriteMap.containsKey(rewrite))
-			this.rewriteMap.get(rewrite).add(element);
-		else
-			this.rewriteMap.put(rewrite, Util.setOf(element));
 	}
 
 	public Set<IJavaElement> elements() {
@@ -114,24 +101,12 @@ public class Entities implements Iterable<IJavaElement> {
 	public void transform() throws CoreException {
 		for (final ICompilationUnit icu : this.icuMap.keySet()) {
 			final CompilationUnit cu = Util.getCompilationUnit(icu, new NullProgressMonitor());
-			Document doc = new Document(icu.getSource());
-			Set<IJavaElement> elements = this.icuMap.get(icu);
-			N2ONodeTransformer n2ont = new N2ONodeTransformer(cu, elements, this.instances);
-			CompilationUnit tcu = (CompilationUnit)n2ont.process();
-			ImportDeclaration id = tcu.getAST().newImportDeclaration();
-			id.setName(tcu.getAST().newName(new String[] { "java", "util", "Optional" }));
-			cu.imports().add(id);
-			TextEdit te = tcu.rewrite(doc, icu.getJavaProject().getOptions(true));
-			try {
-				te.apply(doc);
-			} catch (MalformedTreeException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (BadLocationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			Util.LOGGER.info(doc.get());
+			final Set<IJavaElement> elements = this.icuMap.get(icu);
+			final N2ONodeTransformer n2ont = new N2ONodeTransformer(icu, cu, elements, this.instances);
+			final CompilationUnitRewrite cur = (CompilationUnitRewrite) n2ont.process();
+			final ImportRewrite ir = cur.getImportRewrite();
+			ir.addImport("java.util.Optional");
+			this.rewrites.put(icu, cur);
 		}
 	}
 
@@ -140,4 +115,8 @@ public class Entities implements Iterable<IJavaElement> {
 			this.icuMap.get(icu).add(element);
 		else
 			this.icuMap.put(icu, Util.setOf(element));	}
+
+	public Map<ICompilationUnit, CompilationUnitRewrite> getRewrites() {
+		return this.rewrites;
+	}
 }
