@@ -225,8 +225,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 					pm.worked(1);
 				}
 				entity.transform();
-				entity.getRewrites().entrySet().stream()
-					.map(entry -> this.compilationUnitToCompilationUnitRewriteMap.put(entry.getKey(), entry.getValue()));
+				entity.getRewrites().entrySet().forEach(entry -> 
+					this.compilationUnitToCompilationUnitRewriteMap.put(entry.getKey(), entry.getValue()));
 			}
 
 			// save the source changes.

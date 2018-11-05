@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ISourceRange;
@@ -24,8 +25,15 @@ import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.TextEdit;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
+import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -45,6 +53,7 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 		this.rewrite = cu;
 	}
 
+	@SuppressWarnings("restriction")
 	@Override
 	Object process() throws CoreException {
 		this.rewrite.recordModifications();
@@ -57,7 +66,14 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 				o.map(instance -> N2ONodeTransformer.this.process(node, instance.action));
 			}
 		});
-		return new CompilationUnitRewrite(this.icu, this.rewrite);
+		Document doc = new Document(this.icu.getSource());
+		TextEdit edits = this.rewrite.rewrite(doc, icu.getJavaProject().getOptions(true));
+		try {
+			edits.apply(doc);
+		} catch (MalformedTreeException | BadLocationException e) {
+			throw new CoreException(new Status(Status.ERROR, ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, RefactoringStatus.FATAL, Messages.CompilingSource, e));
+		}
+		return doc;
 	}
 
 	private void bridgeOut(Expression _node) {

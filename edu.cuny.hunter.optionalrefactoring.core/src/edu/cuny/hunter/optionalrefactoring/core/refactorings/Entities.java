@@ -7,13 +7,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jface.text.Document;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import com.google.common.collect.Streams;
 
@@ -99,14 +102,20 @@ public class Entities implements Iterable<IJavaElement> {
 	}
 	
 	public void transform() throws CoreException {
+		IProgressMonitor monitor = new NullProgressMonitor();
 		for (final ICompilationUnit icu : this.icuMap.keySet()) {
-			final CompilationUnit cu = Util.getCompilationUnit(icu, new NullProgressMonitor());
+			final CompilationUnit cu = Util.getCompilationUnit(icu, monitor);
 			final Set<IJavaElement> elements = this.icuMap.get(icu);
 			final N2ONodeTransformer n2ont = new N2ONodeTransformer(icu, cu, elements, this.instances);
-			final CompilationUnitRewrite cur = (CompilationUnitRewrite) n2ont.process();
+			final Document doc = (Document) n2ont.process();
+			String name = icu.getElementName();
+			icu.rename("old_"+name, false, monitor);
+			ICompilationUnit rwIcu = ((IPackageFragment)icu.getParent())
+					.createCompilationUnit(name, doc.get(), false, monitor);
+			CompilationUnitRewrite cur = new CompilationUnitRewrite(rwIcu);
 			final ImportRewrite ir = cur.getImportRewrite();
 			ir.addImport("java.util.Optional");
-			this.rewrites.put(icu, cur);
+			this.rewrites.put(rwIcu, cur);
 		}
 	}
 
