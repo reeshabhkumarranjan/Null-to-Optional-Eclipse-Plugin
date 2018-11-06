@@ -21,12 +21,10 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -80,7 +78,7 @@ public class RefactorableHarvester {
 		// expressions.
 		final NullSeeder seeder = new NullSeeder(this.element, this.refactoringRootNode, this.settings, this.monitor, this.scopeRoot);
 		// if no nulls pass the preconditions, return the Seeder status immediately
-		if (!seeder.process()) {
+		if (!(boolean)seeder.process()) {
 			return seeder.getErrors();
 		}
 		RefactoringStatus status = seeder.getErrors();
@@ -142,7 +140,7 @@ public class RefactorableHarvester {
 				HarvesterASTException hae = (HarvesterASTException)e;
 				RefactoringStatus s = hae.getInstances().stream()
 						.flatMap(instance -> instance.failures.stream()
-							.map(failure -> Util.createStatusEntry(this.settings, instance, failure)))
+							.map(failure -> Util.createStatusEntry(this.settings, failure, instance.element, instance.node, instance.action)))
 						.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
 				status.merge(s);
 				this.notRefactorable.addAll(this.workList.getCurrentComputationTreeElements());

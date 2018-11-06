@@ -20,7 +20,6 @@ import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
-import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -34,13 +33,12 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -56,7 +54,6 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 class NullSeeder extends N2ONodeProcessor {
 
 	private ASTNode currentNull;
-	private final RefactoringStatus status = new RefactoringStatus();
 
 	public NullSeeder(final IJavaElement element, final ASTNode node, final RefactoringSettings settings, 
 			final IProgressMonitor monitor, final IJavaSearchScope scope) throws HarvesterException {
@@ -171,28 +168,12 @@ class NullSeeder extends N2ONodeProcessor {
 		}
 	}
 
-	@Override
-	void descend(final VariableDeclarationFragment node) throws CoreException {
-		final IJavaElement element = Util.resolveElement(node);
-		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
-			final EnumSet<PreconditionFailure> pf = node.getParent() instanceof FieldDeclaration
-					? PreconditionFailure.check(node, (IField) element, this.settings)
-							: PreconditionFailure.check(node, element, this.settings);
-					final Action action = Action.infer(node, element, pf, this.settings);
-					if (pf.isEmpty())
-						this.addCandidate(element, node, pf, action);
-					else if (pf.contains(PreconditionFailure.EXCLUDED_ENTITY)
-							|| pf.contains(PreconditionFailure.NON_SOURCE_CODE))
-						this.endProcessing(element, node, pf);
-		}
-	}
-
 	/**
 	 * @return Whether or not any seeds passed the precondition checks
 	 * @throws CoreException
 	 */
 	@Override
-	boolean process() throws CoreException {
+	Object process() throws CoreException {
 
 		
 
@@ -233,11 +214,6 @@ class NullSeeder extends N2ONodeProcessor {
 			} catch (HarvesterException e) {
 				if (e.getFailure() > RefactoringStatus.ERROR)
 					throw e;
-				Set<Instance> i = ((HarvesterASTException)e).getInstances();
-				this.status.merge(i.stream().flatMap(instance -> instance.failures.stream()
-						.map(failure ->
-							Util.createStatusEntry(this.settings, instance, failure)))
-						.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge));
 			}
 		}
 

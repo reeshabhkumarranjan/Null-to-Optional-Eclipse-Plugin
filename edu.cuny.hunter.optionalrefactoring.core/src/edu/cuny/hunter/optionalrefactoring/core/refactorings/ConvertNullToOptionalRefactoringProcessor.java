@@ -47,7 +47,6 @@ import org.eclipse.ltk.core.refactoring.participants.RefactoringParticipant;
 import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
 
 import edu.cuny.citytech.refactoring.common.core.RefactoringProcessor;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
@@ -222,10 +221,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			for (final Entities entity : this.entities) {
 				for (final IJavaElement element : entity) {
 					final ICompilationUnit icu = (ICompilationUnit) element.getAncestor(IJavaElement.COMPILATION_UNIT);
-					entity.addRewrite(this.getCompilationUnitRewrite(icu, this.getCompilationUnit(icu, pm)), element);
+					entity.addIcu(icu, element);
 					pm.worked(1);
 				}
 				entity.transform();
+				entity.getRewrites().entrySet().forEach(entry -> 
+					this.compilationUnitToCompilationUnitRewriteMap.put(entry.getKey(), entry.getValue()));
 			}
 
 			// save the source changes.

@@ -709,7 +709,7 @@ abstract class ASTNodeProcessor {
 	void descend(final WildcardType node) throws CoreException {
 	}
 
-	abstract boolean process() throws CoreException;
+	abstract Object process() throws CoreException;
 
 	/**
 	 * Processes the {@link org.eclipse.jdt.core.dom.ASTNode} to determine the

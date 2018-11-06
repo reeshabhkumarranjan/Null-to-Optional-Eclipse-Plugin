@@ -2,9 +2,8 @@ package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IField;
@@ -15,17 +14,26 @@ import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CastExpression;
+import org.eclipse.jdt.core.dom.CharacterLiteral;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.SuperFieldAccess;
+import org.eclipse.jdt.core.dom.TypeLiteral;
+import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -34,13 +42,12 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -55,7 +62,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	final IJavaSearchScope scope;
 	final Set<IJavaElement> candidates = new LinkedHashSet<>();
 	private final Set<Instance> instances = new LinkedHashSet<>();
-	private final Set<Instance> instanceQueue = new LinkedHashSet<>();
+	final RefactoringStatus status = new RefactoringStatus();
 
 	@SuppressWarnings("serial")
 	N2ONodeProcessor(final IJavaElement element, final ASTNode node, final RefactoringSettings settings, final IProgressMonitor monitor,
@@ -71,34 +78,21 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	void addCandidate(final IJavaElement element, final ASTNode node, final EnumSet<PreconditionFailure> pf,
 			final Action action) {
-		/*
-		 * dump the instance queue into instances, with the appropriate resolved element
-		 */
-		this.instances.addAll(this.instanceQueue.stream()
-				.map(instance -> new Instance(element, instance.node, instance.failures, instance.action))
-				.collect(Collectors.toSet()));
-		this.instanceQueue.clear();
 		this.candidates.add(element);
 		this.addInstance(element, node, pf, action);
 	}
 
-	void addInstance(final IJavaElement element, final ASTNode node, final EnumSet<PreconditionFailure> pf,
-			final Action action) {
-		if (element == null)
-			this.instanceQueue.add(new Instance(element, node, pf, action));
-		else
-			this.instances.add(new Instance(element, node, pf, action));
+	void addInstance(IJavaElement _element, final ASTNode node, final EnumSet<PreconditionFailure> pf, final Action action) {
+		IJavaElement element = _element != null ? _element : 
+			candidates.isEmpty() ? this.rootElement : 
+				candidates.toArray(new IJavaElement[candidates.size()])[candidates.size()-1];
+		this.instances.add(new Instance(element, node, pf, action));
+		this.status.merge(pf.stream().map(f -> Util.createStatusEntry(this.settings, f, element, node, action))
+				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge));
 	}
 
 	void endProcessing(IJavaElement element, ASTNode node, EnumSet<PreconditionFailure> pf) throws HarvesterASTException {
-		IJavaElement failingElement = element == null ? this.rootElement : element;
-		/*
-		 * dump the instance queue into instances, with the appropriate resolved element
-		 */
-		this.instances.addAll(this.instanceQueue.stream()
-				.map(instance -> new Instance(failingElement, instance.node, instance.failures, instance.action))
-				.collect(Collectors.toSet()));
-		this.addInstance(failingElement, node, pf, Action.NIL);
+		this.addInstance(element, node, pf, Action.NIL);
 		throw new HarvesterASTException(node, this.candidates, this.instances);
 	}
 
@@ -177,6 +171,33 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	void ascend(final SingleVariableDeclaration node) throws CoreException {
 		this.descend(node);
 	}
+	
+	/* (non-Javadoc)
+	 * @see edu.cuny.hunter.optionalrefactoring.core.refactorings.ASTNodeProcessor#ascend(org.eclipse.jdt.core.dom.FieldDeclaration)
+	 * 	 * When we ascend to an <code>FieldDeclaration</code> node, we stop ascending, and descend to process it.
+	 */
+	@Override
+	void ascend(final FieldDeclaration node) throws CoreException {
+		this.descend(node);
+	}
+	
+	/* (non-Javadoc)
+	 * @see edu.cuny.hunter.optionalrefactoring.core.refactorings.ASTNodeProcessor#ascend(org.eclipse.jdt.core.dom.FieldDeclaration)
+	 * 	 * When we ascend to an <code>VariableDeclarationExpression</code> node, we stop ascending, and descend to process it.
+	 */
+	@Override
+	void ascend(final VariableDeclarationExpression node) throws CoreException {
+		this.descend(node);
+	}
+	
+	/* (non-Javadoc)
+	 * @see edu.cuny.hunter.optionalrefactoring.core.refactorings.ASTNodeProcessor#ascend(org.eclipse.jdt.core.dom.FieldDeclaration)
+	 * 	 * When we ascend to an <code>VariableDeclarationStatement</code> node, we stop ascending, and descend to process it.
+	 */
+	@Override
+	void ascend(final VariableDeclarationStatement node) throws CoreException {
+		this.descend(node);
+	}
 
 	@Override
 	void ascend(final SuperFieldAccess node) throws CoreException {
@@ -184,15 +205,23 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	}
 
 	/**
-	 * When we ascend to an <code>VariableDeclarationFragment</code> node, we stop
-	 * ascending, and descend to process it.
 	 *
 	 * @param node
 	 * @throws CoreException
 	 */
 	@Override
 	void ascend(final VariableDeclarationFragment node) throws CoreException {
-		this.descend(node);
+		final IVariableBinding binding = node.resolveBinding();
+		EnumSet<PreconditionFailure> pf = binding.isField() ? PreconditionFailure.check(node, (IField)binding.getJavaElement(), this.settings) :
+			PreconditionFailure.check(node, binding.getJavaElement(), this.settings);
+		Action action = Action.infer(node, binding.getJavaElement(), pf, this.settings);
+		if (pf.isEmpty()) {
+			this.addCandidate(binding.getJavaElement(), node, pf, action);
+			this.processAscent(node.getParent());
+		} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
+			this.endProcessing(binding.getJavaElement(), node, pf);
+		else
+			this.addInstance(binding.getJavaElement(), node, pf, action);
 	}
 
 	/**
@@ -254,6 +283,16 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			this.addInstance(element, node, pf, action);
 	}
 
+	@Override
+	void descend(final FieldDeclaration node) throws CoreException {
+		@SuppressWarnings("unchecked")
+		List<VariableDeclarationFragment> list = node.fragments();
+		for (final VariableDeclarationFragment vdf : list) {
+			this.descend(vdf);
+		}
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CHANGE_N2O_VAR_DECL);
+	}
+
 	/**
 	 * When processing an <code>InfixExpression</code> node comparison we only care
 	 * about equality / inequality with <code>null</code>.
@@ -296,6 +335,79 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			this.endProcessing(element, node, pf);
 		else
 			this.addInstance(element, node, pf, action);
+	}
+
+	@Override
+	void descend(final VariableDeclarationExpression node) throws CoreException {
+		@SuppressWarnings("unchecked")
+		final List<VariableDeclarationFragment> list = node.fragments();
+		for (final VariableDeclarationFragment vdf : list) {
+			this.descend(vdf);
+		}
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CHANGE_N2O_VAR_DECL);
+	}
+
+	@Override
+	void descend(final VariableDeclarationFragment node) throws CoreException {
+		final IJavaElement element = Util.resolveElement(node);
+		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
+			final EnumSet<PreconditionFailure> pf = node.getParent() instanceof FieldDeclaration
+					? PreconditionFailure.check(node, (IField) element, this.settings)
+					: PreconditionFailure.check(node, element, this.settings);
+			final Action action = Action.infer(node, element, pf, this.settings);
+			if (pf.isEmpty()) {
+				this.addCandidate(element, node, pf, action);
+				this.processDescent(node.getInitializer());
+			} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
+				this.endProcessing(element, node, pf);
+			else
+				this.addInstance(element, node, pf, action);
+		}
+	}
+
+	@Override
+	void descend(final NumberLiteral node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.infer(node, pf, this.settings);
+		this.addInstance(null, node, pf, action);
+	}
+
+	@Override
+	void descend(final CharacterLiteral node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.infer(node, pf, this.settings);
+		this.addInstance(null, node, pf, action);
+	}
+
+	@Override
+	void descend(final StringLiteral node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.infer(node, pf, this.settings);
+		this.addInstance(null, node, pf, action);
+	}
+
+	@Override
+	void descend(final NullLiteral node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.infer(node, pf, this.settings);
+		this.addInstance(null, node, pf, action);
+	}
+
+	@Override
+	void descend(final TypeLiteral node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.infer(node, pf, this.settings);
+		this.addInstance(null, node, pf, action);
+	}
+	
+	@Override
+	void descend(final VariableDeclarationStatement node) throws CoreException {
+		@SuppressWarnings("unchecked")
+		final List<VariableDeclarationFragment> list = node.fragments();
+		for (final VariableDeclarationFragment vdf : list) {
+			this.descend(vdf);
+		}
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CHANGE_N2O_VAR_DECL);
 	}
 
 	void findFormalsForVariable(final IMethod correspondingMethod, final int paramNumber) throws CoreException {
@@ -354,7 +466,8 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	private void process(final Name node) throws HarvesterException {
 		final IJavaElement element = Util.resolveElement(node);
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
-		final Action action = Action.infer(node, element, pf, this.settings);
+		final Action action = pf.contains(PreconditionFailure.NON_SOURCE_CODE) ? Action.BRIDGE_VALUE_OUT
+				: Action.NIL;
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))

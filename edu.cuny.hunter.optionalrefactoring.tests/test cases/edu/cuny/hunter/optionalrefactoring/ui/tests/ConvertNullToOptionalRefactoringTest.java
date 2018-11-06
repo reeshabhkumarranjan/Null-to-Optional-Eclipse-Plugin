@@ -12,6 +12,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
@@ -32,7 +33,6 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 
 import edu.cuny.citytech.refactoring.common.tests.RefactoringTest;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.N2ORefactoringStatusContext;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
@@ -40,6 +40,7 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.Cho
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -241,68 +242,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		return refactoringProcessor;
 	}
 
-	private void propagationHelper(final Set<Set<String>> expectedPassingSets,
-			final Set<Set<String>> expectedFailingSet, final EnumSet<Choice> turnOff, final RefactoringStatus expectedStatus)
-			throws Exception {
-
-		System.out.println();
-		// compute the actual results.
-		final ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
-
-		final ConvertNullToOptionalRefactoringProcessor refactoring = this.getRefactoringProcessor(icu);
-
-		if (!turnOff.isEmpty())
-			turnOff.forEach(choice -> refactoring.settings().set(false, choice));
-
-		final RefactoringStatus status = refactoring.checkFinalConditions(new NullProgressMonitor(), null);
-
-		System.out.println(refactoring.settings());
-
-		// assert that the actual severity matches that of the expected.
-		assertEquals(expectedStatus.getSeverity(), status.getSeverity());
-
-		final Set<Entities> sets = refactoring.getEntities();
-
-		// Here we are getting all the sets of type dependent entities
-		final Set<Entities> passingSets = sets.stream().filter(entity -> !entity.status().hasError())
-				.collect(Collectors.toSet());
-		final Set<Entities> failingSet = sets.stream().filter(entity -> entity.status().hasError())
-				.collect(Collectors.toSet());
-
-		// print to console
-		System.out.println(this.getName() + " - SEVERITY: " + status.getSeverity());
-		System.out.println("Passing sets:");
-		System.out.print("{");
-		passingSets.forEach(set -> {
-			Util.candidatePrinter(set);
-			System.out.print(", ");
-		});
-		System.out.println("}");
-		System.out.println("Failing set:");
-		System.out.print("{");
-		failingSet.forEach(set -> {
-			Util.candidatePrinter(set);
-			System.out.print(", ");
-		});
-		System.out.println("}");
-
-		// convert to sets of strings
-		final Set<Set<String>> actualPassingSets = passingSets.stream().map(entity -> entity.elements().stream()
-				.map(element -> element.getElementName()).collect(Collectors.toSet())).collect(Collectors.toSet());
-
-		final Set<Set<String>> actualFailingSet = failingSet.stream().map(entity -> entity.elements().stream()
-				.map(element -> element.getElementName()).collect(Collectors.toSet())).collect(Collectors.toSet());
-
-		assertNotNull(actualPassingSets);
-		assertNotNull(actualFailingSet);
-
-		assertTrue("Expected passing sets contain " + expectedPassingSets.toString() + " and are the same.",
-				expectedPassingSets.containsAll(actualPassingSets)
-						&& actualPassingSets.containsAll(expectedPassingSets));
-		assertTrue("Expected failing set contains " + expectedFailingSet.toString() + " and are the same.",
-				expectedFailingSet.containsAll(actualFailingSet) && actualFailingSet.containsAll(expectedFailingSet));
-	}
-
 	@Override
 	public void setFileContents(final String fileName, final String contents) throws IOException {
 		final Path absolutePath = this.getAbsolutionPath(fileName);
@@ -314,7 +253,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testAssignmentField() throws Exception {
-		this.transformationHelper(Choice.CONSIDER_IMPLICITLY_NULL_FIELDS, new RefactoringStatus());
+		this.transformationHelper(EnumSet.of(Choice.CONSIDER_IMPLICITLY_NULL_FIELDS), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldArray() throws Exception {
@@ -438,6 +377,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testDeclarationFieldArray() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
+	}
+	
+	public void testVarDeclMultiFragment() throws Exception {
+		this.transformationHelper(EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testDeclarationFieldTransitive() throws Exception {
@@ -613,7 +556,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 
-	private void transformationHelper(final Choice turnOff, final RefactoringStatus expectedStatus) throws Exception {
+	private void transformationHelper(final EnumSet<Choice> turnOff, final RefactoringStatus expectedStatus) throws Exception {
 		final ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
 
 		final ProcessorBasedRefactoring refactoring = (ProcessorBasedRefactoring) this.getRefactoring(icu);
@@ -621,10 +564,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				.getProcessor();
 
 		if (turnOff != null)
-			processor.settings().set(false, turnOff);
+			turnOff.forEach(choice -> processor.settings().set(false, choice));
 
 		final RefactoringStatus finalStatus = refactoring.checkAllConditions(new NullProgressMonitor());
-		this.getLogger().info("Final status: " + finalStatus);
+		LOGGER.info("Final status: " + finalStatus);
 
 		assertTrue("Precondition checking returned the expected RefactoringStatus: " + expectedStatus + ".",
 				this.equivalentRefactoringStatus(finalStatus, expectedStatus));
@@ -636,9 +579,60 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 		final String outputTestFileName = this.getOutputTestFileName("A");
 		final String actual = icu.getSource();
+		LOGGER.info(actual);
 		assertTrue("Actual output should compile.", compiles(actual));
 
 		final String expected = this.getFileContents(outputTestFileName);
 		assertEqualLines(expected, actual);
+		
+	}
+
+	private void propagationHelper(final Set<Set<String>> expectedPassingSets,
+			final Set<Set<String>> expectedFailingSet, final EnumSet<Choice> turnOff, final RefactoringStatus expectedStatus)
+			throws Exception {
+
+		// compute the actual results.
+		final ICompilationUnit icu = this.createCUfromTestFile(this.getPackageP(), "A");
+
+		final ConvertNullToOptionalRefactoringProcessor refactoring = this.getRefactoringProcessor(icu);
+
+		if (!turnOff.isEmpty())
+			turnOff.forEach(choice -> refactoring.settings().set(false, choice));
+
+		final RefactoringStatus status = refactoring.checkFinalConditions(new NullProgressMonitor(), null);
+
+		// assert that the actual severity matches that of the expected.
+		assertTrue("The actual RefactoringStatus ("+status+") is equal to the expected: ("+expectedStatus+").",
+				this.equivalentRefactoringStatus(status, expectedStatus));
+		
+		final Set<Entities> sets = refactoring.getEntities();
+
+		// Here we are getting all the sets of type dependent entities
+		final Set<Entities> passingSets = sets.stream().filter(entity -> !entity.status().hasError())
+				.collect(Collectors.toSet());
+		final Set<Entities> failingSet = sets.stream().filter(entity -> entity.status().hasError())
+				.collect(Collectors.toSet());
+		
+		LOGGER.info("Settings:"+refactoring.settings()+"\n"
+		+"Passing Sets:"+passingSets.stream().map(Entities::toString)
+				.collect(Collectors.joining(", ", "{", "}"))+"\n"
+		+"RefactoringStatusEntries:"+Arrays.stream(status.getEntries()).map(RefactoringStatusEntry::toString)
+				.collect(Collectors.joining(", ", "\n", "\n")));
+
+		// convert to sets of strings
+		final Set<Set<String>> actualPassingSets = passingSets.stream().map(entity -> entity.elements().stream()
+				.map(element -> element.getElementName()).collect(Collectors.toSet())).collect(Collectors.toSet());
+
+		final Set<Set<String>> actualFailingSet = failingSet.stream().map(entity -> entity.elements().stream()
+				.map(element -> element.getElementName()).collect(Collectors.toSet())).collect(Collectors.toSet());
+
+		assertNotNull(actualPassingSets);
+		assertNotNull(actualFailingSet);
+
+		assertTrue("Expected passing sets contain " + expectedPassingSets.toString() + " and are the same.",
+				expectedPassingSets.containsAll(actualPassingSets)
+						&& actualPassingSets.containsAll(expectedPassingSets));
+		assertTrue("Expected failing set contains " + expectedFailingSet.toString() + " and are the same.",
+				expectedFailingSet.containsAll(actualFailingSet) && actualFailingSet.containsAll(expectedFailingSet));
 	}
 }
