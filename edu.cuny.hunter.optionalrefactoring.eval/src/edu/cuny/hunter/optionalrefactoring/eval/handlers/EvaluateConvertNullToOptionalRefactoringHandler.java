@@ -3,6 +3,7 @@ package edu.cuny.hunter.optionalrefactoring.eval.handlers;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.candidatePrinter;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOptionalRefactoringProcessor;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -55,10 +56,31 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 			List<String> elementResultsHeader = Lists.newArrayList("Project Name", "Type Dependent Set ID",
 					"Entity Name", "Entity Type", "Containing Entities", "Read Only", "Generated");
 
+			List<String> resultsHeader = Lists.newArrayList(
+					"Subjects", "# Seed Elements", "# Candidate Elements", "# Refactorable Elements",
+					"Failed Preconditions", "Info Failures", "Error Failures",
+					"P1", // MISSING_BINDING
+					"P2", // JAVA_MODEL_ERROR
+					"P3", // NON_SOURCE_CODE
+					"P4", // CAST_EXPRESSION
+					"P5", // INSTANCEOF_OP
+					"P6", // EXCLUDED_ENTITY
+					"P7", // OBJECT_TYPE
+					"P8", // COMPARISON_OP
+					"P9", // ENHANCED_FOR
+					"ACTION_NIL", "ACTION_CHANGE_N2O_VAR_DECL", "ACTION_BRIDGE_N2O_VAR_DECL",
+					"ACTION_CHANGE_N2O_PARAM", "ACTION_CHANGE_N2O_METH_DECL", "ACTION_BRIDGE_VALUE_OUT",
+					"ACTION_CHANGE_N2O_LITERAL", "ACTION_BRIDGE_VALUE_IN",
+					"time"
+					);
+		
 			try (CSVPrinter elementResultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("elementResults.csv",
 					elementResultsHeader.toArray(new String[elementResultsHeader.size()]));
 					CSVPrinter setSummaryPrinter = EvaluateRefactoringHandler.createCSVPrinter("setSummary.csv",
-							setSummaryHeader.toArray(new String[setSummaryHeader.size()]))) {
+							setSummaryHeader.toArray(new String[setSummaryHeader.size()]));
+					CSVPrinter resultPrinter = EvaluateRefactoringHandler.createCSVPrinter("results.csv",
+							resultsHeader.toArray(new String[resultsHeader.size()]));
+					) {
 				if (BUILD_WORKSPACE) {
 					// build the workspace.
 					monitor.beginTask("Building workspace ...", IProgressMonitor.UNKNOWN);
@@ -114,9 +136,30 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 											: element.getAncestor(IJavaElement.TYPE).getElementName(),
 									element.isReadOnly(), element.getResource().isDerived());
 					}
+					
+					
 					setSummaryPrinter.println();
 					elementResultsPrinter.println();
 
+					
+					Long errorCount = passingSets
+						    .stream()
+						    .map(Entities::status)
+						    .map(RefactoringStatus::getEntries)
+						    .flatMap(Arrays::stream)
+						    .filter(entry -> entry.getSeverity() >= RefactoringStatus.ERROR).count();
+						
+					Long okCount = passingSets
+				            .stream()
+				            .map(Entities::status)
+				            .map(RefactoringStatus::getEntries)
+				            .flatMap(Arrays::stream)
+				            .filter(entry -> entry.getSeverity() <= RefactoringStatus.OK).count();
+
+					System.out.println("errorCount: " + errorCount);
+					System.out.println("okCount: " + okCount);
+
+					
 					// Then let's refactor them
 					// TODO: This should refer to a constant in this file as it once did #59.
 //					if (processor.settings().doesTransformation()) {
