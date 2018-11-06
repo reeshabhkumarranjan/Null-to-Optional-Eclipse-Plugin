@@ -19,6 +19,7 @@ import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.dom.Name;
@@ -41,7 +42,6 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
@@ -62,6 +62,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	final IJavaSearchScope scope;
 	final Set<IJavaElement> candidates = new LinkedHashSet<>();
 	private final Set<Instance> instances = new LinkedHashSet<>();
+	final RefactoringStatus status = new RefactoringStatus();
 
 	@SuppressWarnings("serial")
 	N2ONodeProcessor(final IJavaElement element, final ASTNode node, final RefactoringSettings settings, final IProgressMonitor monitor,
@@ -86,6 +87,8 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			candidates.isEmpty() ? this.rootElement : 
 				candidates.toArray(new IJavaElement[candidates.size()])[candidates.size()-1];
 		this.instances.add(new Instance(element, node, pf, action));
+		this.status.merge(pf.stream().map(f -> Util.createStatusEntry(this.settings, f, element, node, action))
+				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge));
 	}
 
 	void endProcessing(IJavaElement element, ASTNode node, EnumSet<PreconditionFailure> pf) throws HarvesterASTException {
@@ -208,16 +211,17 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	 */
 	@Override
 	void ascend(final VariableDeclarationFragment node) throws CoreException {
-		final IJavaElement element = Util.resolveElement(node);
-		EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
-		Action action = Action.infer(node, element, pf, this.settings);
+		final IVariableBinding binding = node.resolveBinding();
+		EnumSet<PreconditionFailure> pf = binding.isField() ? PreconditionFailure.check(node, (IField)binding.getJavaElement(), this.settings) :
+			PreconditionFailure.check(node, binding.getJavaElement(), this.settings);
+		Action action = Action.infer(node, binding.getJavaElement(), pf, this.settings);
 		if (pf.isEmpty()) {
-			this.addCandidate(element, node, pf, action);
+			this.addCandidate(binding.getJavaElement(), node, pf, action);
 			this.processAscent(node.getParent());
 		} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			this.endProcessing(element, node, pf);
+			this.endProcessing(binding.getJavaElement(), node, pf);
 		else
-			this.addInstance(element, node, pf, action);
+			this.addInstance(binding.getJavaElement(), node, pf, action);
 	}
 
 	/**

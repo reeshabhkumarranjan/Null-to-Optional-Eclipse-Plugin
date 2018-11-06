@@ -54,7 +54,6 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 class NullSeeder extends N2ONodeProcessor {
 
 	private ASTNode currentNull;
-	private final RefactoringStatus status = new RefactoringStatus();
 
 	public NullSeeder(final IJavaElement element, final ASTNode node, final RefactoringSettings settings, 
 			final IProgressMonitor monitor, final IJavaSearchScope scope) throws HarvesterException {
@@ -215,11 +214,6 @@ class NullSeeder extends N2ONodeProcessor {
 			} catch (HarvesterException e) {
 				if (e.getFailure() > RefactoringStatus.ERROR)
 					throw e;
-				Set<Instance> i = ((HarvesterASTException)e).getInstances();
-				this.status.merge(i.stream().flatMap(instance -> instance.failures.stream()
-						.map(failure ->
-							Util.createStatusEntry(this.settings, failure, instance.element, instance.node, instance.action)))
-						.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge));
 			}
 		}
 
