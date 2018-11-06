@@ -109,9 +109,9 @@ public class Entities implements Iterable<IJavaElement> {
 			final N2ONodeTransformer n2ont = new N2ONodeTransformer(icu, cu, elements, this.instances);
 			final Document doc = (Document) n2ont.process();
 			String name = icu.getElementName();
-			icu.rename("old_"+name, false, monitor);
+			icu.rename("old_"+name, true, monitor);
 			ICompilationUnit rwIcu = ((IPackageFragment)icu.getParent())
-					.createCompilationUnit(name, doc.get(), false, monitor);
+					.createCompilationUnit(name, doc.get(), true, monitor);
 			CompilationUnitRewrite cur = new CompilationUnitRewrite(rwIcu);
 			final ImportRewrite ir = cur.getImportRewrite();
 			ir.addImport("java.util.Optional");

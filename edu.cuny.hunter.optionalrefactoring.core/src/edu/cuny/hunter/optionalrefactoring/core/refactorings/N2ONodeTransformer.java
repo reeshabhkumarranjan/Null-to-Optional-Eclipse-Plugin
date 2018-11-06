@@ -1,5 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -13,17 +14,23 @@ import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.NameQualifiedType;
 import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.QualifiedType;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
+import org.eclipse.jdt.core.dom.WildcardType;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
@@ -130,11 +137,54 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Type getConvertedType(final AST ast, final String rawType) {
+	private Type getConvertedType(final AST ast, final Type rawType) {
 		final ParameterizedType parameterized = ast
 				.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
-		final Type parameter = ast.newSimpleType(ast.newSimpleName(rawType));
-		parameterized.typeArguments().add(0, parameter);
+		switch (rawType.getNodeType()) {
+		case ASTNode.SIMPLE_TYPE: {
+			SimpleType r = ast.newSimpleType(ast.newSimpleName(((SimpleType)rawType).getName().toString()));
+			((Map<String, Object>)rawType.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			parameterized.typeArguments().add(0, r);
+			break;
+		}
+		case ASTNode.QUALIFIED_TYPE: {
+			QualifiedType t = (QualifiedType) rawType;
+			QualifiedType r = ast.newQualifiedType(
+					ast.newSimpleType(ast.newSimpleName(((SimpleType)t.getQualifier()).getName().toString())), ast.newSimpleName(t.getName().toString()));
+			((Map<String, Object>)t.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			parameterized.typeArguments().add(0, r);
+			break;
+		}
+		case ASTNode.NAME_QUALIFIED_TYPE: {
+			NameQualifiedType t = (NameQualifiedType) rawType;
+			NameQualifiedType r = ast.newNameQualifiedType(
+					ast.newSimpleName(t.getName().toString()), ast.newSimpleName(t.getName().toString()));
+			((Map<String, Object>)t.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			parameterized.typeArguments().add(0, r);
+			break;
+		}
+		case ASTNode.WILDCARD_TYPE: {
+			WildcardType t = (WildcardType) rawType;
+			WildcardType r = ast.newWildcardType();
+			((Map<String, Object>)t.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			parameterized.typeArguments().add(0, r);
+			break;
+		}
+		case ASTNode.ARRAY_TYPE: {
+			ArrayType t = (ArrayType) rawType;
+			ArrayType r = ast.newArrayType(ast.newSimpleType(ast.newSimpleName(((SimpleType)t.getElementType()).getName().toString())), t.getDimensions());
+			((Map<String, Object>)t.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			parameterized.typeArguments().add(0, r);
+			break;
+		}
+		case ASTNode.PARAMETERIZED_TYPE: {
+			ParameterizedType t = (ParameterizedType) rawType;
+			ParameterizedType r = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName(((SimpleType)t.getType()).getName().toString())));
+			((Map<String, Object>)t.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			parameterized.typeArguments().add(0, r);
+			break;
+		}
+		}
 		return parameterized;
 	}
 
@@ -182,7 +232,7 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 				this.transform((FieldDeclaration)node);
 			else if (node instanceof VariableDeclarationExpression)
 				this.transform((VariableDeclarationExpression)node);
-			else 
+			else if (node instanceof VariableDeclarationStatement)
 				this.transform((VariableDeclarationStatement)node);
 			break;
 		case BRIDGE_N2O_VAR_DECL:
@@ -209,31 +259,31 @@ class N2ONodeTransformer extends ASTNodeProcessor {
 	private void transform(final MethodDeclaration node) {
 		final AST ast = node.getAST();
 		final Type returnType = node.getReturnType2();
-		final Type converted = this.getConvertedType(ast, returnType.toString());
+		final Type converted = this.getConvertedType(ast, returnType);
 		node.setReturnType2(converted);
 	}
 
 	private void transform(final SingleVariableDeclaration node) {
 		final AST ast = node.getAST();
-		final Type parameterized = this.getConvertedType(ast, node.getType().toString());
+		final Type parameterized = this.getConvertedType(ast, node.getType());
 		node.setType(parameterized);
 	}
 
 	private void transform(final FieldDeclaration node) {
 		final AST ast = node.getAST();
-		final Type parameterized = this.getConvertedType(ast, node.getType().toString());
+		final Type parameterized = this.getConvertedType(ast, node.getType());
 		node.setType(parameterized);
 	}
 
 	private void transform(final VariableDeclarationExpression node) {
 		final AST ast = node.getAST();
-		final Type parameterized = this.getConvertedType(ast, node.getType().toString());
+		final Type parameterized = this.getConvertedType(ast, node.getType());
 		node.setType(parameterized);
 	}
 
 	private void transform(final VariableDeclarationStatement node) {
 		final AST ast = node.getAST();
-		final Type parameterized = this.getConvertedType(ast, node.getType().toString());
+		final Type parameterized = this.getConvertedType(ast, node.getType());
 		node.setType(parameterized);
 	}
 	
