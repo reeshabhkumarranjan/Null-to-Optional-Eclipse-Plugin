@@ -7,6 +7,7 @@ import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFail
 import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.ENHANCED_FOR;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.setOf;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -105,6 +106,27 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public ConvertNullToOptionalRefactoringTest(final String name) {
 		super(name);
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
+
+		if (this.getPackageP().exists()) {
+			tryDeletingJavaFiles(this.getPackageP());
+		}
+
+		super.tearDown();
+	}
+
+	private static void tryDeletingJavaFiles(IPackageFragment pack) throws JavaModelException {
+		File sourceFile = pack.getResource().getLocation().append("A.java").toFile();
+
+		// delete the file.
+		try {
+			Files.delete(sourceFile.toPath());
+		} catch (IOException e) {
+			throw new IllegalArgumentException("Source file does not exist.", e);
+		}
 	}
 
 	/*
