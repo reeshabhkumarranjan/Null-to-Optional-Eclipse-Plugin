@@ -1,4 +1,4 @@
-package edu.cuny.hunter.optionalrefactoring.core.refactorings;
+package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -33,12 +33,9 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -79,7 +76,7 @@ class NullSeeder extends N2ONodeProcessor {
 	void ascend(final ClassInstanceCreation node) throws CoreException {
 		if (this.settings.refactorsParameters()) {
 			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
-			final IMethod method = Util.resolveElement(node, argPos);
+			final IMethod method = this.resolveElement(node, argPos);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
 				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
@@ -93,7 +90,7 @@ class NullSeeder extends N2ONodeProcessor {
 	void ascend(final ConstructorInvocation node) throws CoreException {
 		if (this.settings.refactorsParameters()) {
 			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
-			final IMethod method = Util.resolveElement(node);
+			final IMethod method = this.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
 				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
@@ -107,7 +104,7 @@ class NullSeeder extends N2ONodeProcessor {
 	void ascend(final MethodInvocation node) throws CoreException {
 		if (this.settings.refactorsParameters()) {
 			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
-			final IMethod method = Util.resolveElement(node);
+			final IMethod method = this.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
 				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
@@ -117,10 +114,10 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 
 	@Override
-	void ascend(final ReturnStatement node) throws HarvesterASTException {
+	void ascend(final ReturnStatement node) throws HarvesterException {
 		if (this.settings.refactorsMethods()) {
 			final MethodDeclaration methodDecl = Util.getMethodDeclaration(node);
-			final IJavaElement im = Util.resolveElement(methodDecl);
+			final IJavaElement im = this.resolveElement(methodDecl);
 			this.candidates.add(im);
 		}
 	}
@@ -130,7 +127,7 @@ class NullSeeder extends N2ONodeProcessor {
 	void ascend(final SuperConstructorInvocation node) throws CoreException {
 		if (this.settings.refactorsParameters()) {
 			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
-			final IMethod method = Util.resolveElement(node);
+			final IMethod method = this.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
 				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
@@ -144,7 +141,7 @@ class NullSeeder extends N2ONodeProcessor {
 	void ascend(final SuperMethodInvocation node) throws CoreException {
 		if (this.settings.refactorsParameters()) {
 			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
-			final IMethod method = Util.resolveElement(node);
+			final IMethod method = this.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
 				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
@@ -154,7 +151,7 @@ class NullSeeder extends N2ONodeProcessor {
 	}
 
 	@Override
-	void descend(final SingleVariableDeclaration node) throws HarvesterASTException {
+	void descend(final SingleVariableDeclaration node) throws HarvesterException {
 		/*
 		 * Single variable declaration nodes are used in a limited number of places,
 		 * including formal parameter lists and catch clauses. We don't have to worry
@@ -163,7 +160,7 @@ class NullSeeder extends N2ONodeProcessor {
 		 * declarations and regular variable declaration statements.
 		 */
 		if (this.settings.refactorsLocalVariables()) {
-			final IJavaElement element = Util.resolveElement(node);
+			final IJavaElement element = this.resolveElement(node);
 			this.candidates.add(element);
 		}
 	}
@@ -219,8 +216,8 @@ class NullSeeder extends N2ONodeProcessor {
 
 		for (VariableDeclarationFragment node : infdl) {
 			this.currentNull = node;
-			final IVariableBinding binding = Util.resolveBinding(node);
-			final IField element = (IField) Util.resolveElement(node);
+			final IVariableBinding binding = this.resolveBinding(node);
+			final IField element = (IField) this.resolveElement(node);
 			final List<Boolean> fici = new LinkedList<>();
 			this.rootNode.accept(new ASTVisitor() {
 				@Override

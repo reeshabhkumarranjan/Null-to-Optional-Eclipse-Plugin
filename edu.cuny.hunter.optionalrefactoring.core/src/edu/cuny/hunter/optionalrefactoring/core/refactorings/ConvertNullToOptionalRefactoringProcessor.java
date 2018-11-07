@@ -48,7 +48,7 @@ import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
 
 import edu.cuny.citytech.refactoring.common.core.RefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactorableHarvester;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
@@ -328,7 +328,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final CompilationUnit compilationUnit = this.getCompilationUnit(icu, subMonitor.split(1));
 		final RefactorableHarvester harvester = new RefactorableHarvester(icu, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
-		final RefactoringStatus status = harvester.harvestRefactorableContexts();
+		final RefactoringStatus status = harvester.process();
 		this.entities.addAll(harvester.getEntities());
 
 		return status;
@@ -344,7 +344,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final CompilationUnit compilationUnit = this.getCompilationUnit(field.getTypeRoot(), subMonitor.split(1));
 		final RefactorableHarvester harvester = new RefactorableHarvester(field, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
-		final RefactoringStatus status = harvester.harvestRefactorableContexts();
+		final RefactoringStatus status = harvester.process();
 		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
@@ -360,7 +360,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final CompilationUnit compilationUnit = this.getCompilationUnit(initializer.getTypeRoot(), subMonitor.split(1));
 		final RefactorableHarvester harvester = new RefactorableHarvester(initializer, compilationUnit,
 				this.refactoringScope, this.settings, subMonitor);
-		final RefactoringStatus status = harvester.harvestRefactorableContexts();
+		final RefactoringStatus status = harvester.process();
 		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
@@ -390,7 +390,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final CompilationUnit compilationUnit = this.getCompilationUnit(method.getTypeRoot(), subMonitor.split(1));
 		final RefactorableHarvester harvester = new RefactorableHarvester(method, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
-		final RefactoringStatus status = harvester.harvestRefactorableContexts();
+		final RefactoringStatus status = harvester.process();
 		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
@@ -436,7 +436,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final CompilationUnit compilationUnit = this.getCompilationUnit(type.getTypeRoot(), subMonitor.split(1));
 		final RefactorableHarvester harvester = new RefactorableHarvester(type, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
-		final RefactoringStatus status = harvester.harvestRefactorableContexts();
+		final RefactoringStatus status = harvester.process();
 		this.entities.addAll(harvester.getEntities());
 		return status;
 	}

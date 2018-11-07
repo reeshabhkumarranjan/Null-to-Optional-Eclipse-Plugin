@@ -6,7 +6,6 @@ package edu.cuny.hunter.optionalrefactoring.core.utils;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,37 +31,12 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.SourceRange;
 import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTMatcher;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
-import org.eclipse.jdt.core.dom.CastExpression;
-import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.ConstructorInvocation;
-import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.FieldAccess;
-import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.InstanceofExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.NullLiteral;
-import org.eclipse.jdt.core.dom.QualifiedName;
-import org.eclipse.jdt.core.dom.SimpleName;
-import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
-import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
-import org.eclipse.jdt.core.dom.SuperFieldAccess;
-import org.eclipse.jdt.core.dom.SuperMethodInvocation;
-import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
-import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
@@ -76,16 +50,15 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringProcessor;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.N2ORefactoringStatusContext;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.ComputationNode;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 
 /**
  * @author <a href="mailto:raffi.khatchadourian@hunter.cuny.edu">Raffi
@@ -155,87 +128,16 @@ public interface Util {
 		};
 	}
 
-	static boolean equalASTNodes(final CastExpression left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final ClassInstanceCreation left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final ConstructorInvocation left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final EnhancedForStatement left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final FieldAccess left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final FieldDeclaration left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final InstanceofExpression left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final MethodDeclaration left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final MethodInvocation left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final QualifiedName left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final SimpleName left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final SingleVariableDeclaration left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final SuperConstructorInvocation left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final SuperFieldAccess left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final SuperMethodInvocation left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final VariableDeclarationExpression left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final VariableDeclarationFragment left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-
-	static boolean equalASTNodes(final VariableDeclarationStatement left, final ASTNode right) {
-		return new ASTMatcher().match(left, right);
-	}
-	
 	static ASTNode findASTNode(final CompilationUnit cu, final IMember element) throws JavaModelException {
 		return org.eclipse.jdt.core.dom.NodeFinder.perform(cu, element.getNameRange());
 	}
 
-	static ASTNode getASTNode(final IJavaElement elem, final IProgressMonitor monitor) throws CoreException {
+	static ASTNode getASTNode(final IJavaElement elem, final IProgressMonitor monitor) throws HarvesterException {
 		final IMember mem = getIMember(elem);
 		final ICompilationUnit icu = mem.getCompilationUnit();
 		if (icu == null)
-			throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, mem);
+			throw new HarvesterException(RefactoringStatus
+					.createFatalErrorStatus(Messages.Harvester_JavaModelError));
 		final ASTNode root = Util.getCompilationUnit(icu, monitor);
 		return root;
 	}
@@ -333,7 +235,7 @@ public interface Util {
 			return top;
 	}
 
-	static boolean isBinaryCode(final IJavaElement element) throws HarvesterJavaModelException {
+	static boolean isBinaryCode(final IJavaElement element) throws HarvesterException {
 		switch (element.getElementType()) {
 		case IJavaElement.LOCAL_VARIABLE: {
 			final ILocalVariable ilv = (ILocalVariable) element;
@@ -356,7 +258,8 @@ public interface Util {
 			return ii.getDeclaringType().isBinary();
 		}
 		default:
-			throw new HarvesterJavaModelException(PreconditionFailure.JAVA_MODEL_ERROR, element);
+			throw new HarvesterException(RefactoringStatus
+					.createFatalErrorStatus(Messages.Harvester_JavaModelError));
 		}
 	}
 
@@ -367,204 +270,6 @@ public interface Util {
 	@SafeVarargs
 	static <T> List<T> listOf(final T... o) {
 		return Stream.of(o).collect(Collectors.toCollection(LinkedList::new));
-	}
-
-	static IMethodBinding resolveBinding(final ClassInstanceCreation node) throws HarvesterASTException {
-		final IMethodBinding binding = node.resolveConstructorBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IMethodBinding resolveBinding(final ConstructorInvocation node) throws HarvesterASTException {
-		final IMethodBinding binding = node.resolveConstructorBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IVariableBinding resolveBinding(final FieldAccess node) throws HarvesterASTException {
-		final IVariableBinding binding = node.resolveFieldBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IMethodBinding resolveBinding(final MethodDeclaration node) throws HarvesterASTException {
-		final IMethodBinding binding = node.resolveBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IMethodBinding resolveBinding(final MethodInvocation node) throws HarvesterASTException {
-		final IMethodBinding binding = node.resolveMethodBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IBinding resolveBinding(final Name node) throws HarvesterASTException {
-		final IBinding binding = node.resolveBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IVariableBinding resolveBinding(final SingleVariableDeclaration node) throws HarvesterASTException {
-		final IVariableBinding binding = node.resolveBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IMethodBinding resolveBinding(final SuperConstructorInvocation node) throws HarvesterASTException {
-		final IMethodBinding binding = node.resolveConstructorBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IVariableBinding resolveBinding(final SuperFieldAccess node) throws HarvesterASTException {
-		final IVariableBinding binding = node.resolveFieldBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IMethodBinding resolveBinding(final SuperMethodInvocation node) throws HarvesterASTException {
-		final IMethodBinding binding = node.resolveMethodBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IVariableBinding resolveBinding(final VariableDeclarationFragment node) throws HarvesterASTException {
-		final IVariableBinding binding = node.resolveBinding();
-		if (binding == null)
-			throw new HarvesterASTException(PreconditionFailure.MISSING_BINDING, node);
-		return binding;
-	}
-
-	static IMethod resolveElement(final ClassInstanceCreation node) throws HarvesterASTException {
-		final IMethodBinding constructorBinding = resolveBinding(node);
-		IMethod element = (IMethod) constructorBinding.getJavaElement();
-		if (element == null) { // possibly an AnonymousClassDeclaration
-			final AnonymousClassDeclaration acd = node.getAnonymousClassDeclaration();
-			if (acd != null)
-				element = (IMethod) acd.resolveBinding().getJavaElement();
-			else // something's wrong
-				throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		}
-		return element;
-	}
-
-	static IMethod resolveElement(final ClassInstanceCreation node, final int paramNumber)
-			throws HarvesterASTException {
-		final IMethodBinding constructorBinding = resolveBinding(node);
-		IMethod element = (IMethod) constructorBinding.getJavaElement();
-		if (element == null) { // it might be an anonymous class declaration
-			final AnonymousClassDeclaration acd = node.getAnonymousClassDeclaration();
-			if (acd != null) { // it's an anonymous class declaration
-				final ITypeBinding binding = acd.resolveBinding();
-				final ITypeBinding superBinding = binding.getSuperclass();
-				for (final IMethodBinding imb : Arrays.asList(superBinding.getDeclaredMethods()))
-					if (imb.isConstructor()) {
-						final ITypeBinding[] itb = imb.getParameterTypes();
-						if (itb.length > paramNumber) {
-							final ITypeBinding ithParamType = itb[paramNumber];
-							if (ithParamType
-									.isEqualTo(((Expression) node.arguments().get(paramNumber)).resolveTypeBinding())
-									|| (Expression) node.arguments().get(paramNumber) instanceof NullLiteral) {
-								element = (IMethod) imb.getJavaElement();
-								break;
-							}
-						}
-					}
-			} else // it's not an anonymous class declaration and we have an error
-				throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		} // we have the element and we can return it
-		return element;
-	}
-
-	static IMethod resolveElement(final ConstructorInvocation node) throws HarvesterASTException {
-		final IMethodBinding binding = resolveBinding(node);
-		final IMethod element = (IMethod) binding.getJavaElement();
-		if (element == null)
-			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		return element;
-	}
-
-	static IField resolveElement(final FieldAccess node) throws HarvesterASTException {
-		final IVariableBinding binding = resolveBinding(node);
-		final IField element = (IField) binding.getJavaElement();
-		if (element == null)
-			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		return element;
-	}
-
-	static IMethod resolveElement(final MethodDeclaration node) throws HarvesterASTException {
-		final IMethodBinding binding = resolveBinding(node);
-		final IMethod element = (IMethod) binding.getJavaElement();
-		if (element == null)
-			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		return element;
-	}
-
-	static IMethod resolveElement(final MethodInvocation node) throws HarvesterASTException {
-		final IMethodBinding binding = resolveBinding(node);
-		final IMethod element = (IMethod) binding.getJavaElement();
-		if (element == null)
-			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		return element;
-	}
-
-	static IJavaElement resolveElement(final Name node) throws HarvesterASTException {
-		final IBinding binding = resolveBinding(node);
-		final IJavaElement element = binding.getJavaElement();
-		if (element == null)
-			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		return element;
-	}
-
-	static IJavaElement resolveElement(final SingleVariableDeclaration node) throws HarvesterASTException {
-		final IVariableBinding binding = resolveBinding(node);
-		final IJavaElement element = binding.getJavaElement();
-		if (element == null)
-			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		return element;
-	}
-
-	static IMethod resolveElement(final SuperConstructorInvocation node) throws HarvesterASTException {
-		final IMethodBinding binding = resolveBinding(node);
-		final IMethod element = (IMethod) binding.getJavaElement();
-		if (element == null)
-			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		return element;
-	}
-
-	static IField resolveElement(final SuperFieldAccess node) throws HarvesterASTException {
-		final IVariableBinding binding = resolveBinding(node);
-		final IField element = (IField) binding.getJavaElement();
-		if (element == null)
-			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		return element;
-	}
-
-	static IMethod resolveElement(final SuperMethodInvocation node) throws HarvesterASTException {
-		final IMethodBinding binding = resolveBinding(node);
-		final IMethod element = (IMethod) binding.getJavaElement();
-		if (element == null)
-			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		return element;
-	}
-
-	static IJavaElement resolveElement(final VariableDeclarationFragment node) throws HarvesterASTException {
-		final IVariableBinding binding = resolveBinding(node);
-		final IJavaElement element = binding.getJavaElement();
-		if (element == null)
-			throw new HarvesterASTException(PreconditionFailure.JAVA_MODEL_ERROR, node);
-		return element;
 	}
 
 	@SafeVarargs

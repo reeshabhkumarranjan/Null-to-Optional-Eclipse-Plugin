@@ -1,6 +1,4 @@
-package edu.cuny.hunter.optionalrefactoring.core.refactorings;
-
-import edu.cuny.hunter.optionalrefactoring.core.utils.Visitor;
+package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 public class UnionComputationNode extends ComputationNode {
 	@Override

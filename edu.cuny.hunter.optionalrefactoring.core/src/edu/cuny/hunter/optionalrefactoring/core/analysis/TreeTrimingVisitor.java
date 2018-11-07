@@ -1,10 +1,8 @@
-package edu.cuny.hunter.optionalrefactoring.core.refactorings;
+package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import java.util.Set;
 
 import org.eclipse.jdt.core.IJavaElement;
-
-import edu.cuny.hunter.optionalrefactoring.core.utils.Visitor;
 
 class TreeTrimingVisitor implements Visitor {
 	private final Set<ComputationNode> computationForest;

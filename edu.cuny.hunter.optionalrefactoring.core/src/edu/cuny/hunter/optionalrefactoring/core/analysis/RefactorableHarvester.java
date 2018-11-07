@@ -1,4 +1,4 @@
-package edu.cuny.hunter.optionalrefactoring.core.refactorings;
+package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -21,9 +21,9 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterASTException;
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -70,7 +70,7 @@ public class RefactorableHarvester {
 		return this.entities;
 	}
 
-	public RefactoringStatus harvestRefactorableContexts() throws CoreException {
+	public RefactoringStatus process() throws CoreException {
 
 		this.reset();
 		// this worklist starts with the immediate type-dependent entities on
@@ -112,7 +112,7 @@ public class RefactorableHarvester {
 						// process the matching ASTNode.
 						final NullPropagator processor = new NullPropagator(searchElement, node,
 								RefactorableHarvester.this.scopeRoot, RefactorableHarvester.this.settings,
-								RefactorableHarvester.this.monitor);
+								RefactorableHarvester.this.monitor, RefactorableHarvester.this.instances);
 
 						processor.process();
 
@@ -135,17 +135,12 @@ public class RefactorableHarvester {
 				if (e.getFailure() >= RefactoringStatus.FATAL)
 					throw e;
 				/*
-				 * we create a RefactoringStatus for the elements that failed with Error severity before we remove them
+				 * we merge the RefactoringStatus for the entities that failed with Error severity
 				 */
-				HarvesterASTException hae = (HarvesterASTException)e;
-				RefactoringStatus s = hae.getInstances().stream()
-						.flatMap(instance -> instance.failures.stream()
-							.map(failure -> Util.createStatusEntry(this.settings, failure, instance.element, instance.node, instance.action)))
-						.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
-				status.merge(s);
+				status.merge(e.getRefactoringStatus());
 				this.notRefactorable.addAll(this.workList.getCurrentComputationTreeElements());
 				this.workList.removeAll(this.notRefactorable);
-				this.instances.removeIf(instance -> this.notRefactorable.contains(instance.element));
+				this.instances.removeIf(instance -> this.notRefactorable.contains(instance.element()));
 				continue;
 			}
 		}
