@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -149,15 +150,27 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 						    .flatMap(Arrays::stream)
 						    .filter(entry -> entry.getSeverity() >= RefactoringStatus.ERROR).count();
 						
-					Long okCount = passingSets
+					Long okCount = passingSets.stream().map(Entities::elements)
+							.map(Set::size).collect(Collectors.counting());
+							
+					Long infoCount = passingSets
 				            .stream()
 				            .map(Entities::status)
 				            .map(RefactoringStatus::getEntries)
 				            .flatMap(Arrays::stream)
-				            .filter(entry -> entry.getSeverity() <= RefactoringStatus.OK).count();
+				            .filter(entry -> entry.getSeverity() == RefactoringStatus.INFO).count();
 
+					System.out.println("Project Name: " + javaProject.getElementName() );
 					System.out.println("errorCount: " + errorCount);
+					System.out.println("infoCount: " + infoCount);
 					System.out.println("okCount: " + okCount);
+
+					
+					resultsPrinter.printRecord(
+							javaProject.getElementName(),
+							"0", "0", "0"
+					);
+//					resultsPrinter.println();
 
 					
 					// Then let's refactor them
