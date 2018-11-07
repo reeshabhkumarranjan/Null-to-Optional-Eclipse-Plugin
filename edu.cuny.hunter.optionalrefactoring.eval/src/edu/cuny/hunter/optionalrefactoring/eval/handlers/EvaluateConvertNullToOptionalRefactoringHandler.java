@@ -78,7 +78,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					elementResultsHeader.toArray(new String[elementResultsHeader.size()]));
 					CSVPrinter setSummaryPrinter = EvaluateRefactoringHandler.createCSVPrinter("setSummary.csv",
 							setSummaryHeader.toArray(new String[setSummaryHeader.size()]));
-					CSVPrinter resultPrinter = EvaluateRefactoringHandler.createCSVPrinter("results.csv",
+					CSVPrinter resultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("results.csv",
 							resultsHeader.toArray(new String[resultsHeader.size()]));
 					) {
 				if (BUILD_WORKSPACE) {
