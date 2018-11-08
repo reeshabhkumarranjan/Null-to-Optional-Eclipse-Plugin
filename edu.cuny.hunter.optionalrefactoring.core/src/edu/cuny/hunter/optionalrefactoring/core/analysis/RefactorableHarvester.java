@@ -186,4 +186,8 @@ public class RefactorableHarvester {
 		return ret;
 	}
 
+	public int countNotRefactorable() {
+		return this.notRefactorable.size();
+	}
+
 }
