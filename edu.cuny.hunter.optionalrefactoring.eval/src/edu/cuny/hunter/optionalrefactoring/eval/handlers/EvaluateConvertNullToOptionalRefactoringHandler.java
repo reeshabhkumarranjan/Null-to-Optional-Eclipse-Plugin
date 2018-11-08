@@ -160,15 +160,31 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 				            .flatMap(Arrays::stream)
 				            .filter(entry -> entry.getSeverity() == RefactoringStatus.INFO).count();
 
-					System.out.println("Project Name: " + javaProject.getElementName() );
-					System.out.println("errorCount: " + errorCount);
-					System.out.println("infoCount: " + infoCount);
-					System.out.println("okCount: " + okCount);
-
+					Integer preconditionFailureCount = Arrays.stream(status.getEntries())
+							.filter(entry -> entry.getSeverity() >= RefactoringStatus.ERROR || entry.getSeverity() == RefactoringStatus.INFO)
+							.toArray().length;
 					
+					Integer errorFailureCount = Arrays.stream(status.getEntries())
+							.filter(entry -> entry.getSeverity() >= RefactoringStatus.ERROR)
+							.toArray().length;
+					
+					Integer infoFailureCount = Arrays.stream(status.getEntries())
+							.filter(entry -> entry.getSeverity() == RefactoringStatus.INFO)
+							.toArray().length;
+
+					System.out.println("Project Name: " + javaProject.getElementName() );
+					System.out.println("# errorCount: " + errorCount);
+					System.out.println("# infoCount: " + infoCount);
+					System.out.println("# okCount: " + okCount);
+					System.out.println("# preconditionFailureCount: " + preconditionFailureCount);					
+					System.out.println("# errorFailureCount: " + errorFailureCount);
+					System.out.println("# infoFailureCount: " + infoFailureCount);
+
+
 					resultsPrinter.printRecord(
 							javaProject.getElementName(),
-							"0", "0", "0"
+							"0", "0", "0",
+							preconditionFailureCount, infoFailureCount, errorFailureCount
 					);
 //					resultsPrinter.println();
 
