@@ -89,19 +89,6 @@ class N2ONodeTransformer {
 
 	private Expression bridgeIn(final Expression node) {
 		AST ast = node.getAST();
-		Integer type = node.getNodeType();
-		assert(	type == ASTNode.METHOD_INVOCATION 		||
-				type == ASTNode.SUPER_METHOD_INVOCATION ||
-				type == ASTNode.CLASS_INSTANCE_CREATION ||
-				type == ASTNode.FIELD_ACCESS 			||
-				type == ASTNode.QUALIFIED_NAME 			|| 
-				type == ASTNode.SIMPLE_NAME				||
-				type == ASTNode.BOOLEAN_LITERAL 		||
-				type == ASTNode.CHARACTER_LITERAL 		||
-				type == ASTNode.NUMBER_LITERAL 			||
-				type == ASTNode.STRING_LITERAL 			||
-				type == ASTNode.TYPE_LITERAL 			||
-				type == ASTNode.NULL_LITERAL 			);
 		switch (node.getNodeType()) { 
 		case ASTNode.METHOD_INVOCATION:
 		case ASTNode.SUPER_METHOD_INVOCATION:
