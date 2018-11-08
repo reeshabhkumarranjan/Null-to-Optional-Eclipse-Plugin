@@ -82,6 +82,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private final Set<Entities> entities = new LinkedHashSet<>();
 
+	private final Set<IJavaElement> seeds = new LinkedHashSet<>();
+
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
 		this(null, null, false, null, Optional.empty());
 	}
@@ -283,6 +285,10 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	public Set<Entities> getEntities() {
 		return this.entities;
 	}
+	
+	public Set<IJavaElement> getSeeds() {
+		return this.seeds;
+	}
 
 	public TimeCollector getExcludedTimeCollector() {
 		return this.excludedTimeCollector;
@@ -329,6 +335,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactorableHarvester harvester = new RefactorableHarvester(icu, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
 		final RefactoringStatus status = harvester.process();
+		this.seeds .addAll(harvester.getSeeds());
 		this.entities.addAll(harvester.getEntities());
 
 		return status;
