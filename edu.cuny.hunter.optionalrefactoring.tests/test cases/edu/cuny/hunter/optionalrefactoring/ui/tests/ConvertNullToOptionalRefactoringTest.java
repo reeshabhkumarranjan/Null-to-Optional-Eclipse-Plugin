@@ -456,10 +456,17 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				new RefactoringStatus());
 	}
 
-	public void testMainMethod() throws Exception {
+	public void testMainMethodNoBridge() throws Exception {
 		this.propagationHelper(setOf(), setOf(), EnumSet.of(Choice.BRIDGE_EXTERNAL), 
 				this.createExpectedStatus(new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.ERROR, MAIN_METHOD) 
+				}));
+	}
+
+	public void testMainMethodBridge() throws Exception {
+		this.propagationHelper(setOf(setOf("args")), setOf(), EnumSet.noneOf(Choice.class), 
+				this.createExpectedStatus(new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.INFO, MAIN_METHOD) 
 				}));
 	}
 
