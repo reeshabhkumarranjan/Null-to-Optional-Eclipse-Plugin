@@ -766,7 +766,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	Action infer(final MethodInvocation node, final IMethod element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.NIL;
+		return pf.contains(PreconditionFailure.MAIN_METHOD) ? Action.BRIDGE_VALUE_OUT : Action.NIL;
 	}
 
 	Action infer(final Name node, final IJavaElement element, final EnumSet<PreconditionFailure> pf,
@@ -776,7 +776,8 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	Action infer(final SingleVariableDeclaration node, final IJavaElement element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.CHANGE_N2O_VAR_DECL;
+		return pf.contains(PreconditionFailure.MAIN_METHOD) ? Action.BRIDGE_VALUE_OUT : 
+			Action.CHANGE_N2O_VAR_DECL;
 	}
 
 	Action infer(final SuperFieldAccess node, final IField element, final EnumSet<PreconditionFailure> pf,
