@@ -25,8 +25,9 @@ import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterJavaModelException;
+import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 public enum PreconditionFailure {
@@ -137,7 +138,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final FieldAccess node, final IField element,
-			final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
@@ -146,7 +147,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final FieldDeclaration node, final IField element,
-			final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
@@ -155,7 +156,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final IJavaElement element, final RefactoringSettings settings)
-			throws HarvesterJavaModelException {
+			throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = EnumSet.noneOf(PreconditionFailure.class);
 		if (element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)) {
 			value.add(NON_SOURCE_CODE);
@@ -169,7 +170,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final MethodDeclaration node, final IMethod element,
-			final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsMethods()) {
 			value.add(EXCLUDED_ENTITY);
@@ -178,7 +179,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final MethodInvocation node, final IMethod element,
-			final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsMethods()) {
 			value.add(EXCLUDED_ENTITY);
@@ -187,7 +188,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final Name node, final IJavaElement element,
-			final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
@@ -196,7 +197,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final SingleVariableDeclaration node, final IJavaElement element,
-			final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsParameters()) {
 			value.add(EXCLUDED_ENTITY);
@@ -205,7 +206,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final SuperFieldAccess node, final IField element,
-			final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
@@ -214,7 +215,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final SuperMethodInvocation node, final IMethod element,
-			final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsMethods()) {
 			value.add(EXCLUDED_ENTITY);
@@ -223,7 +224,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final VariableDeclarationExpression node,
-			final IJavaElement element, final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final IJavaElement element, final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsLocalVariables()) {
 			value.add(EXCLUDED_ENTITY);
@@ -232,7 +233,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final VariableDeclarationFragment node, final IField element,
-			final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
@@ -241,7 +242,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final VariableDeclarationFragment node, final IJavaElement element,
-			final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsLocalVariables()) {
 			value.add(EXCLUDED_ENTITY);
@@ -250,7 +251,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final VariableDeclarationStatement node,
-			final IJavaElement element, final RefactoringSettings settings) throws HarvesterJavaModelException {
+			final IJavaElement element, final RefactoringSettings settings) throws HarvesterException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsLocalVariables()) {
 			value.add(EXCLUDED_ENTITY);

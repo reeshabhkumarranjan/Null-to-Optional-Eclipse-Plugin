@@ -22,7 +22,6 @@ import com.google.common.collect.Streams;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 @SuppressWarnings("restriction")
@@ -39,6 +38,18 @@ public class Entities implements Iterable<IJavaElement> {
 			this.node = n;
 			this.failures = pf;
 			this.action = a;
+		}
+		
+		public IJavaElement element() {
+			return this.element;
+		}
+		
+		public ASTNode node() {
+			return this.node;
+		}
+		
+		public Action action() {
+			return this.action;
 		}
 		
 		@Override

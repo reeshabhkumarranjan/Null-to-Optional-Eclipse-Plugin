@@ -7,6 +7,7 @@ import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFail
 import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.ENHANCED_FOR;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.setOf;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -35,12 +36,12 @@ import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import edu.cuny.citytech.refactoring.common.tests.RefactoringTest;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.N2ORefactoringStatusContext;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings;
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.Choice;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings.Choice;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -105,6 +106,27 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public ConvertNullToOptionalRefactoringTest(final String name) {
 		super(name);
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
+
+		if (this.getPackageP().exists()) {
+			tryDeletingJavaFiles(this.getPackageP());
+		}
+
+		super.tearDown();
+	}
+
+	private static void tryDeletingJavaFiles(IPackageFragment pack) throws JavaModelException {
+		File sourceFile = pack.getResource().getLocation().append("A.java").toFile();
+
+		// delete the file.
+		try {
+			Files.delete(sourceFile.toPath());
+		} catch (IOException e) {
+			throw new IllegalArgumentException("Source file does not exist.", e);
+		}
 	}
 
 	/*

@@ -1,4 +1,4 @@
-package edu.cuny.hunter.optionalrefactoring.core.analysis;
+package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.EnumSet;
 import java.util.Map;

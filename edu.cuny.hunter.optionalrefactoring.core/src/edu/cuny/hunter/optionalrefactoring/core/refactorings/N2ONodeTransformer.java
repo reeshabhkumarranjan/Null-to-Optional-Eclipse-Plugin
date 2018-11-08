@@ -1,6 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,7 +22,6 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NameQualifiedType;
 import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.QualifiedType;
-import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
@@ -43,24 +41,24 @@ import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
-class N2ONodeTransformer extends ASTNodeProcessor {
+class N2ONodeTransformer {
 
+	private final ASTNode rootNode;
 	private final Set<Instance> instances;
 	private final ICompilationUnit icu;
 	private final CompilationUnit rewrite;
 	
 	N2ONodeTransformer(ICompilationUnit icu, CompilationUnit cu, Set<IJavaElement> elements, 
 			Map<IJavaElement, Set<Instance>> instances) {
-		super(cu);
 		this.icu = icu;
+		this.rootNode = cu;
 		this.instances = elements.stream()
 				.flatMap(element -> instances.get(element).stream())
 				.collect(Collectors.toSet());
 		this.rewrite = cu;
 	}
 
-	@Override
-	Object process() throws CoreException {
+	Document process() throws CoreException {
 		this.rewrite.recordModifications();
 		this.rootNode.accept(new ASTVisitor() {
 			@Override

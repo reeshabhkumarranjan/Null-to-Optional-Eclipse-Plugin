@@ -19,9 +19,9 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.PlatformUI;
 
-import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactoringSettings.Choice;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings.Choice;
 
 public class ConvertNullToOptionalRefactoringTypePage extends UserInputWizardPage implements IWizardPage {
 
