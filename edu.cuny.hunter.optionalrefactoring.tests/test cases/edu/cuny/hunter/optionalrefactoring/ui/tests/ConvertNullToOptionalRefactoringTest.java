@@ -5,6 +5,7 @@ package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
 import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.CAST_EXPRESSION;
 import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.ENHANCED_FOR;
+import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.MAIN_METHOD;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.setOf;
 
 import java.io.File;
@@ -455,8 +456,18 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				new RefactoringStatus());
 	}
 
-	public void testMainMethod() throws Exception {
-		this.propagationHelper(setOf(), setOf(), EnumSet.noneOf(Choice.class), RefactoringStatus.createErrorStatus(""));
+	public void testMainMethodNoBridge() throws Exception {
+		this.propagationHelper(setOf(), setOf(), EnumSet.of(Choice.BRIDGE_EXTERNAL), 
+				this.createExpectedStatus(new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.ERROR, MAIN_METHOD) 
+				}));
+	}
+
+	public void testMainMethodBridge() throws Exception {
+		this.propagationHelper(setOf(setOf("args")), setOf(), EnumSet.noneOf(Choice.class), 
+				this.createExpectedStatus(new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.INFO, MAIN_METHOD) 
+				}));
 	}
 
 	public void testNewStatement() throws Exception {

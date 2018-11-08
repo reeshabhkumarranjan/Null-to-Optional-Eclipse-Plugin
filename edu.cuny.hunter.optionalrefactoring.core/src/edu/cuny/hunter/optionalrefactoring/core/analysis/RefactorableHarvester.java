@@ -56,6 +56,7 @@ public class RefactorableHarvester {
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
 	private final Set<Instance> instances = new LinkedHashSet<>();
 	private final Set<Entities> entities = new LinkedHashSet<>();
+	private final Set<IJavaElement> seeds = new LinkedHashSet<>();
 
 	public RefactorableHarvester(final IJavaElement element, final CompilationUnit cu, final IJavaSearchScope scope, 
 			final RefactoringSettings settings, final IProgressMonitor m) throws JavaModelException {
@@ -79,6 +80,7 @@ public class RefactorableHarvester {
 		final NullSeeder seeder = new NullSeeder(this.element, this.refactoringRootNode, this.settings, this.monitor, this.scopeRoot);
 		// if no nulls pass the preconditions, return the Seeder status immediately
 		if (!(boolean)seeder.process()) {
+			this.seeds .addAll(seeder.getCandidates());
 			return seeder.getErrors();
 		}
 		RefactoringStatus status = seeder.getErrors();
@@ -164,6 +166,10 @@ public class RefactorableHarvester {
 		return status;
 	}
 
+	public Set<IJavaElement> getSeeds() {
+		return this.seeds;
+	}
+	
 	private void reset() {
 		this.workList.clear();
 		this.notRefactorable.clear();
@@ -178,6 +184,10 @@ public class RefactorableHarvester {
 		for (final ComputationNode root : computationForest)
 			root.accept(visitor);
 		return ret;
+	}
+
+	public int countNotRefactorable() {
+		return this.notRefactorable.size();
 	}
 
 }

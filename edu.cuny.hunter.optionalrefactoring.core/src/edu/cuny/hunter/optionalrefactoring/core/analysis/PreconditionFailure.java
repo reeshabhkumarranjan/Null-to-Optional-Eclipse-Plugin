@@ -5,6 +5,7 @@ import java.util.EnumSet;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.CastExpression;
@@ -64,7 +65,7 @@ public enum PreconditionFailure {
 	 */
 	JAVA_MODEL_ERROR(2, Messages.Harvester_JavaModelError),
 	/**
-	 * We've hit a precondition failure, but the set can be bridged.
+	 * We've hit an entity that has a reference to non-source code.
 	 */
 	NON_SOURCE_CODE(4, Messages.Harvester_SourceNotPresent),
 	/**
@@ -92,7 +93,11 @@ public enum PreconditionFailure {
 	/**
 	 * Bridging this may be excluded by settings.
 	 */
-	ENHANCED_FOR(10, Messages.Enhanced_For),;
+	ENHANCED_FOR(10, Messages.Enhanced_For), 
+	/**
+	 * We hit the main method
+	 */
+	MAIN_METHOD(3, Messages.Main_Method),;
 
 	public static EnumSet<PreconditionFailure> check(final ArrayAccess node, final RefactoringSettings settings) {
 		final EnumSet<PreconditionFailure> value = EnumSet.noneOf(PreconditionFailure.class);
@@ -170,7 +175,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final MethodDeclaration node, final IMethod element,
-			final RefactoringSettings settings) throws HarvesterException {
+			final RefactoringSettings settings) throws HarvesterException, JavaModelException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsMethods()) {
 			value.add(EXCLUDED_ENTITY);
@@ -179,8 +184,11 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final MethodInvocation node, final IMethod element,
-			final RefactoringSettings settings) throws HarvesterException {
+			final RefactoringSettings settings) throws HarvesterException, JavaModelException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
+		if (element.isMainMethod()) {
+			value.add(PreconditionFailure.MAIN_METHOD);
+		}
 		if (!settings.refactorsMethods()) {
 			value.add(EXCLUDED_ENTITY);
 		}
@@ -197,8 +205,15 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final SingleVariableDeclaration node, final IJavaElement element,
-			final RefactoringSettings settings) throws HarvesterException {
+			final RefactoringSettings settings) throws HarvesterException, JavaModelException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
+		IMethod meth = node.getParent() instanceof MethodDeclaration ? 
+				(IMethod)((MethodDeclaration) node.getParent()).resolveBinding().getJavaElement() : null;
+		if (meth != null) {
+			if (meth.isMainMethod()) {
+				value.add(PreconditionFailure.MAIN_METHOD);
+			}
+		}
 		if (!settings.refactorsParameters()) {
 			value.add(EXCLUDED_ENTITY);
 		}
@@ -296,6 +311,7 @@ public enum PreconditionFailure {
 			return RefactoringStatus.FATAL;
 		case MISSING_BINDING:
 			return RefactoringStatus.FATAL;
+		case MAIN_METHOD:
 		case NON_SOURCE_CODE:
 			return settings.bridgeExternalCode() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
 		case OBJECT_TYPE:

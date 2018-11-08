@@ -376,8 +376,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	@Override
 	void descend(final VariableDeclarationFragment node) throws CoreException {
 		final IJavaElement element = this.resolveElement(node);
-		if (!this.candidates.contains(element)) { // we don't want to keep processing if it does
-			final EnumSet<PreconditionFailure> pf = node.getParent() instanceof FieldDeclaration
+		final EnumSet<PreconditionFailure> pf = node.getParent() instanceof FieldDeclaration
 					? PreconditionFailure.check(node, (IField) element, this.settings)
 					: PreconditionFailure.check(node, element, this.settings);
 			final Action action = this.infer(node, element, pf, this.settings);
@@ -388,7 +387,6 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 				this.endProcessing(element, node, pf);
 			else
 				this.addInstance(element, node, pf, action);
-		}
 	}
 
 	@Override
@@ -766,7 +764,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	Action infer(final MethodInvocation node, final IMethod element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.NIL;
+		return pf.contains(PreconditionFailure.MAIN_METHOD) ? Action.BRIDGE_VALUE_OUT : Action.NIL;
 	}
 
 	Action infer(final Name node, final IJavaElement element, final EnumSet<PreconditionFailure> pf,
@@ -776,7 +774,8 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	Action infer(final SingleVariableDeclaration node, final IJavaElement element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.CHANGE_N2O_VAR_DECL;
+		return pf.contains(PreconditionFailure.MAIN_METHOD) ? Action.BRIDGE_VALUE_OUT : 
+			Action.CHANGE_N2O_VAR_DECL;
 	}
 
 	Action infer(final SuperFieldAccess node, final IField element, final EnumSet<PreconditionFailure> pf,

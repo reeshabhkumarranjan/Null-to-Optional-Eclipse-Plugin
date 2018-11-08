@@ -14,6 +14,7 @@ public class Messages extends NLS {
 
 	public static final String ConvertNullToOptionalTypePage_Description = "Select the Java Model Elements to convert nulls to optionals.";
 
+	public static String Main_Method;
 	public static String Enhanced_For;
 	public static String Name;
 	public static String CategoryName;

@@ -82,6 +82,10 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private final Set<Entities> entities = new LinkedHashSet<>();
 
+	private final Set<IJavaElement> seeds = new LinkedHashSet<>();
+
+	private int countNotRefactorable;
+
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
 		this(null, null, false, null, Optional.empty());
 	}
@@ -283,6 +287,14 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	public Set<Entities> getEntities() {
 		return this.entities;
 	}
+	
+	public Set<IJavaElement> getSeeds() {
+		return this.seeds;
+	}
+	
+	public int countNotRefactorable() {
+		return this.countNotRefactorable;
+	}
 
 	public TimeCollector getExcludedTimeCollector() {
 		return this.excludedTimeCollector;
@@ -329,6 +341,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactorableHarvester harvester = new RefactorableHarvester(icu, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
 		final RefactoringStatus status = harvester.process();
+		this.seeds .addAll(harvester.getSeeds());
+		this.countNotRefactorable = harvester.countNotRefactorable();
 		this.entities.addAll(harvester.getEntities());
 
 		return status;
@@ -345,6 +359,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactorableHarvester harvester = new RefactorableHarvester(field, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
 		final RefactoringStatus status = harvester.process();
+		this.seeds .addAll(harvester.getSeeds());
+		this.countNotRefactorable = harvester.countNotRefactorable();
 		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
@@ -361,6 +377,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactorableHarvester harvester = new RefactorableHarvester(initializer, compilationUnit,
 				this.refactoringScope, this.settings, subMonitor);
 		final RefactoringStatus status = harvester.process();
+		this.seeds .addAll(harvester.getSeeds());
+		this.countNotRefactorable = harvester.countNotRefactorable();
 		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
@@ -391,6 +409,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactorableHarvester harvester = new RefactorableHarvester(method, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
 		final RefactoringStatus status = harvester.process();
+		this.seeds .addAll(harvester.getSeeds());
+		this.countNotRefactorable = harvester.countNotRefactorable();
 		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
@@ -437,6 +457,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactorableHarvester harvester = new RefactorableHarvester(type, compilationUnit, this.refactoringScope,
 				this.settings, subMonitor);
 		final RefactoringStatus status = harvester.process();
+		this.seeds .addAll(harvester.getSeeds());
+		this.countNotRefactorable = harvester.countNotRefactorable();
 		this.entities.addAll(harvester.getEntities());
 		return status;
 	}
