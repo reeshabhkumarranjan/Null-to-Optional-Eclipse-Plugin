@@ -71,13 +71,6 @@ public interface Util {
 	static final Logger LOGGER = Logger.getLogger(ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID + ":"
 			+ Instant.now().truncatedTo(ChronoUnit.MINUTES));
 
-	// temporary development method for console logging extracted results
-	static void candidatePrinter(final Entities elements) {
-		System.out.print("{");
-		elements.forEach(element -> System.out.print(element.getElementName() + ","));
-		System.out.print("}");
-	}
-
 	static ConvertNullToOptionalRefactoringProcessor createNullToOptionalRefactoringProcessor(
 			final IJavaElement[] elements, final RefactoringSettings refactoringSettings,
 			final Optional<IProgressMonitor> monitor) throws JavaModelException {

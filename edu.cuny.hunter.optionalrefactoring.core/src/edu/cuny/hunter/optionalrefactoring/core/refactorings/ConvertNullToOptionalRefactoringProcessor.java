@@ -223,7 +223,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			pm.beginTask(Messages.CreatingChange, count);
 
 			for (final Entities entity : this.entities) {
-				for (final IJavaElement element : entity) {
+				for (final Map.Entry<IJavaElement, Set<Entities.Instance>> pair : entity) {
+					IJavaElement element = pair.getKey();
 					final ICompilationUnit icu = (ICompilationUnit) element.getAncestor(IJavaElement.COMPILATION_UNIT);
 					entity.addIcu(icu, element);
 					pm.worked(1);

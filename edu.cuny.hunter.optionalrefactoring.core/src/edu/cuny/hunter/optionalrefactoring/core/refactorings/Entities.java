@@ -1,5 +1,6 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
+import java.util.AbstractMap;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -25,7 +26,7 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 @SuppressWarnings("restriction")
-public class Entities implements Iterable<IJavaElement> {
+public class Entities implements Iterable<Map.Entry<IJavaElement, Set<Entities.Instance>>> {
 
 	public static class Instance {
 		final IJavaElement element;
@@ -102,10 +103,15 @@ public class Entities implements Iterable<IJavaElement> {
 	public Set<IJavaElement> elements() {
 		return this.elements;
 	}
-
+/*
 	@Override
 	public Iterator<IJavaElement> iterator() {
 		return this.elements.iterator();
+	}
+	*/
+	@Override
+	public Iterator<Map.Entry<IJavaElement, Set<Instance>>> iterator() {
+		return this.instances.entrySet().iterator();
 	}
 
 	public RefactoringStatus status() {
