@@ -62,13 +62,14 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					"Failed Preconditions", "Info Failures", "Error Failures",
 					"P1", // MISSING_BINDING
 					"P2", // JAVA_MODEL_ERROR
-					"P3", // NON_SOURCE_CODE
-					"P4", // CAST_EXPRESSION
-					"P5", // INSTANCEOF_OP
-					"P6", // EXCLUDED_ENTITY
-					"P7", // OBJECT_TYPE
-					"P8", // COMPARISON_OP
-					"P9", // ENHANCED_FOR
+					"P3", // MAIN_METHOD_ERROR
+					"P4", // NON_SOURCE_CODE
+					"P5", // CAST_EXPRESSION
+					"P6", // INSTANCEOF_OP
+					"P7", // EXCLUDED_ENTITY
+					"P8", // OBJECT_TYPE
+					"P9", // COMPARISON_OP
+					"P10", // ENHANCED_FOR
 					"ACTION_NIL", "ACTION_CHANGE_N2O_VAR_DECL", "ACTION_BRIDGE_N2O_VAR_DECL",
 					"ACTION_CHANGE_N2O_PARAM", "ACTION_CHANGE_N2O_METH_DECL", "ACTION_BRIDGE_VALUE_OUT",
 					"ACTION_CHANGE_N2O_LITERAL", "ACTION_BRIDGE_VALUE_IN",
