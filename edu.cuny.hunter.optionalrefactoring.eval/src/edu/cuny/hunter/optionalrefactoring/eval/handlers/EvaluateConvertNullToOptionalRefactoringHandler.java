@@ -1,6 +1,5 @@
 package edu.cuny.hunter.optionalrefactoring.eval.handlers;
 
-import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.candidatePrinter;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOptionalRefactoringProcessor;
 
 import java.util.Arrays;
@@ -119,12 +118,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 
 					Set<Entities> passingSets = processor.getEntities();
 
-					System.out.print("{");
-					passingSets.forEach(set -> {
-						candidatePrinter(set);
-						System.out.print(", ");
-					});
-					System.out.println("}");
 
 					for (Entities set : passingSets) {
 						// Let's print some information about what's inside
