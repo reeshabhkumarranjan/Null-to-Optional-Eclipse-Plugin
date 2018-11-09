@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.osgi.framework.FrameworkUtil;
 
@@ -143,49 +144,117 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					setSummaryPrinter.println();
 					elementResultsPrinter.println();
 
+					Integer totalRefactorableElements = passingSets
+							.stream()
+							.map(Entities::elements)
+							.map(Set::size)
+							.mapToInt(Integer::intValue)
+							.sum();
 					
-					Long errorCount = passingSets
-						    .stream()
-						    .map(Entities::status)
-						    .map(RefactoringStatus::getEntries)
-						    .flatMap(Arrays::stream)
-						    .filter(entry -> entry.getSeverity() >= RefactoringStatus.ERROR).count();
+					List<RefactoringStatusEntry> useableStatusEntires = Arrays.stream(status.getEntries())
+							.filter(entry -> entry.getSeverity() >= RefactoringStatus.ERROR || entry.getSeverity() == RefactoringStatus.INFO)
+							.collect(Collectors.toList());
 						
-					Long okCount = passingSets.stream().map(Entities::elements)
-							.map(Set::size).collect(Collectors.counting());
-							
-					Long infoCount = passingSets
-				            .stream()
-				            .map(Entities::status)
-				            .map(RefactoringStatus::getEntries)
-				            .flatMap(Arrays::stream)
-				            .filter(entry -> entry.getSeverity() == RefactoringStatus.INFO).count();
+//					Long okCount = passingSets.stream().map(Entities::elements)
+//							.map(Set::size).collect(Collectors.counting());
 
-					Integer preconditionFailureCount = Arrays.stream(status.getEntries())
+					Integer preconditionFailureCount = useableStatusEntires.stream()
 							.filter(entry -> entry.getSeverity() >= RefactoringStatus.ERROR || entry.getSeverity() == RefactoringStatus.INFO)
 							.toArray().length;
 					
-					Integer errorFailureCount = Arrays.stream(status.getEntries())
+					Integer errorFailureCount = useableStatusEntires.stream()
 							.filter(entry -> entry.getSeverity() >= RefactoringStatus.ERROR)
 							.toArray().length;
 					
-					Integer infoFailureCount = Arrays.stream(status.getEntries())
+					Integer infoFailureCount = useableStatusEntires.stream()
 							.filter(entry -> entry.getSeverity() == RefactoringStatus.INFO)
 							.toArray().length;
 
-					System.out.println("Project Name: " + javaProject.getElementName() );
-					System.out.println("# errorCount: " + errorCount);
-					System.out.println("# infoCount: " + infoCount);
-					System.out.println("# okCount: " + okCount);
+					// TODO: Explore possibilty to combining into maybe single and simple fn expression
+					Integer preconditionFailureTypeCountP1 = useableStatusEntires
+							.stream()
+							.map(RefactoringStatusEntry::getCode)
+							.filter(entry -> entry == 1)
+							.toArray().length;
+					
+					Integer preconditionFailureTypeCountP2 = useableStatusEntires
+							.stream()
+							.map(RefactoringStatusEntry::getCode)
+							.filter(entry -> entry == 2)
+							.toArray().length;
+					
+					Integer preconditionFailureTypeCountP3 = useableStatusEntires
+							.stream()
+							.map(RefactoringStatusEntry::getCode)
+							.filter(entry -> entry == 3)
+							.toArray().length;
+					
+					Integer preconditionFailureTypeCountP4 = useableStatusEntires
+							.stream()
+							.map(RefactoringStatusEntry::getCode)
+							.filter(entry -> entry == 4)
+							.toArray().length;
+					
+					Integer preconditionFailureTypeCountP5 = useableStatusEntires
+							.stream()
+							.map(RefactoringStatusEntry::getCode)
+							.filter(entry -> entry == 5)
+							.toArray().length;
+					
+					Integer preconditionFailureTypeCountP6 = useableStatusEntires
+							.stream()
+							.map(RefactoringStatusEntry::getCode)
+							.filter(entry -> entry == 6)
+							.toArray().length;
+					
+					Integer preconditionFailureTypeCountP7 = useableStatusEntires
+							.stream()
+							.map(RefactoringStatusEntry::getCode)
+							.filter(entry -> entry == 7)
+							.toArray().length;
+					
+					Integer preconditionFailureTypeCountP8 = useableStatusEntires
+							.stream()
+							.map(RefactoringStatusEntry::getCode)
+							.filter(entry -> entry == 8)
+							.toArray().length;
+					
+					Integer preconditionFailureTypeCountP9 = useableStatusEntires
+							.stream()
+							.map(RefactoringStatusEntry::getCode)
+							.filter(entry -> entry == 9)
+							.toArray().length;
+					
+					Integer preconditionFailureTypeCountP10 = useableStatusEntires
+							.stream()
+							.map(RefactoringStatusEntry::getCode)
+							.filter(entry -> entry == 10)
+							.toArray().length;
+					
+					System.out.println("Project Name: " + javaProject.getElementName());
+					System.out.println("# Refactorable Elements: " + totalRefactorableElements);
 					System.out.println("# preconditionFailureCount: " + preconditionFailureCount);					
 					System.out.println("# errorFailureCount: " + errorFailureCount);
 					System.out.println("# infoFailureCount: " + infoFailureCount);
-
+					System.out.println("# preconditionFailureTypeCountP1: " + preconditionFailureTypeCountP1);
+					System.out.println("# preconditionFailureTypeCountP2: " + preconditionFailureTypeCountP2);	
+					System.out.println("# preconditionFailureTypeCountP3: " + preconditionFailureTypeCountP3);	
+					System.out.println("# preconditionFailureTypeCountP4: " + preconditionFailureTypeCountP4);	
+					System.out.println("# preconditionFailureTypeCountP5: " + preconditionFailureTypeCountP5);	
+					System.out.println("# preconditionFailureTypeCountP6: " + preconditionFailureTypeCountP6);					
+					System.out.println("# preconditionFailureTypeCountP7: " + preconditionFailureTypeCountP7);	
+					System.out.println("# preconditionFailureTypeCountP8: " + preconditionFailureTypeCountP8);					
+					System.out.println("# preconditionFailureTypeCountP9: " + preconditionFailureTypeCountP9);					
+					System.out.println("# preconditionFailureTypeCountP10: " + preconditionFailureTypeCountP10);					
 
 					resultsPrinter.printRecord(
 							javaProject.getElementName(),
-							"0", "0", "0",
-							preconditionFailureCount, infoFailureCount, errorFailureCount
+							"0", "0", totalRefactorableElements,
+							preconditionFailureCount, infoFailureCount, errorFailureCount,
+							preconditionFailureTypeCountP1, preconditionFailureTypeCountP2, preconditionFailureTypeCountP3,
+							preconditionFailureTypeCountP4, preconditionFailureTypeCountP5, preconditionFailureTypeCountP6,
+							preconditionFailureTypeCountP7, preconditionFailureTypeCountP8, preconditionFailureTypeCountP9,
+							preconditionFailureTypeCountP10
 					);
 //					resultsPrinter.println();
 
