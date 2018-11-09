@@ -119,19 +119,19 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					Set<Entities> passingSets = processor.getEntities();
 
 
-					for (Entities set : passingSets) {
-						// Let's print some information about what's inside
-						setSummaryPrinter.printRecord(set.hashCode(), set.status());
-						for (IJavaElement element : set)
-							elementResultsPrinter.printRecord(element.getJavaProject().getElementName(), set.hashCode(),
-									element.getElementName(), element.getClass().getSimpleName(),
-									element.getElementType() == IJavaElement.LOCAL_VARIABLE
-											? element.getAncestor(IJavaElement.METHOD).getElementName() + "\n"
-													+ element.getAncestor(IJavaElement.METHOD)
-															.getAncestor(IJavaElement.TYPE).getElementName()
-											: element.getAncestor(IJavaElement.TYPE).getElementName(),
-									element.isReadOnly(), element.getResource().isDerived());
-					}
+//					for (Entities set : passingSets) {
+//						// Let's print some information about what's inside
+//						setSummaryPrinter.printRecord(set.hashCode(), set.status());
+//						for (IJavaElement element : set)
+//							elementResultsPrinter.printRecord(element.getJavaProject().getElementName(), set.hashCode(),
+//									element.getElementName(), element.getClass().getSimpleName(),
+//									element.getElementType() == IJavaElement.LOCAL_VARIABLE
+//											? element.getAncestor(IJavaElement.METHOD).getElementName() + "\n"
+//													+ element.getAncestor(IJavaElement.METHOD)
+//															.getAncestor(IJavaElement.TYPE).getElementName()
+//											: element.getAncestor(IJavaElement.TYPE).getElementName(),
+//									element.isReadOnly(), element.getResource().isDerived());
+//					}
 					
 					
 					setSummaryPrinter.println();
