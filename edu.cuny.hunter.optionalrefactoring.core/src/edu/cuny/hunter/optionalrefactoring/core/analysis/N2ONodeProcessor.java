@@ -314,8 +314,9 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	@Override
 	void descend(final FieldDeclaration node) throws CoreException {
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), 
-				Action.CONVERT_VAR_DECL_TYPE);
+		Action action = node.getType().isArrayType() || Arrays.stream(node.getType().resolveBinding().getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable")) ?
+				Action.CONVERT_ITERABLE_VAR_DECL_TYPE : Action.CONVERT_VAR_DECL_TYPE;
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), action);
 		@SuppressWarnings("unchecked")
 		List<VariableDeclarationFragment> list = node.fragments();
 		for (final VariableDeclarationFragment vdf : list) {
@@ -369,8 +370,10 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	@Override
 	void descend(final VariableDeclarationExpression node) throws CoreException {
+		Action action = node.getType().isArrayType() || Arrays.stream(node.getType().resolveBinding().getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable")) ?
+				Action.CONVERT_ITERABLE_VAR_DECL_TYPE : Action.CONVERT_VAR_DECL_TYPE;
 		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), 
-				Action.CONVERT_VAR_DECL_TYPE);
+				action);
 		@SuppressWarnings("unchecked")
 		final List<VariableDeclarationFragment> list = node.fragments();
 		for (final VariableDeclarationFragment vdf : list) {
@@ -431,12 +434,16 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	
 	@Override
 	void descend(final VariableDeclarationStatement node) throws CoreException {
+		Action action = node.getType().isArrayType() || 
+				Arrays.stream(node.getType().resolveBinding()
+						.getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable")) ?
+				Action.CONVERT_ITERABLE_VAR_DECL_TYPE : Action.CONVERT_VAR_DECL_TYPE;
 		@SuppressWarnings("unchecked")
 		final List<VariableDeclarationFragment> list = node.fragments();
 		for (final VariableDeclarationFragment vdf : list) {
 			this.descend(vdf);
 		}
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CONVERT_VAR_DECL_TYPE);
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), action);
 	}
 
 	void findFormalsForVariable(final IMethod correspondingMethod, final int paramNumber) throws CoreException {
@@ -728,11 +735,6 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		return Action.WRAP;
 	}
 
-	Action infer(final EnhancedForStatement node, final EnumSet<PreconditionFailure> pf,
-			final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
 	/**
 	 * Determines appropriate action for a method receiver
 	 *
@@ -774,8 +776,13 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	Action infer(final SingleVariableDeclaration node, final IJavaElement element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return pf.contains(PreconditionFailure.MAIN_METHOD) ? Action.UNWRAP : 
-			Action.CONVERT_VAR_DECL_TYPE;
+		return pf.contains(PreconditionFailure.MAIN_METHOD) ? 
+				Action.UNWRAP 
+				: node.getType().isArrayType() || 
+					Arrays.stream(node.getType().resolveBinding()
+							.getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable")) ?
+									Action.CONVERT_ITERABLE_VAR_DECL_TYPE 
+									: Action.CONVERT_VAR_DECL_TYPE;
 	}
 
 	Action infer(final SuperFieldAccess node, final IField element, final EnumSet<PreconditionFailure> pf,

@@ -14,6 +14,11 @@ public enum Action {
 	 */
 	CONVERT_VAR_DECL_TYPE,
 	/**
+	 * We need to distinguish transforming the element type of an array or iterable collection
+	 * from simply transforming a variable declaration type in order to handle iteration or streams
+	 */
+	CONVERT_ITERABLE_VAR_DECL_TYPE,
+	/**
 	 * Transform a method's return type to a parameterized optional type
 	 */
 	CONVERT_METHOD_RETURN_TYPE,

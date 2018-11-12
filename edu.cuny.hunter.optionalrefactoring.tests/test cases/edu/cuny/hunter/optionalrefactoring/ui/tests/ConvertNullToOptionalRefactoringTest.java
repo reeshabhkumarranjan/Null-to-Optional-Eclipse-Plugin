@@ -614,7 +614,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testTransformationEnhancedForStatement() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
+		this.transformationHelper(null, this.createExpectedStatus(new MockEntryData[] {
+				new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.ENHANCED_FOR)
+		}));
 	}
 
 	public void testTransformationFieldAccessAssignment() throws Exception {

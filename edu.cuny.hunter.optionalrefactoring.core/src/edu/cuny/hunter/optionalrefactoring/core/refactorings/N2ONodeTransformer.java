@@ -17,15 +17,12 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.ArrayType;
-import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.InfixExpression;
-import org.eclipse.jdt.core.dom.InstanceofExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NameQualifiedType;
@@ -37,6 +34,7 @@ import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.Type;
+import org.eclipse.jdt.core.dom.TypeParameter;
 import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
@@ -191,6 +189,17 @@ class N2ONodeTransformer {
 
 	private Object transform(final ASTNode node, final Action action) {
 		switch (action) {
+		case CONVERT_ITERABLE_VAR_DECL_TYPE: {
+			if (node instanceof FieldDeclaration)
+				this.transformIterable((FieldDeclaration)node);
+			else if (node instanceof VariableDeclarationExpression)
+				this.transformIterable((VariableDeclarationExpression)node);
+			else if (node instanceof VariableDeclarationStatement)
+				this.transformIterable((VariableDeclarationStatement)node);
+			else if (node instanceof SingleVariableDeclaration)
+				this.transformIterable((SingleVariableDeclaration) node);
+			break;
+		}
 		case CONVERT_VAR_DECL_TYPE: {
 			if (node instanceof FieldDeclaration)
 				this.transform((FieldDeclaration)node);
@@ -249,6 +258,70 @@ class N2ONodeTransformer {
 			break;
 		}
 		return node;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void transformIterable(SingleVariableDeclaration node) {
+		final AST ast = node.getAST();
+		Type copy = node.getType() instanceof ArrayType ? 
+						ast.newArrayType(
+								ast.newSimpleType(
+										ast.newSimpleName(
+												((SimpleType)((ArrayType)node.getType()).getElementType())
+													.getName().toString())), 
+								((ArrayType)node.getType()).getDimensions()) 
+						: this.getConvertedType(ast, node.getType());
+		final ParameterizedType parameterized = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
+		parameterized.typeArguments().add(0, copy);
+		node.setType(parameterized);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void transformIterable(VariableDeclarationStatement node) {
+		final AST ast = node.getAST();
+		Type copy = node.getType() instanceof ArrayType ? 
+						ast.newArrayType(
+								ast.newSimpleType(
+										ast.newSimpleName(
+												((SimpleType)((ArrayType)node.getType()).getElementType())
+													.getName().toString())), 
+								((ArrayType)node.getType()).getDimensions()) 
+						: this.getConvertedType(ast, node.getType());
+		final ParameterizedType parameterized = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
+		parameterized.typeArguments().add(0, copy);
+		node.setType(parameterized);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void transformIterable(VariableDeclarationExpression node) {
+		final AST ast = node.getAST();
+		Type copy = node.getType() instanceof ArrayType ? 
+						ast.newArrayType(
+								ast.newSimpleType(
+										ast.newSimpleName(
+												((SimpleType)((ArrayType)node.getType()).getElementType())
+													.getName().toString())), 
+								((ArrayType)node.getType()).getDimensions()) 
+						: this.getConvertedType(ast, node.getType());
+		final ParameterizedType parameterized = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
+		parameterized.typeArguments().add(0, copy);
+		node.setType(parameterized);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void transformIterable(FieldDeclaration node) {
+		final AST ast = node.getAST();
+		Type copy = node.getType() instanceof ArrayType ? 
+						ast.newArrayType(
+								ast.newSimpleType(
+										ast.newSimpleName(
+												((SimpleType)((ArrayType)node.getType()).getElementType())
+													.getName().toString())), 
+								((ArrayType)node.getType()).getDimensions()) 
+						: this.getConvertedType(ast, node.getType());
+		final ParameterizedType parameterized = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
+		parameterized.typeArguments().add(0, copy);
+		node.setType(parameterized);
 	}
 
 	private void replace(ASTNode node, Expression expr) {

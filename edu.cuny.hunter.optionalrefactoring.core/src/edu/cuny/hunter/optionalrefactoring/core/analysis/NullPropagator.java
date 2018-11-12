@@ -17,6 +17,7 @@ import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
+import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
@@ -28,6 +29,7 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
@@ -137,16 +139,25 @@ class NullPropagator extends N2ONodeProcessor {
 
 	@Override
 	void ascend(final EnhancedForStatement node) throws CoreException {
-		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
-		final Action action = this.infer(node, pf, this.settings);
+		final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.ENHANCED_FOR);
+		/*	We need to check if the expression side of the node is itself an array or Collection or 
+			not. If not then we need to unwrap it because it's going to be transformed to Optional.
+		*/
+		final Action action = NullPropagator.containedIn(node.getExpression(), (Expression)this.rootNode) ?
+					this.existingInstances.stream().filter(i -> i.element().equals(this.rootElement))
+						.anyMatch(e -> e.action().equals(Action.CONVERT_ITERABLE_VAR_DECL_TYPE)) ?
+								Action.UNWRAP
+								: Action.NIL
+					: Action.NIL;
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(null, node, pf);
 		// if the Expression itself is a candidate for transformation to Optional type,
 		// we need to bridge it here (as opposed to being a collection parameterized
 		// with an optional type)
-		else if (pf.contains(PreconditionFailure.ENHANCED_FOR))
-			this.addInstance(null, node, pf, action);
-		this.descend(node.getParameter());
+		if (action.equals(Action.UNWRAP))
+			this.addInstance(null, node.getExpression(), pf, action);
+		else
+			this.descend(node.getParameter());
 	}
 
 	@Override
