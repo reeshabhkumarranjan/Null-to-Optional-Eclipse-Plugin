@@ -284,40 +284,96 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testAssignmentFieldSimpleName() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class),
+				this.createExpectedStatus(
+						new MockEntryData[] {
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+						}));
 	}
 
 	public void testAssignmentFieldStaticQualified() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class),
+				this.createExpectedStatus(
+						new MockEntryData[] {
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+						}));
 	}
 
 	public void testAssignmentFieldStaticSimpleName() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), 
+				this.createExpectedStatus(
+						new MockEntryData[] {
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+						}));
 	}
 
 	public void testAssignmentFieldSuper() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), 
+				this.createExpectedStatus(
+						new MockEntryData[] {
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+						}));
 	}
 
 	public void testAssignmentFieldSuperQualified() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class),
+				this.createExpectedStatus(
+						new MockEntryData[] {
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+						}));
 	}
 
 	public void testAssignmentFieldThis() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), 
+				this.createExpectedStatus(
+						new MockEntryData[] {
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+						}));
 	}
 
 	public void testAssignmentFieldThisQualified() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), 
+				this.createExpectedStatus(
+						new MockEntryData[] {
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+						}));
 	}
 
 	public void testAssignmentFieldTransitive() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b", "c"), setOf("controlNullDependent"), setOf("d", "e")), setOf(),
-				EnumSet.noneOf(Choice.class), new RefactoringStatus());
+				EnumSet.noneOf(Choice.class), this.createExpectedStatus(
+						new MockEntryData[] {
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE),
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+						}));
 	}
 
 	public void testAssignmentLocalVariable() throws Exception {
-		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), new RefactoringStatus());
+		this.propagationHelper(setOf(setOf("a", "b"), setOf("nullControl")), setOf(), EnumSet.noneOf(Choice.class), 
+				this.createExpectedStatus(
+						new MockEntryData[] {
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+						}));
 	}
 
 	public void testAssignmentLocalVariable2() throws Exception {
@@ -334,7 +390,15 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testAssignmentLocalVariableTransitive() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b"), setOf("c", "d", "e", "f", "g"), setOf("control")), setOf(), EnumSet.noneOf(Choice.class),
-				new RefactoringStatus());
+				this.createExpectedStatus(
+						new MockEntryData[] {
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE),
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE), 
+								new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+						}));
 	}
 
 	public void testAssignmentParameters() throws Exception {

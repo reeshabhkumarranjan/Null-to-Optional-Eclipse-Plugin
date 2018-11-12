@@ -149,6 +149,13 @@ class NullPropagator extends N2ONodeProcessor {
 		this.descend(node.getParameter());
 	}
 
+	@Override
+	void ascend(final MethodDeclaration node) throws CoreException {
+		IMethod meth = this.resolveElement(node);
+		this.addCandidate(meth, node, EnumSet.noneOf(PreconditionFailure.class), Action.CONVERT_METHOD_RETURN_TYPE);
+		this.descend(node);
+	}
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(final MethodInvocation node) throws CoreException {
