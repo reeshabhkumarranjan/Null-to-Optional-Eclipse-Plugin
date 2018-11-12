@@ -12,31 +12,39 @@ public enum Action {
 	/**
 	 * Transform to a parameterized optional type and wrap value if any.
 	 */
-	CHANGE_N2O_VAR_DECL,
+	CONVERT_VAR_DECL_TYPE,
 	/**
-	 * Transform the right side of the declaration whose type is now Optional into
-	 * it's raw type or null
+	 * Transform a method's return type to a parameterized optional type
 	 */
-	BRIDGE_N2O_VAR_DECL,
+	CONVERT_METHOD_RETURN_TYPE,
 	/**
-	 * Transform to a parameterized optional type
+	 * Transform some value whose type is now Optional into it's raw type or null.
 	 */
-	CHANGE_N2O_PARAM,
+	UNWRAP,
 	/**
-	 * Transform to a parameterized optional return type and wrap return value;
+	 * Transform some value into an Optional type.
 	 */
-	CHANGE_N2O_RETURN,
+	WRAP,
 	/**
-	 * Transform the value of a variable or invocation with optional type to it's
-	 * raw type or null
+	 * Unwrap the Expression of a {@link org.eclipse.jdt.core.dom.CastExpression},
+	 * or the Expression of a {@link org.eclipse.jdt.core.dom.InstanceofExpression},
+	 * and then wrap it again. 
 	 */
-	BRIDGE_VALUE_OUT,
+	BRIDGE_OPERATOR,
 	/**
-	 * Wrap a literal into an optional.
+	 * Transform a method invocation on a receiver which is converted to Optional into a
+	 * {@link java.util.Optional.map} invocation with the appropriate method reference.  
 	 */
-	BRIDGE_LITERAL_IN,
+	APPLY_MAP,
 	/**
-	 * Wrap a value in an Optional.ofNullable
+	 * Transform a reference equality check on an entity to an {@link java.util.Optional.isPresent} or {@link java.util.Optional.ifPresent}
+	 * with the body of any subsequent statement (if used in an {@link org.eclipse.jdt.core.dom.IfStatement} 
+	 * or a {@link org.eclipse.jdt.core.dom.ConditionalExpression} as an appropriate lambda or method reference.
 	 */
-	BRIDGE_VALUE_IN
+	APPLY_IFPRESENT,
+	APPLY_ISPRESENT, 
+	/**
+	 * Transform an uninitialized field declaration into an empty optional.
+	 */
+	INIT_VAR_DECL_FRAGMENT
 }

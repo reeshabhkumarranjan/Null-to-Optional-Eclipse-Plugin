@@ -276,7 +276,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testAssignmentField() throws Exception {
-		this.transformationHelper(EnumSet.of(Choice.CONSIDER_IMPLICITLY_NULL_FIELDS), new RefactoringStatus());
+		this.transformationHelper(EnumSet.noneOf(Choice.class), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldArray() throws Exception {
@@ -653,11 +653,15 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				.collect(Collectors.joining(", ", "\n", "\n")));
 
 		// convert to sets of strings
-		final Set<Set<String>> actualPassingSets = passingSets.stream().map(entity -> entity.elements().stream()
-				.map(element -> element.getElementName()).collect(Collectors.toSet())).collect(Collectors.toSet());
+		final Set<Set<String>> actualPassingSets = passingSets.stream()
+				.map(entity -> entity.stream().map(pair -> pair.getKey())
+						.map(element -> element.getElementName()).collect(Collectors.toSet()))
+				.collect(Collectors.toSet());
 
-		final Set<Set<String>> actualFailingSet = failingSet.stream().map(entity -> entity.elements().stream()
-				.map(element -> element.getElementName()).collect(Collectors.toSet())).collect(Collectors.toSet());
+		final Set<Set<String>> actualFailingSet = failingSet.stream()
+				.map(entity -> entity.stream().map(pair -> pair.getKey())
+						.map(element -> element.getElementName()).collect(Collectors.toSet()))
+				.collect(Collectors.toSet());
 
 		assertNotNull(actualPassingSets);
 		assertNotNull(actualFailingSet);

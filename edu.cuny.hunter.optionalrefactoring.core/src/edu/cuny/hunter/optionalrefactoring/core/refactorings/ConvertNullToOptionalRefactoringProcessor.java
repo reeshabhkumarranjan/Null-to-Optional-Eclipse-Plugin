@@ -27,6 +27,7 @@ import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -218,12 +219,12 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 					.isEmpty())
 				return new NullChange(Messages.NoNullsHaveBeenFound);
 
-			final int count = (int) this.entities.stream().flatMap(entity -> entity.elements().stream()).count();
+			final int count = this.entities.stream().map(Entities::size).reduce(Integer::sum).orElse(0);
 
 			pm.beginTask(Messages.CreatingChange, count);
 
 			for (final Entities entity : this.entities) {
-				for (final Map.Entry<IJavaElement, Set<Entities.Instance>> pair : entity) {
+				for (final Map.Entry<IJavaElement, Set<Instance<? extends ASTNode>>> pair : entity) {
 					IJavaElement element = pair.getKey();
 					final ICompilationUnit icu = (ICompilationUnit) element.getAncestor(IJavaElement.COMPILATION_UNIT);
 					entity.addIcu(icu, element);

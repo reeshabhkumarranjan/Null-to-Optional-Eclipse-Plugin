@@ -3,7 +3,7 @@ package p;
 public class A {
 	
 	void m() {
-		Object[] list = { null, new Object() };
-		for (Object o : list) ;
+		Integer[] list = { null, 1 };
+		for (Integer o : list) ;
 	}
 }

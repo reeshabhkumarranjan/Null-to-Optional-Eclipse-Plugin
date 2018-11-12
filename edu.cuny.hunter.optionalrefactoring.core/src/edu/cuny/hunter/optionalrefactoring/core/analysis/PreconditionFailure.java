@@ -69,35 +69,48 @@ public enum PreconditionFailure {
 	 */
 	NON_SOURCE_CODE(4, Messages.Harvester_SourceNotPresent),
 	/**
-	 * CAST_EXPRESSION: Bridging this may be excluded by settings.
+	 * {@link org.eclipse.jdt.core.dom.CastExpression}: Bridging this may be excluded by settings.
 	 */
 	CAST_EXPRESSION(5, Messages.Cast_Expression),
 	/**
-	 * INSTANCEOF_OP: Bridging this may be excluded by settings.
+	 * {@link org.eclipse.jdt.core.dom.InstanceofExpression}: Bridging this may be excluded by settings.
 	 */
 	INSTANCEOF_OP(6, Messages.InstanceOf_Expression),
 	/**
-	 * Entities (Fields, Method Return Type, Method Parameters, Local Variable) of
-	 * this type should not be refactored.
+	 * Entities (Fields, Method Return Type, Method Parameters, Local Variable) of the user's choice should not be refactored.
 	 */
 	EXCLUDED_ENTITY(7, Messages.Entity_Excluded),
 	/**
-	 * This entity is of the supertype of Optional. It may not be desirable to
-	 * refactor.
+	 * {@link java.lang.Object}: An entity may be of the supertype of Optional. It may not be desirable to refactor.
 	 */
 	OBJECT_TYPE(8, Messages.Object_Type),
 	/**
-	 * Bridging this (x == y, x != y) may be excluded by settings
+	 * Any reference type may be compared for equality in an {@link org.eclipse.jdt.core.dom.InfixExpression}.
+	 * Bridging (x == y) or (x != y) may be excluded by settings.
 	 */
-	COMPARISON_OP(9, Messages.Comparison_Op),
+	REFERENCE_EQUALITY_OP(9, Messages.Reference_Equality_Op),
 	/**
-	 * Bridging this may be excluded by settings.
+	 * A reference type <T> implementing {@link java.lang.Iterable<T>} may be transformed 
+	 * to an Optional. In such a case, use in an {@link org.eclipse.jdt.core.dom.EnhancedForStatement}
+	 * needs to be unwrapped. Unwrapping this may be excluded by settings.
 	 */
 	ENHANCED_FOR(10, Messages.Enhanced_For), 
 	/**
 	 * We hit the main method
 	 */
-	MAIN_METHOD(3, Messages.Main_Method),;
+	MAIN_METHOD(3, Messages.Main_Method),
+	/**
+	 * {@link org.eclipse.jdt.core.dom.MethodInvocation}
+	 * {@link org.eclipse.jdt.core.dom.FieldAccess}
+	 * In either of these cases, if the entity transformed to an optional is used in such an expression,
+	 * unwrapping may be required. This can be excluded by settings.
+	 */
+	MEMBER_ACCESS_OP(11, Messages.Member_Access_Op),
+	/**
+	 * {@link org.eclipse.jdt.core.dom.ConditionalExpression}: Bridging this (x ? y : z) may be excluded by settings.
+	 */
+	CONDITIONAL_OP(12, Messages.Conditional_Op)
+	;
 
 	public static EnumSet<PreconditionFailure> check(final ArrayAccess node, final RefactoringSettings settings) {
 		final EnumSet<PreconditionFailure> value = EnumSet.noneOf(PreconditionFailure.class);
@@ -170,7 +183,7 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final InfixExpression node, final RefactoringSettings settings) {
-		final EnumSet<PreconditionFailure> value = EnumSet.of(COMPARISON_OP);
+		final EnumSet<PreconditionFailure> value = EnumSet.of(REFERENCE_EQUALITY_OP);
 		return value;
 	}
 
@@ -249,6 +262,7 @@ public enum PreconditionFailure {
 
 	public static EnumSet<PreconditionFailure> check(final VariableDeclarationFragment node, final IField element,
 			final RefactoringSettings settings) throws HarvesterException {
+		// do we really need to check in a VDF if we're in non-source code ?
 		final EnumSet<PreconditionFailure> value = check(element, settings);
 		if (!settings.refactorsFields()) {
 			value.add(EXCLUDED_ENTITY);
@@ -296,7 +310,7 @@ public enum PreconditionFailure {
 		case CAST_EXPRESSION:
 			return settings.refactorThruOperators() ? RefactoringStatus.INFO : 
 				settings.bridgesExcluded() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
-		case COMPARISON_OP:
+		case REFERENCE_EQUALITY_OP:
 			return settings.refactorThruOperators() ? RefactoringStatus.INFO :
 				settings.bridgesExcluded() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
 		case ENHANCED_FOR:

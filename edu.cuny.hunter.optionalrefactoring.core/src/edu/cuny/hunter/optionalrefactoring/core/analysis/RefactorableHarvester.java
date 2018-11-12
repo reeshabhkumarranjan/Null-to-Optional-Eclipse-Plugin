@@ -23,8 +23,8 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -54,7 +54,7 @@ public class RefactorableHarvester {
 	private final SearchEngine searchEngine = new SearchEngine();
 	private final WorkList workList = new WorkList();
 	private final Set<IJavaElement> notRefactorable = new LinkedHashSet<>();
-	private final Set<Instance> instances = new LinkedHashSet<>();
+	private final Set<Instance<? extends ASTNode>> instances = new LinkedHashSet<>();
 	private final Set<Entities> entities = new LinkedHashSet<>();
 	private final Set<IJavaElement> seeds = new LinkedHashSet<>();
 
@@ -87,7 +87,7 @@ public class RefactorableHarvester {
 		// otherwise get the passing null type dependent entities
 		// and put just the IJavaElements into the workList
 		this.workList.addAll(seeder.getCandidates());
-
+		this.instances.addAll(seeder.getInstances());
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
 			// grab the next element.

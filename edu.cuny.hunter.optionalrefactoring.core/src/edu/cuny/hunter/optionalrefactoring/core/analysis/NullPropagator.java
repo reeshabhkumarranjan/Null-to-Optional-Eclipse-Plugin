@@ -39,7 +39,7 @@ import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -86,7 +86,7 @@ class NullPropagator extends N2ONodeProcessor {
 	private final Expression name;
 
 	public NullPropagator(final IJavaElement element, final ASTNode node, final IJavaSearchScope scope,
-			final RefactoringSettings settings, final IProgressMonitor monitor, final Set<Instance> existing) throws CoreException {
+			final RefactoringSettings settings, final IProgressMonitor monitor, final Set<Instance<? extends ASTNode>> existing) throws CoreException {
 		super(element, node, settings, monitor, scope, existing);
 		this.name = (Expression) node;
 	}
