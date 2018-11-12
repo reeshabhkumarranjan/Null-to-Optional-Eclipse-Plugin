@@ -149,7 +149,8 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	@Override
 	void ascend(final CastExpression node) throws CoreException {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
-		final Action action = this.infer(node, pf, this.settings);
+		final Action action = this.settings.refactorThruOperators() ?
+						Action.UNWRAP : Action.NIL;
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(null, node, pf);
 		else
@@ -284,7 +285,8 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	@Override
 	void descend(final CastExpression node) throws CoreException {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
-		final Action action = this.infer(node, pf, this.settings);
+		final Action action = this.settings.refactorThruOperators() ?
+						Action.WRAP : Action.NIL;
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(null, node, pf);
 		else
@@ -707,11 +709,6 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	}
 
 	Action infer(final ArrayCreation node, final EnumSet<PreconditionFailure> pf,
-			final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
-	Action infer(final CastExpression node, final EnumSet<PreconditionFailure> pf,
 			final RefactoringSettings settings) {
 		return Action.NIL;
 	}

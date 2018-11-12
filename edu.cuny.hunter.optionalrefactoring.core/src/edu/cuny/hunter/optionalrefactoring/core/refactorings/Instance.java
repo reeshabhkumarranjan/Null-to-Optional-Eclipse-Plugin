@@ -1,6 +1,7 @@
 package edu.cuny.hunter.optionalrefactoring.core.refactorings;
 
 import java.util.EnumSet;
+import java.util.Objects;
 
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -40,9 +41,18 @@ public class Instance<T extends ASTNode> {
 	
 	@Override
 	public String toString() {
-		return this.node.toString();
+		return this.action.toString()+": "+this.node.toString();
 	}
-	
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(this.element.getHandleIdentifier(), 
+				this.node.getNodeType(),
+				this.node.getStartPosition(),
+				this.node.getLength(),
+				this.action.name());
+	}
+
 	@Override
 	public boolean equals(Object _other) {
 		if (!(_other instanceof Instance<?>)) return false;
@@ -50,7 +60,8 @@ public class Instance<T extends ASTNode> {
 		Instance<T> other = (Instance<T>)_other;
 		return this.element.getHandleIdentifier().equals(other.element.getHandleIdentifier()) &&
 				this.node.getNodeType() == other.node.getNodeType() &&
-				Util.getSourceRange(this.node).equals(Util.getSourceRange(other.node)) &&
+				this.node.getStartPosition() == other.node.getStartPosition() &&
+				this.node.getLength() == other.node.getLength() &&
 				this.failures.equals(other.failures) &&
 				this.action.equals(other.action);
 	}

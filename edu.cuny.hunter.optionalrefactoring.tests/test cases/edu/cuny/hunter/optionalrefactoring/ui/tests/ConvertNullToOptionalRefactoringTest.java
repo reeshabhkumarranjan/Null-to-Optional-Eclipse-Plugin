@@ -276,7 +276,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testAssignmentField() throws Exception {
-		this.transformationHelper(EnumSet.noneOf(Choice.class), new RefactoringStatus());
+		this.transformationHelper(EnumSet.of(Choice.CONSIDER_IMPLICITLY_NULL_FIELDS), new RefactoringStatus());
 	}
 
 	public void testAssignmentFieldArray() throws Exception {
@@ -550,7 +550,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testOfNullable3() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
+		this.transformationHelper(null, this.createExpectedStatus(new MockEntryData[] {
+				new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+		}));
 	}
 
 	public void testReturnStatement() throws Exception {

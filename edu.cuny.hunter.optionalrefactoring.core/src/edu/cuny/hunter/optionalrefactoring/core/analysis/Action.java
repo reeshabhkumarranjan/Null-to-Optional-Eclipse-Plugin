@@ -26,12 +26,6 @@ public enum Action {
 	 */
 	WRAP,
 	/**
-	 * Unwrap the Expression of a {@link org.eclipse.jdt.core.dom.CastExpression},
-	 * or the Expression of a {@link org.eclipse.jdt.core.dom.InstanceofExpression},
-	 * and then wrap it again. 
-	 */
-	BRIDGE_OPERATOR,
-	/**
 	 * Transform a method invocation on a receiver which is converted to Optional into a
 	 * {@link java.util.Optional.map} invocation with the appropriate method reference.  
 	 */

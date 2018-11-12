@@ -214,15 +214,6 @@ class N2ONodeTransformer {
 			node1.setReturnType2(converted);
 			break;
 		}
-		case BRIDGE_OPERATOR: {
-			if (node instanceof CastExpression)
-				;
-			else if (node instanceof InstanceofExpression)
-				;
-			else if (node instanceof InfixExpression)
-				;
-			break;
-		}
 		case UNWRAP: {
 			ASTNode parent = node.getParent();
 			StructuralPropertyDescriptor spd = node.getLocationInParent();
