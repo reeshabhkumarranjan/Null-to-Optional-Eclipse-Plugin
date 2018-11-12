@@ -258,7 +258,7 @@ class NullSeeder extends N2ONodeProcessor {
 				 * implicit null also, if the type of the declaration is primitive, we ignore it
 				 */
 				if (!binding.getVariableDeclaration().getType().isPrimitive())
-					this.candidates.add(element);
+					this.addCandidate(element, node, EnumSet.noneOf(PreconditionFailure.class), Action.INIT_VAR_DECL_FRAGMENT);
 		}
 		return !this.candidates.isEmpty();
 	}

@@ -57,7 +57,6 @@ import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptiona
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 
 /**

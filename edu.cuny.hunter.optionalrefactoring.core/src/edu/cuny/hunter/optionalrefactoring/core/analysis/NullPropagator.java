@@ -39,7 +39,7 @@ import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
@@ -86,7 +86,7 @@ class NullPropagator extends N2ONodeProcessor {
 	private final Expression name;
 
 	public NullPropagator(final IJavaElement element, final ASTNode node, final IJavaSearchScope scope,
-			final RefactoringSettings settings, final IProgressMonitor monitor, final Set<Instance> existing) throws CoreException {
+			final RefactoringSettings settings, final IProgressMonitor monitor, final Set<Instance<? extends ASTNode>> existing) throws CoreException {
 		super(element, node, settings, monitor, scope, existing);
 		this.name = (Expression) node;
 	}
@@ -149,6 +149,13 @@ class NullPropagator extends N2ONodeProcessor {
 		this.descend(node.getParameter());
 	}
 
+	@Override
+	void ascend(final MethodDeclaration node) throws CoreException {
+		IMethod meth = this.resolveElement(node);
+		this.addCandidate(meth, node, EnumSet.noneOf(PreconditionFailure.class), Action.CONVERT_METHOD_RETURN_TYPE);
+		this.descend(node);
+	}
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(final MethodInvocation node) throws CoreException {
@@ -230,9 +237,12 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod element = this.resolveElement(node);
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
 		final Action action = this.infer(node, element, pf, this.settings);
-		if (!pf.isEmpty())
-			this.endProcessing(element, node, pf);
-		this.addInstance(element, node, pf, action);
+		if (pf.isEmpty())
+			this.addInstance(element, node, pf, action);
+		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
+			this.endProcessing(null, node, pf);
+		else
+			this.addInstance(null, node, pf, action);
 	}
 
 	@Override
@@ -266,9 +276,9 @@ class NullPropagator extends N2ONodeProcessor {
 		if (pf.isEmpty())
 			this.addCandidate(top, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			this.endProcessing(top == null ? meth : top, node, pf);
+			this.endProcessing(null, node, pf);
 		else
-			this.addInstance(top == null ? meth : top, node, pf, action);
+			this.addInstance(null, node, pf, action);
 	}
 
 	@Override

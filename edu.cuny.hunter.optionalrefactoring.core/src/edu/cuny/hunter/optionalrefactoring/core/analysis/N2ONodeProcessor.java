@@ -57,8 +57,8 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
@@ -72,8 +72,8 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	final IProgressMonitor monitor;
 	final IJavaSearchScope scope;
 	final Set<IJavaElement> candidates = new LinkedHashSet<>();
-	private final Set<Instance> candidateInstances = new LinkedHashSet<>();
-	final Set<Instance> existingInstances;
+	private final Set<Instance<? extends ASTNode>> candidateInstances = new LinkedHashSet<>();
+	final Set<Instance<? extends ASTNode>> existingInstances;
 	final RefactoringStatus status = new RefactoringStatus();
 
 	N2ONodeProcessor(final IJavaElement element, final ASTNode node, final RefactoringSettings settings, final IProgressMonitor monitor,
@@ -90,7 +90,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	}
 
 	N2ONodeProcessor(final IJavaElement element, final ASTNode node, final RefactoringSettings settings, final IProgressMonitor monitor,
-			final IJavaSearchScope scope, Set<Instance> existingInstances) throws HarvesterException {
+			final IJavaSearchScope scope, Set<Instance<? extends ASTNode>> existingInstances) throws HarvesterException {
 		super(node);
 		this.rootElement = element;
 		if (!node.getAST().hasResolvedBindings())
@@ -108,11 +108,12 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		this.addInstance(element, node, pf, action);
 	}
 
-	void addInstance(IJavaElement _element, final ASTNode node, final EnumSet<PreconditionFailure> pf, final Action action) {
+	<T extends ASTNode> void addInstance(IJavaElement _element, final T node, final EnumSet<PreconditionFailure> pf, final Action action) {
 		IJavaElement element = _element != null ? _element : 
 			candidates.isEmpty() ? this.rootElement : 
 				candidates.toArray(new IJavaElement[candidates.size()])[candidates.size()-1];
-		this.candidateInstances.add(new Instance(element, node, pf, action));
+		if (action != Action.NIL)
+			this.candidateInstances.add(new Instance<T>(element, node, pf, action));
 		this.status.merge(pf.stream().map(f -> Util.createStatusEntry(this.settings, f, element, node, action))
 				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge));
 	}
@@ -148,7 +149,8 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	@Override
 	void ascend(final CastExpression node) throws CoreException {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
-		final Action action = this.infer(node, pf, this.settings);
+		final Action action = this.settings.refactorThruOperators() ?
+						Action.UNWRAP : Action.NIL;
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(null, node, pf);
 		else
@@ -240,14 +242,14 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		final IVariableBinding binding = node.resolveBinding();
 		EnumSet<PreconditionFailure> pf = binding.isField() ? PreconditionFailure.check(node, (IField)binding.getJavaElement(), this.settings) :
 			PreconditionFailure.check(node, binding.getJavaElement(), this.settings);
-		Action action = this.infer(node, binding.getJavaElement(), pf, this.settings);
+		Action action = pf.contains(PreconditionFailure.EXCLUDED_ENTITY) ? Action.UNWRAP : Action.NIL;
 		if (pf.isEmpty()) {
 			this.addCandidate(binding.getJavaElement(), node, pf, action);
 			this.processAscent(node.getParent());
 		} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			this.endProcessing(binding.getJavaElement(), node, pf);
+			this.endProcessing(binding.getJavaElement(), node.getInitializer(), pf);
 		else
-			this.addInstance(binding.getJavaElement(), node, pf, action);
+			this.addInstance(binding.getJavaElement(), node.getInitializer(), pf, action);
 	}
 
 	/**
@@ -283,7 +285,8 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	@Override
 	void descend(final CastExpression node) throws CoreException {
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
-		final Action action = this.infer(node, pf, this.settings);
+		final Action action = this.settings.refactorThruOperators() ?
+						Action.WRAP : Action.NIL;
 		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 			this.endProcessing(null, node, pf);
 		else
@@ -311,12 +314,13 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	@Override
 	void descend(final FieldDeclaration node) throws CoreException {
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), 
+				Action.CONVERT_VAR_DECL_TYPE);
 		@SuppressWarnings("unchecked")
 		List<VariableDeclarationFragment> list = node.fragments();
 		for (final VariableDeclarationFragment vdf : list) {
 			this.descend(vdf);
 		}
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CHANGE_N2O_VAR_DECL);
 	}
 
 	/**
@@ -365,12 +369,13 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	@Override
 	void descend(final VariableDeclarationExpression node) throws CoreException {
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), 
+				Action.CONVERT_VAR_DECL_TYPE);
 		@SuppressWarnings("unchecked")
 		final List<VariableDeclarationFragment> list = node.fragments();
 		for (final VariableDeclarationFragment vdf : list) {
 			this.descend(vdf);
 		}
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CHANGE_N2O_VAR_DECL);
 	}
 
 	@Override
@@ -379,7 +384,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		final EnumSet<PreconditionFailure> pf = node.getParent() instanceof FieldDeclaration
 					? PreconditionFailure.check(node, (IField) element, this.settings)
 					: PreconditionFailure.check(node, element, this.settings);
-			final Action action = this.infer(node, element, pf, this.settings);
+			final Action action = Action.NIL;
 			if (pf.isEmpty()) {
 				this.addCandidate(element, node, pf, action);
 				this.processDescent(node.getInitializer());
@@ -431,7 +436,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		for (final VariableDeclarationFragment vdf : list) {
 			this.descend(vdf);
 		}
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CHANGE_N2O_VAR_DECL);
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CONVERT_VAR_DECL_TYPE);
 	}
 
 	void findFormalsForVariable(final IMethod correspondingMethod, final int paramNumber) throws CoreException {
@@ -483,14 +488,14 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		return this.candidates;
 	}
 
-	public Set<Instance> getInstances() {
+	public Set<Instance<? extends ASTNode>> getInstances() {
 		return this.candidateInstances;
 	}
 
 	private void process(final Name node) throws HarvesterException {
 		final IJavaElement element = this.resolveElement(node);
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
-		final Action action = pf.contains(PreconditionFailure.NON_SOURCE_CODE) ? Action.BRIDGE_VALUE_OUT
+		final Action action = pf.contains(PreconditionFailure.NON_SOURCE_CODE) ? Action.UNWRAP
 				: Action.NIL;
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
@@ -708,11 +713,6 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		return Action.NIL;
 	}
 
-	Action infer(final CastExpression node, final EnumSet<PreconditionFailure> pf,
-			final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
 	/**
 	 * Determines appropriate action for ClassInstanceCreation (we just wrap it with
 	 * Optional::ofNullable)
@@ -725,7 +725,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	 */
 	Action infer(final ClassInstanceCreation node, final IMethod element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.BRIDGE_VALUE_IN;
+		return Action.WRAP;
 	}
 
 	Action infer(final EnhancedForStatement node, final EnumSet<PreconditionFailure> pf,
@@ -744,7 +744,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	 */
 	Action infer(final Expression expression, final IMethod element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.BRIDGE_VALUE_OUT;
+		return Action.UNWRAP;
 	}
 
 	Action infer(final FieldAccess node, final IField element, final EnumSet<PreconditionFailure> pf,
@@ -764,7 +764,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	Action infer(final MethodInvocation node, final IMethod element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return pf.contains(PreconditionFailure.MAIN_METHOD) ? Action.BRIDGE_VALUE_OUT : Action.NIL;
+		return pf.contains(PreconditionFailure.MAIN_METHOD) ? Action.UNWRAP : Action.NIL;
 	}
 
 	Action infer(final Name node, final IJavaElement element, final EnumSet<PreconditionFailure> pf,
@@ -774,8 +774,8 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	Action infer(final SingleVariableDeclaration node, final IJavaElement element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return pf.contains(PreconditionFailure.MAIN_METHOD) ? Action.BRIDGE_VALUE_OUT : 
-			Action.CHANGE_N2O_VAR_DECL;
+		return pf.contains(PreconditionFailure.MAIN_METHOD) ? Action.UNWRAP : 
+			Action.CONVERT_VAR_DECL_TYPE;
 	}
 
 	Action infer(final SuperFieldAccess node, final IField element, final EnumSet<PreconditionFailure> pf,
@@ -788,18 +788,12 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		return Action.NIL;
 	}
 
-	Action infer(final VariableDeclarationFragment node, final IField element,
-			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.CHANGE_N2O_VAR_DECL;
-	}
-
-	Action infer(final VariableDeclarationFragment node, final IJavaElement element,
-			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
+	Action infer(final VariableDeclarationFragment node) {
 		Expression initializer = node.getInitializer();
 		IJavaElement e = this.elementGetter(initializer);
 		return e != null ? this.existingInstances.stream().anyMatch(i -> i.element().equals(e)) ?
-				Action.NIL : Action.CHANGE_N2O_VAR_DECL :
-					Action.CHANGE_N2O_VAR_DECL;
+				Action.NIL : Action.CONVERT_VAR_DECL_TYPE :
+					Action.CONVERT_VAR_DECL_TYPE;
 	}
 
 	IJavaElement elementGetter(Expression initializer) {
@@ -811,22 +805,22 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	}
 	
 	Action infer(NumberLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
-		return Action.BRIDGE_LITERAL_IN;
+		return Action.WRAP;
 	}
 
 	Action infer(CharacterLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
-		return Action.BRIDGE_LITERAL_IN;
+		return Action.WRAP;
 	}
 
 	Action infer(StringLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
-		return Action.BRIDGE_LITERAL_IN;
+		return Action.WRAP;
 	}
 
 	Action infer(TypeLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
-		return Action.BRIDGE_LITERAL_IN;
+		return Action.WRAP;
 	}
 
 	Action infer(NullLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
-		return Action.BRIDGE_LITERAL_IN;
+		return Action.WRAP;
 	}
 }
