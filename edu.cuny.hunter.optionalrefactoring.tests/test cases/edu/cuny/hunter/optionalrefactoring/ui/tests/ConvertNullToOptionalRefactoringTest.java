@@ -434,7 +434,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testImplicitlyNullFieldSomeConstructorInit() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
+		this.transformationHelper(null, this.createExpectedStatus(new MockEntryData[] {
+				new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+		}));
 	}
 
 	public void testImplicitlyNullVariableDecl() throws Exception {
@@ -586,7 +588,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testTransformationWithSeedComparison() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
+		this.transformationHelper(null, this.createExpectedStatus(new MockEntryData[] {
+				new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.REFERENCE_EQUALITY_OP)
+		}));
 	}
 
 	private void transformationHelper(final EnumSet<Choice> turnOff, final RefactoringStatus expectedStatus) throws Exception {

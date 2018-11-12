@@ -9,7 +9,7 @@ public class A {
 	Optional<Object> a = Optional.empty();
 	
 	public A() {
-		this.a = Optional.of(new Object());
+		this.a = Optional.ofNullable(new Object());
 	}
 	
 	public A(Object o) { }

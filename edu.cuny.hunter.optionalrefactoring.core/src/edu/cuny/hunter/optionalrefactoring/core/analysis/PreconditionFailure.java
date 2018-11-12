@@ -130,8 +130,8 @@ public enum PreconditionFailure {
 	}
 
 	public static EnumSet<PreconditionFailure> check(final ClassInstanceCreation node, final IMethod element,
-			final RefactoringSettings settings) {
-		return EnumSet.noneOf(PreconditionFailure.class);
+			final RefactoringSettings settings) throws HarvesterException {
+		return check(element, settings);
 	}
 
 	public static EnumSet<PreconditionFailure> check(final EnhancedForStatement node,

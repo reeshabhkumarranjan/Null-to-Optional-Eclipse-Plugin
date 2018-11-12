@@ -230,9 +230,12 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod element = this.resolveElement(node);
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
 		final Action action = this.infer(node, element, pf, this.settings);
-		if (!pf.isEmpty())
-			this.endProcessing(element, node, pf);
-		this.addInstance(element, node, pf, action);
+		if (pf.isEmpty())
+			this.addInstance(element, node, pf, action);
+		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
+			this.endProcessing(null, node, pf);
+		else
+			this.addInstance(null, node, pf, action);
 	}
 
 	@Override
@@ -266,9 +269,9 @@ class NullPropagator extends N2ONodeProcessor {
 		if (pf.isEmpty())
 			this.addCandidate(top, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			this.endProcessing(top == null ? meth : top, node, pf);
+			this.endProcessing(null, node, pf);
 		else
-			this.addInstance(top == null ? meth : top, node, pf, action);
+			this.addInstance(null, node, pf, action);
 	}
 
 	@Override
