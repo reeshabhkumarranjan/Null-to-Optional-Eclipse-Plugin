@@ -618,7 +618,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testTransformationFieldAccessAssignment() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
+		this.transformationHelper(null, this.createExpectedStatus(new MockEntryData[] {
+				new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.NON_SOURCE_CODE)
+		}));
 	}
 
 	public void testTransformationFieldDeclLocal() throws Exception {
