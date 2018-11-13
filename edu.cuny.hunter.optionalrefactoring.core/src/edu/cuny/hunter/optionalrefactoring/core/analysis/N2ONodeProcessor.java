@@ -125,6 +125,9 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	@Override
 	void ascend(final ArrayInitializer node) throws CoreException {
+		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		Action action = Action.CONVERT_ITERABLE_VAR_DECL_TYPE;
+		this.addInstance(null, node, pf, action);
 		this.processAscent(node.getParent());
 	}
 
@@ -314,7 +317,9 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	@Override
 	void descend(final FieldDeclaration node) throws CoreException {
-		Action action = node.getType().isArrayType() || Arrays.stream(node.getType().resolveBinding().getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable")) ?
+		Action action = (node.getType().isArrayType() || 
+				Arrays.stream(node.getType().resolveBinding().getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable"))) &&
+				this.candidateInstances.stream().anyMatch(i -> i.action().equals(Action.CONVERT_ITERABLE_VAR_DECL_TYPE)) ?
 				Action.CONVERT_ITERABLE_VAR_DECL_TYPE : Action.CONVERT_VAR_DECL_TYPE;
 		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), action);
 		@SuppressWarnings("unchecked")
@@ -370,7 +375,9 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	@Override
 	void descend(final VariableDeclarationExpression node) throws CoreException {
-		Action action = node.getType().isArrayType() || Arrays.stream(node.getType().resolveBinding().getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable")) ?
+		Action action = (node.getType().isArrayType() || 
+				Arrays.stream(node.getType().resolveBinding().getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable"))) &&
+				this.candidateInstances.stream().anyMatch(i -> i.action().equals(Action.CONVERT_ITERABLE_VAR_DECL_TYPE)) ?
 				Action.CONVERT_ITERABLE_VAR_DECL_TYPE : Action.CONVERT_VAR_DECL_TYPE;
 		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), 
 				action);
@@ -434,9 +441,9 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	
 	@Override
 	void descend(final VariableDeclarationStatement node) throws CoreException {
-		Action action = node.getType().isArrayType() || 
-				Arrays.stream(node.getType().resolveBinding()
-						.getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable")) ?
+		Action action = (node.getType().isArrayType() || 
+				Arrays.stream(node.getType().resolveBinding().getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable"))) &&
+				this.candidateInstances.stream().anyMatch(i -> i.action().equals(Action.CONVERT_ITERABLE_VAR_DECL_TYPE)) ?
 				Action.CONVERT_ITERABLE_VAR_DECL_TYPE : Action.CONVERT_VAR_DECL_TYPE;
 		@SuppressWarnings("unchecked")
 		final List<VariableDeclarationFragment> list = node.fragments();
