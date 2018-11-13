@@ -145,7 +145,7 @@ class NullPropagator extends N2ONodeProcessor {
 		*/
 		final Action action = NullPropagator.containedIn(node.getExpression(), (Expression)this.rootNode) ?
 					this.existingInstances.stream().filter(i -> i.element().equals(this.rootElement))
-						.anyMatch(e -> e.action().equals(Action.CONVERT_ITERABLE_VAR_DECL_TYPE)) ?
+						.anyMatch(e -> e.action().equals(Action.CONVERT_VAR_DECL_TYPE)) ?
 								Action.UNWRAP
 								: Action.NIL
 					: Action.NIL;
@@ -232,11 +232,14 @@ class NullPropagator extends N2ONodeProcessor {
 
 	@Override
 	void descend(final ArrayCreation node) throws CoreException {
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CONVERT_ITERABLE_VAR_DECL_TYPE);
 		this.processDescent(node.getInitializer());
 	}
 
 	@Override
 	void descend(final ArrayInitializer node) throws CoreException {
+		if (node.getParent().getNodeType() != ASTNode.ARRAY_CREATION)
+			this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.CONVERT_ITERABLE_VAR_DECL_TYPE);
 		for (final Object exp : node.expressions())
 			this.processDescent((Expression) exp);
 	}
