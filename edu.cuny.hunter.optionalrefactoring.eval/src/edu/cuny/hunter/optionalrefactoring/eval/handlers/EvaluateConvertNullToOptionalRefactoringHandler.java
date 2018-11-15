@@ -4,6 +4,7 @@ import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOp
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,8 +30,10 @@ import org.osgi.framework.FrameworkUtil;
 import com.google.common.collect.Lists;
 
 import edu.cuny.citytech.refactoring.common.eval.handlers.EvaluateRefactoringHandler;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;;
@@ -120,21 +123,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					RefactoringStatus status = new ProcessorBasedRefactoring(processor)
 							.checkAllConditions(new NullProgressMonitor());
 					resultsTimeCollector.stop();
-
-
-//					for (Entities set : passingSets) {
-//						// Let's print some information about what's inside
-//						setSummaryPrinter.printRecord(set.hashCode(), set.status());
-//						for (IJavaElement element : set)
-//							elementResultsPrinter.printRecord(element.getJavaProject().getElementName(), set.hashCode(),
-//									element.getElementName(), element.getClass().getSimpleName(),
-//									element.getElementType() == IJavaElement.LOCAL_VARIABLE
-//											? element.getAncestor(IJavaElement.METHOD).getElementName() + "\n"
-//													+ element.getAncestor(IJavaElement.METHOD)
-//															.getAncestor(IJavaElement.TYPE).getElementName()
-//											: element.getAncestor(IJavaElement.TYPE).getElementName(),
-//									element.isReadOnly(), element.getResource().isDerived());
-//					}
 					
 					
 					setSummaryPrinter.println();
@@ -229,8 +217,66 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							.sum();
 					
 					
-
+					Set<Instance> allInstances = passingSets
+							.stream()
+							.flatMap(Entities::stream)
+							.map(e -> e.getValue())
+							.flatMap(Set::stream)
+							.collect(Collectors.toSet());
+					
+					Integer actionTypeCountA1 = allInstances.stream()
+							.map(Instance::action)
+							.filter(e -> e == Action.CONVERT_VAR_DECL_TYPE)
+							.toArray().length;
+					
+					Integer actionTypeCountA2 = allInstances.stream()
+							.map(Instance::action)
+							.filter(e -> e == Action.CONVERT_METHOD_RETURN_TYPE)
+							.toArray().length;
+					
+					Integer actionTypeCountA3 = allInstances.stream()
+							.map(Instance::action)
+							.filter(e -> e == Action.UNWRAP)
+							.toArray().length;
+					
+					Integer actionTypeCountA4 = allInstances.stream()
+							.map(Instance::action)
+							.filter(e -> e == Action.WRAP)
+							.toArray().length;
+					
+					Integer actionTypeCountA5 = allInstances.stream()
+							.map(Instance::action)
+							.filter(e -> e == Action.APPLY_MAP)
+							.toArray().length;
+					
+					Integer actionTypeCountA6 = allInstances.stream()
+							.map(Instance::action)
+							.filter(e -> e == Action.APPLY_IFPRESENT)
+							.toArray().length;
+					
+					Integer actionTypeCountA7 = allInstances.stream()
+							.map(Instance::action)
+							.filter(e -> e == Action.APPLY_ISPRESENT)
+							.toArray().length;
+					
+					Integer actionTypeCountA8 = allInstances.stream()
+							.map(Instance::action)
+							.filter(e -> e == Action.INIT_VAR_DECL_FRAGMENT)
+							.toArray().length;
+					
 //					Print to console
+//					Entities
+					System.out.println(allInstances);
+					System.out.println("# A1: " + actionTypeCountA1);
+					System.out.println("# A2: " + actionTypeCountA2);
+					System.out.println("# A3: " + actionTypeCountA3);
+					System.out.println("# A4: " + actionTypeCountA4);
+					System.out.println("# A5: " + actionTypeCountA5);
+					System.out.println("# A6: " + actionTypeCountA6);
+					System.out.println("# A7: " + actionTypeCountA7);
+					System.out.println("# A8: " + actionTypeCountA8);
+	
+//					Error Status
 					System.out.println("Project Name: " + javaProject.getElementName());
 					System.out.println("# Refactorable Elements: " + totalRefactorableElements);
 					System.out.println("# preconditionFailureCount: " + preconditionFailureCount);					
@@ -255,20 +301,14 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							preconditionFailureTypeCountP1, preconditionFailureTypeCountP2, preconditionFailureTypeCountP3,
 							preconditionFailureTypeCountP4, preconditionFailureTypeCountP5, preconditionFailureTypeCountP6,
 							preconditionFailureTypeCountP7, preconditionFailureTypeCountP8, preconditionFailureTypeCountP9,
-							preconditionFailureTypeCountP10
+							preconditionFailureTypeCountP10,
+							actionTypeCountA1, actionTypeCountA2,
+							actionTypeCountA3, actionTypeCountA4,
+							actionTypeCountA5, actionTypeCountA6,
+							actionTypeCountA7, actionTypeCountA8,
+							resultsTimeCollector.getCollectedTime()
+							
 					);
-//					resultsPrinter.println();
-
-					
-					// Then let's refactor them
-					// TODO: This should refer to a constant in this file as it once did #59.
-//					if (processor.settings().doesTransformation()) {
-//
-//					}
-
-					// Then let's print some more information about the
-					// refactoring
-
 				}
 			} catch (Exception e) {
 				return new Status(IStatus.ERROR, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
