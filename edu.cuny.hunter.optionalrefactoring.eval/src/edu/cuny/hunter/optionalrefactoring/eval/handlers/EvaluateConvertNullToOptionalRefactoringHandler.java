@@ -4,7 +4,6 @@ import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOp
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,7 +19,6 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
@@ -53,12 +51,9 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 	 */
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
+//		TODO: break up precondition & action data collection into separate methods
+//		TODO: store useful data structures as private members
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
-
-			List<String> setSummaryHeader = Lists.newArrayList("Seed");
-
-			List<String> elementResultsHeader = Lists.newArrayList("Project Name", "Type Dependent Set ID",
-					"Entity Name", "Entity Type", "Containing Entities", "Read Only", "Generated");
 
 			List<String> resultsHeader = Lists.newArrayList(
 					"Subjects", "# Seed Elements", "# Candidate Elements", "# Refactorable Elements",
@@ -84,13 +79,10 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					"time"
 					);
 		
-			try (CSVPrinter elementResultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("elementResults.csv",
-					elementResultsHeader.toArray(new String[elementResultsHeader.size()]));
-					CSVPrinter setSummaryPrinter = EvaluateRefactoringHandler.createCSVPrinter("setSummary.csv",
-							setSummaryHeader.toArray(new String[setSummaryHeader.size()]));
-					CSVPrinter resultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("results.csv",
-							resultsHeader.toArray(new String[resultsHeader.size()]));
-					) {
+			try (CSVPrinter resultsPrinter = EvaluateRefactoringHandler.createCSVPrinter(
+					"results.csv",
+					resultsHeader.toArray(new String[resultsHeader.size()]));
+				) {
 				if (BUILD_WORKSPACE) {
 					// build the workspace.
 					monitor.beginTask("Building workspace ...", IProgressMonitor.UNKNOWN);
@@ -124,10 +116,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							.checkAllConditions(new NullProgressMonitor());
 					resultsTimeCollector.stop();
 					
-					
-					setSummaryPrinter.println();
-					elementResultsPrinter.println();
-
 //					Precondition stats
 					List<RefactoringStatusEntry> useableStatusEntires = Arrays.stream(status.getEntries())
 							.filter(entry -> entry.getSeverity() >= RefactoringStatus.ERROR || entry.getSeverity() == RefactoringStatus.INFO)
@@ -269,7 +257,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					
 //					Print to console
 //					Entities
-					System.out.println(allInstances);
 					System.out.println("# A1: " + actionTypeCountA1);
 					System.out.println("# A2: " + actionTypeCountA2);
 					System.out.println("# A3: " + actionTypeCountA3);
