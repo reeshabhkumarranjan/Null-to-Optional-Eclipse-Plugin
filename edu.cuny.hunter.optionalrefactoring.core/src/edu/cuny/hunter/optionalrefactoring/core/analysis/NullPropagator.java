@@ -84,7 +84,7 @@ class NullPropagator extends N2ONodeProcessor {
 		*/
 		final Action action = NullPropagator.containedIn(node.getExpression(), (Expression)this.rootNode) ?
 					this.existingInstances.stream().filter(i -> i.element().equals(this.rootElement))
-						.anyMatch(e -> e.action().equals(Action.CONVERT_ITERABLE_VAR_DECL_TYPE)) ?
+						.anyMatch(e -> e.action().equals(Action.CONVERT_VAR_DECL_TYPE)) ?
 								Action.UNWRAP
 								: Action.NIL
 					: Action.NIL;
