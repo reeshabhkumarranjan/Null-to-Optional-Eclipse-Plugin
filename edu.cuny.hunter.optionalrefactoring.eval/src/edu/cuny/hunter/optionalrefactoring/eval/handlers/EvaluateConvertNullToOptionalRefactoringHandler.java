@@ -195,15 +195,10 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					
 					Set<Entities> passingSets = processor.getEntities();
 					
-					Integer totalCandidateElements = passingSets
-							.stream()
-							.map(Entities::size)
-							.mapToInt(Integer::intValue)
-							.sum();
-					
-					Integer totalRefactorableElements = passingSets.size();
-							
+//					Base stats
 					Integer totalSeedElements = processor.getSeeds().size();
+					Integer totalRefactorableElements = passingSets.size();
+					Integer totalCandidateElements = totalRefactorableElements + processor.countNotRefactorable();
 
 //					Actions stats
 					Set<Instance> allInstances = passingSets
@@ -266,6 +261,8 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 	
 //					Error Status
 					System.out.println("Project Name: " + javaProject.getElementName());
+					System.out.println("# Seed Elements: " + totalSeedElements);
+					System.out.println("# Candidate Elements: " + totalCandidateElements);
 					System.out.println("# Refactorable Elements: " + totalRefactorableElements);
 					System.out.println("# preconditionFailureCount: " + preconditionFailureCount);					
 					System.out.println("# errorFailureCount: " + errorFailureCount);
