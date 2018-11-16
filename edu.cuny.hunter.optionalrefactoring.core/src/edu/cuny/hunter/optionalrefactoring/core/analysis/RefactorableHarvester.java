@@ -112,7 +112,7 @@ public class RefactorableHarvester {
 
 						// now we have the ASTNode corresponding to the match.
 						// process the matching ASTNode.
-						final NullPropagator processor = new NullPropagator(searchElement, node,
+						final N2ONodeProcessor processor = new NullPropagator(searchElement, node,
 								RefactorableHarvester.this.scopeRoot, RefactorableHarvester.this.settings,
 								RefactorableHarvester.this.monitor, RefactorableHarvester.this.instances);
 

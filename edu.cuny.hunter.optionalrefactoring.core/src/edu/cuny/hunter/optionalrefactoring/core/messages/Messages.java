@@ -45,6 +45,7 @@ public class Messages extends NLS {
 	public static String Entity_NoFailures;
 	public static String Reference_Equality_Op;
 	public static String Transformer_FailedToWriteDocument;
+	public static String Array_Element_Encountered;
 
 	static {
 		// initialize resource bundle

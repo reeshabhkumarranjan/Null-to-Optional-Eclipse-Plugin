@@ -17,11 +17,11 @@ import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CastExpression;
+import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.CharacterLiteral;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
-import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
@@ -66,6 +66,39 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  *
  */
 abstract class N2ONodeProcessor extends ASTNodeProcessor {
+
+	protected static boolean containedIn(final ASTNode node, final Expression name) {
+		ASTNode curr = name;
+		while (curr != null)
+			if (node.equals(curr))
+				return true;
+			else
+				curr = curr.getParent();
+		return false;
+	}
+
+	protected static boolean containedIn(final List<ASTNode> arguments, final Expression name) {
+		ASTNode curr = name;
+		while (curr != null)
+			if (arguments.contains(curr))
+				return true;
+			else
+				curr = curr.getParent();
+		return false;
+	}
+
+	/**
+	 * Returns to formal parameter number of svd starting from zero.
+	 *
+	 * @param svd The formal parameter.
+	 * @return The formal parameter number starting at zero.
+	 */
+	protected static int getFormalParameterNumber(final SingleVariableDeclaration svd) {
+		if (svd.getParent() instanceof CatchClause)
+			return 0;
+		final MethodDeclaration decl = (MethodDeclaration) svd.getParent();
+		return decl.parameters().indexOf(svd);
+	}
 
 	final IJavaElement rootElement;
 	final RefactoringSettings settings;
@@ -123,12 +156,15 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		throw new HarvesterException(this.status);
 	}
 
+	/**
+	 * When we hit an <code>ArrayInitializer</code> node, we can't refactor.
+	 *
+	 * @param node
+	 * @throws CoreException
+	 */
 	@Override
 	void ascend(final ArrayInitializer node) throws CoreException {
-		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
-		Action action = Action.CONVERT_ITERABLE_VAR_DECL_TYPE;
-		this.addInstance(null, node, pf, action);
-		this.processAscent(node.getParent());
+		this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
 	}
 
 	/**
@@ -260,8 +296,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	 */
 	@Override
 	void descend(final ArrayAccess node) throws CoreException {
-		final Expression e = node.getArray();
-		this.processDescent(e);
+		this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
 	}
 
 	/**
@@ -717,16 +752,6 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		return element;
 	}
 
-	Action infer(final ArrayAccess node, final EnumSet<PreconditionFailure> pf,
-			final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
-	Action infer(final ArrayCreation node, final EnumSet<PreconditionFailure> pf,
-			final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
 	/**
 	 * Determines appropriate action for ClassInstanceCreation (we just wrap it with
 	 * Optional::ofNullable)
@@ -836,5 +861,22 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	Action infer(NullLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
 		return Action.WRAP;
+	}
+
+	@Override
+	protected void ascend(final ArrayCreation node) throws CoreException {
+		// if previous node was in the index of the ArrayCreation,
+		// we have to bridge it. Otherwise we continue processing.
+		boolean notIndex = true;
+		for (final Object o : node.dimensions()) {
+			final Expression dimension = (Expression) o;
+			// if coming up from the index.
+			if (containedIn(dimension, (Expression)this.rootNode)) {
+				notIndex = false;
+				this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.UNWRAP);
+			}
+		}
+		if (notIndex)
+			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
 	}
 }

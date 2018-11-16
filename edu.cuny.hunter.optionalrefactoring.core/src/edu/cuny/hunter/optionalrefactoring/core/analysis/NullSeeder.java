@@ -14,7 +14,6 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
@@ -64,11 +63,6 @@ class NullSeeder extends N2ONodeProcessor {
 		return this.status.isOK() && this.candidates.isEmpty() ? 
 				RefactoringStatus.createWarningStatus(Messages.NoNullsHaveBeenFound) : 
 					status;
-	}
-
-	@Override
-	void ascend(final ArrayCreation node) throws CoreException {
-		this.processAscent(node.getParent());
 	}
 
 	@SuppressWarnings("unchecked")

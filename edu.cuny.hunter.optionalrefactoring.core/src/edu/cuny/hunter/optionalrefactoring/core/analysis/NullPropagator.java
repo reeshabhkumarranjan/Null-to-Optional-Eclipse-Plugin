@@ -3,7 +3,6 @@ package edu.cuny.hunter.optionalrefactoring.core.analysis;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
@@ -17,8 +16,6 @@ import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.ArrayAccess;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
-import org.eclipse.jdt.core.dom.ArrayType;
-import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
@@ -29,7 +26,6 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
@@ -52,88 +48,31 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  */
 class NullPropagator extends N2ONodeProcessor {
 
-	private static boolean containedIn(final ASTNode node, final Expression name) {
-		ASTNode curr = name;
-		while (curr != null)
-			if (node.equals(curr))
-				return true;
-			else
-				curr = curr.getParent();
-		return false;
-	}
-
-	private static boolean containedIn(final List<ASTNode> arguments, final Expression name) {
-		ASTNode curr = name;
-		while (curr != null)
-			if (arguments.contains(curr))
-				return true;
-			else
-				curr = curr.getParent();
-		return false;
-	}
-
-	/**
-	 * Returns to formal parameter number of svd starting from zero.
-	 *
-	 * @param svd The formal parameter.
-	 * @return The formal parameter number starting at zero.
-	 */
-	private static int getFormalParameterNumber(final SingleVariableDeclaration svd) {
-		if (svd.getParent() instanceof CatchClause)
-			return 0;
-		final MethodDeclaration decl = (MethodDeclaration) svd.getParent();
-		return decl.parameters().indexOf(svd);
-	}
-
-	private final Expression name;
-
 	public NullPropagator(final IJavaElement element, final ASTNode node, final IJavaSearchScope scope,
 			final RefactoringSettings settings, final IProgressMonitor monitor, final Set<Instance<? extends ASTNode>> existing) throws CoreException {
 		super(element, node, settings, monitor, scope, existing);
-		this.name = (Expression) node;
 	}
 
 	@Override
 	void ascend(final ArrayAccess node) throws CoreException {
 		// if coming up from the index.
-		if (containedIn(node.getIndex(), this.name)) {
-			final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
-			final Action action = this.infer(node, pf, this.settings);
-			this.addInstance(null, node, pf, action);
+		if (containedIn(node.getIndex(), (Expression)this.rootNode)) {
+			this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.UNWRAP);
 		} else
-			super.processAscent(node.getParent());
-	}
-
-	@Override
-	void ascend(final ArrayCreation node) throws CoreException {
-		// if previous node was in the index of the ArrayCreation,
-		// we have to bridge it. Otherwise we continue processing.
-		boolean legal = true;
-		for (final Object o : node.dimensions()) {
-			final Expression dimension = (Expression) o;
-			// if coming up from the index.
-			if (containedIn(dimension, this.name)) {
-				legal = false;
-				final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
-				final Action action = this.infer(node, pf, this.settings);
-				this.addInstance(null, node, pf, action);
-			}
-		}
-		if (legal)
-			super.processAscent(node.getParent());
+			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(final ClassInstanceCreation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name))
+		if (containedIn(node.arguments(), (Expression)this.rootNode))
 			this.findFormalsForVariable(node);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(final ConstructorInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name))
+		if (containedIn(node.arguments(), (Expression)this.rootNode))
 			this.findFormalsForVariable(node);
 	}
 
@@ -171,9 +110,9 @@ class NullPropagator extends N2ONodeProcessor {
 	@Override
 	void ascend(final MethodInvocation node) throws CoreException {
 		final IMethod element = this.resolveElement(node);
-		if (containedIn(node.arguments(), this.name))
+		if (containedIn(node.arguments(), (Expression)this.rootNode))
 			this.findFormalsForVariable(node);
-		else if (node.getExpression() != null && containedIn(node.getExpression(), this.name)) {
+		else if (node.getExpression() != null && containedIn(node.getExpression(), (Expression)this.rootNode)) {
 				final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node.getExpression(), element,
 						this.settings);
 				final Action action = this.infer(node.getExpression(), element, pf, this.settings);
@@ -211,14 +150,14 @@ class NullPropagator extends N2ONodeProcessor {
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(final SuperConstructorInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name))
+		if (containedIn(node.arguments(), (Expression)this.rootNode))
 			this.findFormalsForVariable(node);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(final SuperMethodInvocation node) throws CoreException {
-		if (containedIn(node.arguments(), this.name))
+		if (containedIn(node.arguments(), (Expression)this.rootNode))
 			this.findFormalsForVariable(node);
 		else
 			this.processAscent(node.getParent());
@@ -232,13 +171,12 @@ class NullPropagator extends N2ONodeProcessor {
 
 	@Override
 	void descend(final ArrayCreation node) throws CoreException {
-		this.processDescent(node.getInitializer());
+		this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
 	}
 
 	@Override
 	void descend(final ArrayInitializer node) throws CoreException {
-		for (final Object exp : node.expressions())
-			this.processDescent((Expression) exp);
+		this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
 	}
 
 	@Override
@@ -337,7 +275,7 @@ class NullPropagator extends N2ONodeProcessor {
 
 	private void findFormalsForVariable(final ClassInstanceCreation node) throws JavaModelException, CoreException {
 		@SuppressWarnings("unchecked")
-		final int paramNumber = Util.getParamNumber(node.arguments(), this.name);
+		final int paramNumber = Util.getParamNumber(node.arguments(), (Expression)this.rootNode);
 		final IMethodBinding b = node.resolveConstructorBinding();
 		if (b == null)
 			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
@@ -369,8 +307,8 @@ class NullPropagator extends N2ONodeProcessor {
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				this.endProcessing(meth, this.name, pf);
-			this.addInstance(meth, this.name, pf, this.infer(this.name, meth, pf, this.settings));
+				this.endProcessing(meth, (Expression)this.rootNode, pf);
+			this.addInstance(meth, (Expression)this.rootNode, pf, this.infer((Expression)this.rootNode, meth, pf, this.settings));
 		} else
 			this.findFormalsForVariable(top, paramNumber);
 	}
@@ -390,10 +328,10 @@ class NullPropagator extends N2ONodeProcessor {
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				this.endProcessing(meth, this.name, pf);
-			this.addInstance(meth, this.name, pf, this.infer(this.name, meth, pf, this.settings));
+				this.endProcessing(meth, (Expression)this.rootNode, pf);
+			this.addInstance(meth, (Expression)this.rootNode, pf, this.infer((Expression)this.rootNode, meth, pf, this.settings));
 		} else
-			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
+			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), (Expression)this.rootNode));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -407,12 +345,12 @@ class NullPropagator extends N2ONodeProcessor {
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				this.endProcessing(meth, this.name, pf);
-			this.addInstance(meth, this.name, pf, this.infer(this.name, meth, pf, this.settings));
+				this.endProcessing(meth, (Expression)this.rootNode, pf);
+			this.addInstance(meth, (Expression)this.rootNode, pf, this.infer((Expression)this.rootNode, meth, pf, this.settings));
 		}
 
 		else
-			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
+			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), (Expression)this.rootNode));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -428,10 +366,10 @@ class NullPropagator extends N2ONodeProcessor {
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				this.endProcessing(meth, this.name, pf);
-			this.addInstance(meth, node, pf, this.infer(this.name, meth, pf, this.settings));
+				this.endProcessing(meth, (Expression)this.rootNode, pf);
+			this.addInstance(meth, node, pf, this.infer((Expression)this.rootNode, meth, pf, this.settings));
 		} else
-			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
+			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), (Expression)this.rootNode));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -446,10 +384,10 @@ class NullPropagator extends N2ONodeProcessor {
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-				this.endProcessing(meth, this.name, pf);
-			this.addInstance(meth, this.name, pf, this.infer(this.name, meth, pf, this.settings));
+				this.endProcessing(meth, (Expression)this.rootNode, pf);
+			this.addInstance(meth, (Expression)this.rootNode, pf, this.infer((Expression)this.rootNode, meth, pf, this.settings));
 		} else
-			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), this.name));
+			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), (Expression)this.rootNode));
 	}
 
 	private void findVariablesForFormal(final SingleVariableDeclaration node) throws CoreException {

@@ -109,7 +109,11 @@ public enum PreconditionFailure {
 	/**
 	 * {@link org.eclipse.jdt.core.dom.ConditionalExpression}: Bridging this (x ? y : z) may be excluded by settings.
 	 */
-	CONDITIONAL_OP(12, Messages.Conditional_Op)
+	CONDITIONAL_OP(12, Messages.Conditional_Op), 
+	/**
+	 * {@link org.eclipse.jdt.core.dom.ArrayCreation}: We cannot refactor arrays to Optional types.
+	 */
+	ARRAY_TYPE(13, Messages.Array_Element_Encountered);
 	;
 
 	public static EnumSet<PreconditionFailure> check(final ArrayAccess node, final RefactoringSettings settings) {
@@ -330,6 +334,8 @@ public enum PreconditionFailure {
 			return settings.bridgeExternalCode() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
 		case OBJECT_TYPE:
 			return settings.refactorsObjects() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
+		case ARRAY_TYPE:
+			return RefactoringStatus.ERROR;
 		default: return RefactoringStatus.OK;
 		}
 	}
