@@ -101,12 +101,10 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 
 					resultsTimeCollector.start();
 					ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
-							new IJavaProject[] { javaProject }, RefactoringSettings
-									.userDefaults() /*
-													 * we inject user defaults
-													 * for now
-													 */,
+							new IJavaProject[] { javaProject },
+							RefactoringSettings.userDefaults(), // we inject user defaults for now
 							Optional.of(monitor));
+
 					processor.settings().createFromEnv();
 					resultsTimeCollector.stop();
 
@@ -134,7 +132,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							.filter(entry -> entry.getSeverity() == RefactoringStatus.INFO)
 							.toArray().length;
 
-					// TODO: Explore possibilty to combining into maybe single and simple fn expression
+					// TODO: Explore possibility of combining related data collection into simpler fn expression
 					Integer preconditionFailureTypeCountP1 = useableStatusEntires
 							.stream()
 							.map(RefactoringStatusEntry::getCode)
