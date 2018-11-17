@@ -94,11 +94,7 @@ public enum PreconditionFailure {
 	 * to an Optional. In such a case, use in an {@link org.eclipse.jdt.core.dom.EnhancedForStatement}
 	 * needs to be unwrapped. Unwrapping this may be excluded by settings.
 	 */
-	ENHANCED_FOR(10, Messages.Enhanced_For), 
-	/**
-	 * We hit the main method
-	 */
-	MAIN_METHOD(3, Messages.Main_Method),
+	ENHANCED_FOR(10, Messages.Enhanced_For),
 	/**
 	 * {@link org.eclipse.jdt.core.dom.MethodInvocation}
 	 * {@link org.eclipse.jdt.core.dom.FieldAccess}
@@ -113,7 +109,7 @@ public enum PreconditionFailure {
 	/**
 	 * {@link org.eclipse.jdt.core.dom.ArrayCreation}: We cannot refactor arrays to Optional types.
 	 */
-	ARRAY_TYPE(13, Messages.Array_Element_Encountered);
+	ARRAY_TYPE(3, Messages.Array_Element_Encountered);
 	;
 
 	public static EnumSet<PreconditionFailure> check(final ArrayAccess node, final RefactoringSettings settings) {
@@ -203,9 +199,6 @@ public enum PreconditionFailure {
 	public static EnumSet<PreconditionFailure> check(final MethodInvocation node, final IMethod element,
 			final RefactoringSettings settings) throws HarvesterException, JavaModelException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
-		if (element.isMainMethod()) {
-			value.add(PreconditionFailure.MAIN_METHOD);
-		}
 		if (!settings.refactorsMethods()) {
 			value.add(EXCLUDED_ENTITY);
 		}
@@ -224,13 +217,6 @@ public enum PreconditionFailure {
 	public static EnumSet<PreconditionFailure> check(final SingleVariableDeclaration node, final IJavaElement element,
 			final RefactoringSettings settings) throws HarvesterException, JavaModelException {
 		final EnumSet<PreconditionFailure> value = check(element, settings);
-		IMethod meth = node.getParent() instanceof MethodDeclaration ? 
-				(IMethod)((MethodDeclaration) node.getParent()).resolveBinding().getJavaElement() : null;
-		if (meth != null) {
-			if (meth.isMainMethod()) {
-				value.add(PreconditionFailure.MAIN_METHOD);
-			}
-		}
 		if (!settings.refactorsParameters()) {
 			value.add(EXCLUDED_ENTITY);
 		}
@@ -329,7 +315,6 @@ public enum PreconditionFailure {
 			return RefactoringStatus.FATAL;
 		case MISSING_BINDING:
 			return RefactoringStatus.FATAL;
-		case MAIN_METHOD:
 		case NON_SOURCE_CODE:
 			return settings.bridgeExternalCode() ? RefactoringStatus.INFO : RefactoringStatus.ERROR;
 		case OBJECT_TYPE:

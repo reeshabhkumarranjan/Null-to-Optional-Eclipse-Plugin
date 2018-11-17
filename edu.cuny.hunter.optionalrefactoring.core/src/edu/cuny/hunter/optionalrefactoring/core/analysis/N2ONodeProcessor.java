@@ -798,7 +798,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	Action infer(final MethodInvocation node, final IMethod element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return pf.contains(PreconditionFailure.MAIN_METHOD) ? Action.UNWRAP : Action.NIL;
+		return Action.NIL;
 	}
 
 	Action infer(final Name node, final IJavaElement element, final EnumSet<PreconditionFailure> pf,
@@ -808,9 +808,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	Action infer(final SingleVariableDeclaration node, final IJavaElement element,
 			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return pf.contains(PreconditionFailure.MAIN_METHOD) ? 
-				Action.UNWRAP 
-				: node.getType().isArrayType() || 
+		return node.getType().isArrayType() || 
 					Arrays.stream(node.getType().resolveBinding()
 							.getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable")) ?
 									Action.CONVERT_ITERABLE_VAR_DECL_TYPE 
@@ -877,6 +875,32 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			}
 		}
 		if (notIndex)
+			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
+	}
+
+	@Override
+	protected void descend(final ArrayCreation node) throws CoreException {
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.WRAP);
+	}
+
+	@Override
+	protected void descend(final ArrayInitializer node) throws CoreException {
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.WRAP);
+	}
+
+	@Override
+	protected void descend(final ClassInstanceCreation node) throws CoreException {
+		// if we descend into a ClassInstanceCreation we can't refactor it to Optional,
+		// so we just bridge it
+		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.WRAP);
+	}
+
+	@Override
+	protected void ascend(final ArrayAccess node) throws CoreException {
+		// if coming up from the index.
+		if (containedIn(node.getIndex(), (Expression)this.rootNode)) {
+			this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.UNWRAP);
+		} else
 			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
 	}
 }

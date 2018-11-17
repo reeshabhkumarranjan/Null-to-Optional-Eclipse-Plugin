@@ -13,9 +13,6 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
-import org.eclipse.jdt.core.dom.ArrayAccess;
-import org.eclipse.jdt.core.dom.ArrayCreation;
-import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
@@ -51,15 +48,6 @@ class NullPropagator extends N2ONodeProcessor {
 	public NullPropagator(final IJavaElement element, final ASTNode node, final IJavaSearchScope scope,
 			final RefactoringSettings settings, final IProgressMonitor monitor, final Set<Instance<? extends ASTNode>> existing) throws CoreException {
 		super(element, node, settings, monitor, scope, existing);
-	}
-
-	@Override
-	void ascend(final ArrayAccess node) throws CoreException {
-		// if coming up from the index.
-		if (containedIn(node.getIndex(), (Expression)this.rootNode)) {
-			this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.UNWRAP);
-		} else
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -167,31 +155,6 @@ class NullPropagator extends N2ONodeProcessor {
 	void ascend(final SwitchCase node) throws CoreException {
 		this.processDescent(node.getExpression());
 		this.processAscent(node.getParent());
-	}
-
-	@Override
-	void descend(final ArrayCreation node) throws CoreException {
-		this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
-	}
-
-	@Override
-	void descend(final ArrayInitializer node) throws CoreException {
-		this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
-	}
-
-	@Override
-	void descend(final ClassInstanceCreation node) throws CoreException {
-		// if we descend into a ClassInstanceCreation we can't refactor it to Optional,
-		// so we just bridge it
-		final IMethod element = this.resolveElement(node);
-		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
-		final Action action = this.infer(node, element, pf, this.settings);
-		if (pf.isEmpty())
-			this.addInstance(element, node, pf, action);
-		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			this.endProcessing(null, node, pf);
-		else
-			this.addInstance(null, node, pf, action);
 	}
 
 	@Override

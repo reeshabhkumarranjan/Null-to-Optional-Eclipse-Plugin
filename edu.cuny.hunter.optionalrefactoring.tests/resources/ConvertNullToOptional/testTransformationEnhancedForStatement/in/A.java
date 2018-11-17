@@ -1,9 +1,12 @@
 package p;
 
+import java.util.LinkedList;
+
 public class A {
-	
+
 	void m() {
-		Integer[] list = { null, 1 };
+		LinkedList<Integer> list = new LinkedList<>();
+		list.add(null);
 		for (Integer o : list) ;
 	}
 }
