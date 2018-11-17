@@ -80,14 +80,15 @@ public class RefactorableHarvester {
 		final NullSeeder seeder = new NullSeeder(this.element, this.refactoringRootNode, this.settings, this.monitor, this.scopeRoot);
 		// if no nulls pass the preconditions, return the Seeder status immediately
 		if (!(boolean)seeder.process()) {
-			this.seeds .addAll(seeder.getCandidates());
+			this.seeds.addAll(seeder.getCandidates());
 			return seeder.getErrors();
 		}
 		RefactoringStatus status = seeder.getErrors();
+		this.seeds.addAll(seeder.getCandidates());
+		this.instances.addAll(seeder.getInstances());
 		// otherwise get the passing null type dependent entities
 		// and put just the IJavaElements into the workList
-		this.workList.addAll(seeder.getCandidates());
-		this.instances.addAll(seeder.getInstances());
+		this.workList.addAll(seeds);
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
 			// grab the next element.

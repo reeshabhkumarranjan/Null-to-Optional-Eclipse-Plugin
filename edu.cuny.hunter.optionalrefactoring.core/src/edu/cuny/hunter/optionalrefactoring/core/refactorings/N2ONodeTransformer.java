@@ -7,8 +7,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.dom.AST;
@@ -17,16 +15,17 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.ArrayType;
-import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NameQualifiedType;
+import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.QualifiedType;
 import org.eclipse.jdt.core.dom.SimpleType;
@@ -39,36 +38,23 @@ import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.WildcardType;
-import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.Document;
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.text.edits.MalformedTreeException;
-import org.eclipse.text.edits.TextEdit;
-
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
-import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
-import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 class N2ONodeTransformer {
 
 	private final ASTNode rootNode;
 	private final Set<Instance<? extends ASTNode>> instances;
-	private final ICompilationUnit icu;
-	private final CompilationUnit rewrite;
 	
-	N2ONodeTransformer(ICompilationUnit icu, CompilationUnit cu, Set<IJavaElement> elements, 
+	N2ONodeTransformer(CompilationUnit cu, Set<IJavaElement> elements, 
 			Map<IJavaElement, Set<Instance<? extends ASTNode>>> instances) {
-		this.icu = icu;
 		this.rootNode = cu;
 		this.instances = elements.stream()
 				.flatMap(element -> instances.get(element).stream())
 				.collect(Collectors.toSet());
-		this.rewrite = cu;
 	}
 
-	Document process() throws CoreException {
-		this.rewrite.recordModifications();
+	void process() throws CoreException {
 		this.rootNode.accept(new ASTVisitor() {
 			@Override
 			public void preVisit(ASTNode node) {
@@ -79,15 +65,6 @@ class N2ONodeTransformer {
 				o.map(instance -> N2ONodeTransformer.this.transform(node, instance.action()));
 			}
 		});
-		Document doc = new Document(this.icu.getSource());
-		TextEdit edits = this.rewrite.rewrite(doc, icu.getJavaProject().getOptions(true));
-		try {
-			edits.apply(doc);
-		} catch (MalformedTreeException | BadLocationException e) {
-			throw new CoreException(new Status(Status.ERROR, ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, 
-					RefactoringStatus.FATAL, Messages.Transformer_FailedToWriteDocument, e));
-		}
-		return doc;
 	}
 
 	private Expression emptyOptional(final AST ast) {
@@ -214,20 +191,8 @@ class N2ONodeTransformer {
 
 	private Object transform(final ASTNode node, final Action action) {
 		switch (action) {
-		case CONVERT_ITERABLE_VAR_DECL_TYPE: {
-			if (node instanceof FieldDeclaration)
-				this.transformIterableOrArray((FieldDeclaration)node);
-			else if (node instanceof VariableDeclarationExpression)
-				this.transformIterableOrArray((VariableDeclarationExpression)node);
-			else if (node instanceof VariableDeclarationStatement)
-				this.transformIterableOrArray((VariableDeclarationStatement)node);
-			else if (node instanceof SingleVariableDeclaration)
-				this.transformIterableOrArray((SingleVariableDeclaration) node);
-			else if (node instanceof ArrayCreation)
-				this.transformIterableOrArray((ArrayCreation) node);
-			else if (node instanceof ArrayInitializer)
-				this.transformIterableOrArray((ArrayInitializer) node);
-			break;
+		case APPLY_ISPRESENT: {
+			this.ifPresent((InfixExpression)node);
 		}
 		case CONVERT_VAR_DECL_TYPE: {
 			if (node instanceof FieldDeclaration)
@@ -288,104 +253,14 @@ class N2ONodeTransformer {
 		}
 		return node;
 	}
-
-	/**
-	 * This likely won't work. We should consider banning array types from refactoring, 
-	 * maybe give an option to transform them to iterables.
-	 */
-	private void transformIterableOrArray(ArrayInitializer node) {
-		AST ast = node.getAST();
-		ArrayInitializer replacement = ast.newArrayInitializer();
-		@SuppressWarnings("unchecked")
-		List<Expression> oldExpr = node.expressions();
-		@SuppressWarnings("unchecked")
-		List<Expression> nuExpr = replacement.expressions();
-		oldExpr.forEach(e -> nuExpr.add(oldExpr.indexOf(e), (Expression)ASTNode.copySubtree(ast, e)));
-		ArrayCreation c = ast.newArrayCreation();
-		c.setInitializer(replacement);
-		c.setType(ast.newArrayType(ast.newSimpleType(ast.newSimpleName("Object")), 1));
-		this.replace(node, c);
-		this.transformIterableOrArray(c);
-	}
 	
-	private void transformArrayToIterable(ArrayCreation node) {
-		//TODO:
-	}
-
-	private void transformArrayToIterable(ArrayInitializer node) {
-		//TODO:
-	}
-
-	private void transformIterableOrArray(ArrayCreation node) {
-		AST ast = node.getAST();
-		CastExpression ce = ast.newCastExpression();
-		ce.setExpression((Expression)ASTNode.copySubtree(ast, node));
-		ParameterizedType pt = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
-		@SuppressWarnings("unchecked")
-		List<Type> tA = pt.typeArguments();
-		tA.add(0, (Type)ASTNode.copySubtree(ast, node.getType().getElementType()));
-		ce.setType(ast.newArrayType(pt, node.dimensions().size()+1));
-		this.replace(node, ce);
-	}
-
-	private ArrayType getConvertedArray(ArrayType type, AST ast) {
-		final ParameterizedType simpleT = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
-		@SuppressWarnings("unchecked")
-		final List<Type> lT = ((List<Type>)simpleT.typeArguments());
-		lT.add(0, ast.newSimpleType(ast.newSimpleName(type.getElementType().toString())));
-		final ArrayType arrayT = ast.newArrayType(simpleT, type.getDimensions());
-		return arrayT;
-	}
-	
-	private ParameterizedType getConvertedIterable(ParameterizedType type, AST ast) {
-		@SuppressWarnings("unchecked")
-		final List<Type> params = (List<Type>)type.typeArguments();
-		final ParameterizedType pType = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName(type.getType().toString())));
-		@SuppressWarnings("unchecked")
-		final List<Type> tArgs = (List<Type>)pType.typeArguments();
-		params.forEach(p -> (tArgs).add(
-				params.indexOf(p),this.getConvertedType(ast, (Type)ASTNode.copySubtree(ast, p))));
-		return pType;
-	}
-	
-	private void transformIterableOrArray(SingleVariableDeclaration node) {
-		final AST ast = node.getAST();
-		final Type type = node.getType();
-		if (type instanceof ArrayType) {
-			node.setType(this.getConvertedArray((ArrayType)type, ast));
-		} else {
-			node.setType(this.getConvertedIterable((ParameterizedType)type, ast));
-		}
-	}
-	
-	private void transformIterableOrArray(VariableDeclarationExpression node) {
-		final AST ast = node.getAST();
-		final Type type = node.getType();
-		if (type instanceof ArrayType) {
-			node.setType(this.getConvertedArray((ArrayType)type, ast));
-		} else {
-			node.setType(this.getConvertedIterable((ParameterizedType)type, ast));
-		}
-	}
-	
-	private void transformIterableOrArray(VariableDeclarationStatement node) {
-		final AST ast = node.getAST();
-		final Type type = node.getType();
-		if (type instanceof ArrayType) {
-			node.setType(this.getConvertedArray((ArrayType)type, ast));
-		} else {
-			node.setType(this.getConvertedIterable((ParameterizedType)type, ast));
-		}
-	}
-	
-	private void transformIterableOrArray(FieldDeclaration node) {
-		final AST ast = node.getAST();
-		final Type type = node.getType();
-		if (type instanceof ArrayType) {
-			node.setType(this.getConvertedArray((ArrayType)type, ast));
-		} else {
-			node.setType(this.getConvertedIterable((ParameterizedType)type, ast));
-		}
+	private void ifPresent(InfixExpression node) {
+		Expression expr = node.getLeftOperand() instanceof NullLiteral ? node.getRightOperand() : node.getLeftOperand();
+		Expression cpy = (Expression) ASTNode.copySubtree(node.getAST(), expr);
+		MethodInvocation mi = node.getAST().newMethodInvocation();
+		mi.setName(node.getAST().newSimpleName("ifPresent"));
+		mi.setExpression(cpy);
+		this.replace(node, mi);
 	}
 
 	private void replace(ASTNode node, Expression expr) {

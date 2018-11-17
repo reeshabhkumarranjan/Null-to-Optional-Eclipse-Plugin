@@ -21,6 +21,7 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.ReturnStatement;
@@ -29,6 +30,7 @@ import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.SwitchCase;
 import org.eclipse.jdt.core.dom.SwitchStatement;
+import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchPattern;
@@ -85,6 +87,27 @@ class NullPropagator extends N2ONodeProcessor {
 			this.addInstance(null, node.getExpression(), pf, action);
 		else
 			this.descend(node.getParameter());
+	}
+
+	/**
+	 * When we ascend to an <code>InfixExpression</code> node, we check for reference equality comparison
+	 *
+	 * @param node
+	 * @throws CoreException
+	 */
+	@Override
+	void ascend(final InfixExpression node) throws CoreException {
+		if (!(node.getOperator().equals(Operator.EQUALS) || node.getOperator().equals(Operator.NOT_EQUALS)))
+			return;
+		PreconditionFailure pf = PreconditionFailure.REFERENCE_EQUALITY_OP;
+		if (pf.getSeverity(this.settings) >= RefactoringStatus.ERROR)
+			this.endProcessing(null, node, EnumSet.of(pf));
+		Action action = Action.UNWRAP;
+		if (N2ONodeProcessor.containedIn(node.getLeftOperand(), (Expression) this.rootNode)) {
+			this.addInstance(null, node.getLeftOperand(), EnumSet.of(pf), action); 
+		} else {
+			this.addInstance(null, node.getRightOperand(), EnumSet.of(pf), action);
+		}
 	}
 
 	@Override

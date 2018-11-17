@@ -20,6 +20,7 @@ import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
@@ -29,6 +30,7 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
@@ -91,6 +93,26 @@ class NullSeeder extends N2ONodeProcessor {
 
 			this.findFormalsForVariable(top, argPos);
 		}
+	}
+
+	/**
+	 * When we ascend to an <code>InfixExpression</code> node, we check for reference equality comparison
+	 *
+	 * @param node
+	 * @throws CoreException
+	 */
+	@Override
+	void ascend(final InfixExpression node) throws CoreException {
+		if (!(node.getOperator().equals(Operator.EQUALS) || node.getOperator().equals(Operator.NOT_EQUALS)))
+			return;
+		PreconditionFailure pf = PreconditionFailure.REFERENCE_EQUALITY_OP;
+		if (pf.getSeverity(this.settings) >= RefactoringStatus.ERROR)
+			this.endProcessing(null, node, EnumSet.of(pf));
+		Action action = Action.APPLY_ISPRESENT;
+		Expression t = N2ONodeProcessor.containedIn(node.getLeftOperand(), (Expression)this.currentNull) ?
+				node.getRightOperand() : node.getLeftOperand();
+		this.addInstance(null, node, EnumSet.of(pf), action);
+		this.processDescent(t);
 	}
 
 	@SuppressWarnings("unchecked")

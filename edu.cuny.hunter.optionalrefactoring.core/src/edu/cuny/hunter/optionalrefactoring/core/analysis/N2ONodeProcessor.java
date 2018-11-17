@@ -212,18 +212,6 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		this.processAscent(node.getParent());
 	}
 
-	/**
-	 * When we ascend to an <code>InfixExpression</code> node, we stop ascending,
-	 * and descend to process it.
-	 *
-	 * @param node
-	 * @throws CoreException
-	 */
-	@Override
-	void ascend(final InfixExpression node) throws CoreException {
-		this.descend(node);
-	}
-
 	@Override
 	void ascend(final QualifiedName node) throws CoreException {
 		this.processAscent(node.getParent());
@@ -362,27 +350,6 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		for (final VariableDeclarationFragment vdf : list) {
 			this.descend(vdf);
 		}
-	}
-
-	/**
-	 * When processing an <code>InfixExpression</code> node comparison we only care
-	 * about equality / inequality with <code>null</code>.
-	 *
-	 * @param node
-	 * @throws CoreException
-	 */
-	@Override
-	void descend(final InfixExpression node) throws CoreException {
-		if (!(node.getOperator().equals(Operator.EQUALS) || node.getOperator().equals(Operator.NOT_EQUALS)))
-			return;
-		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
-		final Action action = this.infer(node, pf, this.settings);
-		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			this.endProcessing(null, node, pf);
-		else
-			this.addInstance(null, node, pf, action);
-		this.processDescent(node.getLeftOperand());
-		this.processDescent(node.getRightOperand());
 	}
 
 	@Override

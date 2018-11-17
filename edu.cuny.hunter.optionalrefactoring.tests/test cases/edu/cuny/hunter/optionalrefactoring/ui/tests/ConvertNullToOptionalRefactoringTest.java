@@ -391,7 +391,9 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testComparisonLocalVariable() throws Exception {
-		this.transformationHelper(null, new RefactoringStatus());
+		this.transformationHelper(null, this.createExpectedStatus(new MockEntryData[] {
+				new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.REFERENCE_EQUALITY_OP) 
+		}));
 	}
 
 	public void testComparisonLocalVariable2() throws Exception {
