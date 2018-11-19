@@ -8,32 +8,32 @@ public class A {
 	 * propagates: {{"k","g","d", "b", "a"},{"m","i","f"},{"o"}}
 	 */
 
-	public A(Object a) {	}
+	public A(String a) {	}
 
 	class B {
-		public B(Object b, Object c) { 
+		public B(String b, String c) { 
 			new A(b);
 		}
 	}
 
 	class C {
-		public C(Object d, Object e, Object f) {
+		public C(String d, String e, String f) {
 			new B(d,e);
 		}
 	}
 
 	class D {
-		public D(Object g, Object h, Object i, Object j) {
+		public D(String g, String h, String i, String j) {
 			new C(g,h,i);
 		}
 	}
 
 	class E {
-		public E(Object k, Object l, Object m, Object n, Object o) {
+		public E(String k, String l, String m, String n, String o) {
 			new D(k,l,m,n);
 		}
 	}
 
-	E e = new E(null, new Object(), null, new Object(), null);
+	E e = new E(null, "Hi", null, "There", null);
 
 }

@@ -24,6 +24,7 @@ import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
@@ -100,14 +101,18 @@ class NullPropagator extends N2ONodeProcessor {
 		if (!(node.getOperator().equals(Operator.EQUALS) || node.getOperator().equals(Operator.NOT_EQUALS)))
 			return;
 		PreconditionFailure pf = PreconditionFailure.REFERENCE_EQUALITY_OP;
+		Expression o = N2ONodeProcessor.containedIn(node.getLeftOperand(), (Expression)this.rootNode) ?
+				node.getRightOperand() : node.getLeftOperand();
+		Expression t = N2ONodeProcessor.containedIn(node.getLeftOperand(), (Expression)this.rootNode) ?
+				node.getLeftOperand() : node.getRightOperand();
+		Action action = o instanceof NullLiteral 
+				? node.getOperator().equals(InfixExpression.Operator.NOT_EQUALS) 
+						? Action.CONVERT_TO_IS_PRESENT
+						: Action.CONVERT_TO_NOT_PRESENT 
+				: Action.UNWRAP;
 		if (pf.getSeverity(this.settings) >= RefactoringStatus.ERROR)
 			this.endProcessing(null, node, EnumSet.of(pf));
-		Action action = Action.UNWRAP;
-		if (N2ONodeProcessor.containedIn(node.getLeftOperand(), (Expression) this.rootNode)) {
-			this.addInstance(null, node.getLeftOperand(), EnumSet.of(pf), action); 
-		} else {
-			this.addInstance(null, node.getRightOperand(), EnumSet.of(pf), action);
-		}
+		this.addInstance(null, o instanceof NullLiteral ? node : t, EnumSet.of(pf), action);
 	}
 
 	@Override

@@ -27,6 +27,7 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NameQualifiedType;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.PrefixExpression;
 import org.eclipse.jdt.core.dom.QualifiedType;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
@@ -191,8 +192,13 @@ class N2ONodeTransformer {
 
 	private Object transform(final ASTNode node, final Action action) {
 		switch (action) {
-		case APPLY_ISPRESENT: {
-			this.ifPresent((InfixExpression)node);
+		case CONVERT_TO_IS_PRESENT: {
+			this.isPresent((InfixExpression)node);
+			break;
+		}
+		case CONVERT_TO_NOT_PRESENT: {
+			this.notPresent((InfixExpression)node);
+			break;
 		}
 		case CONVERT_VAR_DECL_TYPE: {
 			if (node instanceof FieldDeclaration)
@@ -254,13 +260,25 @@ class N2ONodeTransformer {
 		return node;
 	}
 	
-	private void ifPresent(InfixExpression node) {
+	private void isPresent(InfixExpression node) {
 		Expression expr = node.getLeftOperand() instanceof NullLiteral ? node.getRightOperand() : node.getLeftOperand();
 		Expression cpy = (Expression) ASTNode.copySubtree(node.getAST(), expr);
 		MethodInvocation mi = node.getAST().newMethodInvocation();
-		mi.setName(node.getAST().newSimpleName("ifPresent"));
+		mi.setName(node.getAST().newSimpleName("isPresent"));
 		mi.setExpression(cpy);
 		this.replace(node, mi);
+	}
+	
+	private void notPresent(InfixExpression node) {
+		Expression expr = node.getLeftOperand() instanceof NullLiteral ? node.getRightOperand() : node.getLeftOperand();
+		Expression cpy = (Expression) ASTNode.copySubtree(node.getAST(), expr);
+		MethodInvocation mi = node.getAST().newMethodInvocation();
+		mi.setName(node.getAST().newSimpleName("isPresent"));
+		mi.setExpression(cpy);
+		PrefixExpression pe = node.getAST().newPrefixExpression();
+		pe.setOperator(PrefixExpression.Operator.NOT);
+		pe.setOperand(mi);
+		this.replace(node, pe);
 	}
 
 	private void replace(ASTNode node, Expression expr) {

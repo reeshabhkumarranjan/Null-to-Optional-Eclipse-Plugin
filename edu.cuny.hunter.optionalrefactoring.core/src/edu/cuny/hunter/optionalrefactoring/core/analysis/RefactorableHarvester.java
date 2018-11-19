@@ -2,7 +2,6 @@ package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,14 +14,7 @@ import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.FieldAccess;
-import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
@@ -111,9 +103,7 @@ public class RefactorableHarvester {
 			@Override
 			public boolean visit(final VariableDeclarationFragment node) {
 				if (node.getParent().getNodeType() == ASTNode.FIELD_DECLARATION &&
-						node.getInitializer() == null &&
-						RefactorableHarvester.this.isImplicitlyNull(node) &&
-						RefactorableHarvester.this.settings.seedsImplicit())
+						node.getInitializer() == null)
 					nll.add(node);
 				return super.visit(node);
 			}
@@ -133,7 +123,12 @@ public class RefactorableHarvester {
 			} finally {
 				status.merge(ns.getStatus());
 			}
-		}		
+		}
+		
+		// if nothing was found but there were no precondition failures, it means no nulls exist in the source or we are not finding any implicitly null fields
+		if (status.isOK() && this.seeds.isEmpty()) 
+				status.merge(RefactoringStatus.createWarningStatus(Messages.NoNullsHaveBeenFound, 
+						new N2ORefactoringStatusContext(this.element, Util.getSourceRange(this.refactoringRootNode), null, null)));
 		
 		// this worklist starts with the immediate type-dependent entities on null expressions.
 		// Put the seed IJavaElements into the workList
@@ -238,49 +233,5 @@ public class RefactorableHarvester {
 
 	public int countNotRefactorable() {
 		return this.notRefactorable.size();
-	}
-	
-	private boolean isImplicitlyNull(VariableDeclarationFragment node) {
-		
-		final IVariableBinding binding = node.resolveBinding();
-		final List<Boolean> fici = new LinkedList<>();
-		this.compilationUnit.accept(new ASTVisitor() {
-			@Override
-			public boolean visit(final MethodDeclaration node) {
-				if (node.isConstructor()) {
-					final Set<Boolean> initialized = new LinkedHashSet<>();
-					node.accept(new ASTVisitor() {
-						@Override
-						public boolean visit(final Assignment node) {
-							final Expression expr = node.getLeftHandSide();
-							IVariableBinding targetField = null;
-							switch (expr.getNodeType()) {
-							case ASTNode.FIELD_ACCESS:
-								targetField = ((FieldAccess) expr).resolveFieldBinding();
-								break;
-							case ASTNode.SIMPLE_NAME:
-							case ASTNode.QUALIFIED_NAME:
-								targetField = (IVariableBinding) ((Name) expr).resolveBinding();
-							}
-							if (binding.isEqualTo(targetField))
-								initialized.add(Boolean.TRUE);
-							return super.visit(node);
-						}
-					});
-					if (initialized.contains(Boolean.TRUE))
-						fici.add(Boolean.TRUE);
-					else
-						fici.add(Boolean.FALSE);
-				}
-				return super.visit(node);
-			}
-		});
-		final boolean fieldIsConstructorInitialized = fici.isEmpty() ? false
-				: fici.stream().reduce(Boolean.TRUE, Boolean::logicalAnd);
-		return !fieldIsConstructorInitialized;
-			/*
-			 * this element gets added to the Map candidates with boolean true indicating an
-			 * implicit null also, if the type of the declaration is primitive, we ignore it
-			 */			
 	}
 }

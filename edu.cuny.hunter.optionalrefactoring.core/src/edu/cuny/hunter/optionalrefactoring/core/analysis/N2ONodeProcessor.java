@@ -5,6 +5,8 @@ import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.IField;
@@ -30,7 +32,6 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
-import org.eclipse.jdt.core.dom.InfixExpression.Operator;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
@@ -55,6 +56,8 @@ import org.eclipse.jdt.core.search.SearchParticipant;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+
+import com.google.common.collect.Streams;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
@@ -147,7 +150,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 				candidates.toArray(new IJavaElement[candidates.size()])[candidates.size()-1];
 		if (action != Action.NIL)
 			this.candidateInstances.add(new Instance<T>(element, node, pf, action));
-		this.status.merge(pf.stream().map(f -> Util.createStatusEntry(this.settings, f, element, node, action))
+		this.status.merge(pf.stream().map(f -> Util.createStatusEntry(this.settings, f, element, node, action, this instanceof NullSeeder))
 				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge));
 	}
 
@@ -187,18 +190,20 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	 */
 	@Override
 	void ascend(final CastExpression node) throws CoreException {
-		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
+		final EnumSet<PreconditionFailure> 
+		pfError = PreconditionFailure.error(node, null, settings, this instanceof NullSeeder),
+		pfInfo = PreconditionFailure.info(node, null, settings, this instanceof NullSeeder);
 		final Action action = this.settings.refactorThruOperators() ?
 						Action.UNWRAP : Action.NIL;
-		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			this.endProcessing(null, node, pf);
+		if (!pfError.isEmpty())
+			this.endProcessing(null, node, pfError);
 		else
 			/*
 			 * for an ASTNode without it's own IJavaElement add it to a queue, which gets
 			 * associated with the resolved element eventually upon becoming added to the
 			 * candidate set
 			 */
-			this.addInstance(null, node, pf, action);
+			this.addInstance(null, node, pfInfo, action);
 		this.processAscent(node.getParent());
 	}
 
@@ -310,18 +315,20 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	 */
 	@Override
 	void descend(final CastExpression node) throws CoreException {
-		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, this.settings);
+		final EnumSet<PreconditionFailure> 
+		pfError = PreconditionFailure.error(node, null, settings, this instanceof NullSeeder),
+		pfInfo = PreconditionFailure.info(node, null, settings, this instanceof NullSeeder);
 		final Action action = this.settings.refactorThruOperators() ?
 						Action.WRAP : Action.NIL;
-		if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			this.endProcessing(null, node, pf);
+		if (!pfError.isEmpty())
+			this.endProcessing(null, node, pfError);
 		else
 			/*
 			 * for an ASTNode without it's own IJavaElement add it to a queue, which gets
 			 * associated with the resolved element eventually upon becoming added to the
 			 * candidate set
 			 */
-			this.addInstance(null, node, pf, action);
+			this.addInstance(null, node, pfInfo, action);
 		this.processDescent(node.getExpression());
 	}
 
@@ -477,8 +484,12 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 					node.accept(visitor);
 					for (final SingleVariableDeclaration svd : visitor.getParameters()) {
 						final IJavaElement element = N2ONodeProcessor.this.resolveElement(svd);
-						final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(svd, element,
-								N2ONodeProcessor.this.settings);
+						final EnumSet<PreconditionFailure> 
+						pfError = PreconditionFailure.error(svd, element, settings, N2ONodeProcessor.this instanceof NullSeeder),
+						pfInfo = PreconditionFailure.info(svd, element, settings, N2ONodeProcessor.this instanceof NullSeeder),
+						pf = EnumSet.noneOf(PreconditionFailure.class);
+						pf.addAll(pfError);
+						pf.addAll(pfInfo);
 						final Action action = N2ONodeProcessor.this.infer(svd, element, pf, N2ONodeProcessor.this.settings);
 						if (pf.isEmpty())
 							N2ONodeProcessor.this.addCandidate(element, svd, pf, action);
@@ -847,12 +858,20 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	@Override
 	protected void descend(final ArrayCreation node) throws CoreException {
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.WRAP);
+		EnumSet<PreconditionFailure> pfError = PreconditionFailure.error(node, rootElement, settings, this instanceof NullSeeder);
+		EnumSet<PreconditionFailure> pfInfo = PreconditionFailure.info(node, rootElement, settings, this instanceof NullSeeder);
+		if (!pfError.isEmpty())
+			this.endProcessing(rootElement, node, pfError);
+		this.addInstance(null, node, pfInfo, Action.WRAP);
 	}
 
 	@Override
 	protected void descend(final ArrayInitializer node) throws CoreException {
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.WRAP);
+		EnumSet<PreconditionFailure> pfError = PreconditionFailure.error(node, rootElement, settings, this instanceof NullSeeder);
+		EnumSet<PreconditionFailure> pfInfo = PreconditionFailure.info(node, rootElement, settings, this instanceof NullSeeder);
+		if (!pfError.isEmpty())
+			this.endProcessing(rootElement, node, pfError);
+		this.addInstance(null, node, pfInfo, Action.WRAP);
 	}
 
 	@Override

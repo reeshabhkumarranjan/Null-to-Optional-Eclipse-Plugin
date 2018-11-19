@@ -4,11 +4,11 @@ public class A {
 	
 	/*should return status with 1 RefactoringStatusEntry Severity==ERROR*/
 	
-	Object a = null;
-	Object b = m(a);
+	String a = null;
+	String b = m(a);
 	
-	Object m(Object x) {
-		return (Object)x;
+	String m(String x) {
+		return (String)x;
 	}
 	
 }

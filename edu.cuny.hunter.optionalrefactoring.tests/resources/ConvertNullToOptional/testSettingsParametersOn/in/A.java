@@ -9,5 +9,5 @@ public class A {
 		m(null);
 	}
 	
-	void m(Object x) {	}
+	void m(String x) {	}
 }

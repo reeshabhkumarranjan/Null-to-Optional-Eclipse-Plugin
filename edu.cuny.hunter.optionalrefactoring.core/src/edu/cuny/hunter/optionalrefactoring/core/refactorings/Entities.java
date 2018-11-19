@@ -29,7 +29,7 @@ public class Entities implements Collection<Entry<IJavaElement, Set<Instance<? e
 				.filter(instance -> elements.contains(instance.element()))
 				.flatMap(instance -> instance.failures().stream()
 						.map(failure -> Util.createStatusEntry(settings, 
-								failure, instance.element(), instance.node(), instance.action())))
+								failure, instance.element(), instance.node(), instance.action(), false)))
 				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
 		return new Entities(status, mappedInstances);
 	}

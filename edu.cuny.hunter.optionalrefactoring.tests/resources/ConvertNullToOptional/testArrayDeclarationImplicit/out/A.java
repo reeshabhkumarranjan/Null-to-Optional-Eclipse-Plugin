@@ -1,6 +1,6 @@
 package p;
 
 public class A {
-	
-	String x = null;
+
+	Integer[] x;
 }

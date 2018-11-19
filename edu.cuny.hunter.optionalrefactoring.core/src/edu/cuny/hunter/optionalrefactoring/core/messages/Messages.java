@@ -27,7 +27,6 @@ public class Messages extends NLS {
 	public static String NoNullsHaveBeenFound;
 	public static String Util_MemberNotFound;
 	public static String Worklist_IllegalWorklistElement;
-	public static String Harvester_NullLiteralFailed;
 	public static String Harvester_ASTNodeError;
 	public static String Harvester_SourceNotPresent;
 	public static String Harvester_MissingJavaElement;

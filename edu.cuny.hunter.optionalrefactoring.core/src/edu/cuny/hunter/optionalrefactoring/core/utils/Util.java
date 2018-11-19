@@ -269,8 +269,8 @@ public interface Util {
 	}
 
 	static RefactoringStatusEntry createStatusEntry(final RefactoringSettings settings, PreconditionFailure failure,
-			IJavaElement element, ASTNode node, Action action) {
-		return new RefactoringStatusEntry(failure.getSeverity(settings), 
+			IJavaElement element, ASTNode node, Action action, boolean seeding) {
+		return new RefactoringStatusEntry(seeding ? failure.seedingSeverity(settings) : failure.getSeverity(settings), 
 				failure.getMessage(),
 				new N2ORefactoringStatusContext(element, getSourceRange(node), failure, action), 
 				ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID,

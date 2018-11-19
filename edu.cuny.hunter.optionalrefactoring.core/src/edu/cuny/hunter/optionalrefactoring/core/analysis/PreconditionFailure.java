@@ -2,6 +2,7 @@ package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
@@ -40,7 +41,7 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 interface Precondition {
-	boolean test(ASTNode node, IJavaElement element, RefactoringSettings settings);
+	boolean test(ASTNode node, Optional<IJavaElement> element, RefactoringSettings settings);
 }
 
 public enum PreconditionFailure {
@@ -104,8 +105,7 @@ public enum PreconditionFailure {
 	 * We've hit an entity that has a reference to non-source code.
 	 */
 	NON_SOURCE_CODE(4, Messages.Harvester_SourceNotPresent, 
-			(node, element, settings) ->
-				element.isReadOnly() || Util.isBinaryCode(element) || Util.isGeneratedCode(element)),
+			(node, element, settings) -> element.map(e -> e.isReadOnly() || Util.isBinaryCode(e) || Util.isGeneratedCode(e)).orElse(false)),
 	/**
 	 * {@link org.eclipse.jdt.core.dom.CastExpression}: Bridging this may be excluded by settings.
 	 */
@@ -121,9 +121,9 @@ public enum PreconditionFailure {
 	 */
 	EXCLUDED_ENTITY(7, Messages.Entity_Excluded,
 			(n, e, s) -> {
-				if (e instanceof IField)
+				if (e.map(_e -> _e instanceof IField).orElse(false))
 					return !s.refactorsFields();
-				if (e instanceof IMethod)
+				if (e.map(_e -> _e instanceof IMethod).orElse(false))
 					return !s.refactorsMethods();
 				if (n instanceof SingleVariableDeclaration)
 					return !s.refactorsParameters();
@@ -343,17 +343,17 @@ public enum PreconditionFailure {
 		return value;
 	}
 
-	static EnumSet<PreconditionFailure> info(ASTNode node, IJavaElement element, RefactoringSettings settings) {
+	static EnumSet<PreconditionFailure> info(ASTNode node, IJavaElement element, RefactoringSettings settings, boolean seeding) {
 		return Arrays.stream(PreconditionFailure.values())
-				.filter(f -> f.precondition.test(node, element, settings))
-				.filter(f -> f.getSeverity(settings) == INFO)
+				.filter(f -> f.precondition.test(node, Optional.ofNullable(element), settings))
+				.filter(f -> seeding ? f.seedingSeverity(settings) == INFO : f.getSeverity(settings) == INFO)
 				.collect(Collectors.toCollection(() -> EnumSet.noneOf(PreconditionFailure.class)));
 	}
 	
-	static EnumSet<PreconditionFailure> error(ASTNode node, IJavaElement element, RefactoringSettings settings) {
+	static EnumSet<PreconditionFailure> error(ASTNode node, IJavaElement element, RefactoringSettings settings, boolean seeding) {
 		return Arrays.stream(PreconditionFailure.values())
-				.filter(f -> f.precondition.test(node, element, settings))
-				.filter(f -> f.getSeverity(settings) == ERROR)
+				.filter(f -> f.precondition.test(node, Optional.ofNullable(element), settings))
+				.filter(f -> seeding ? f.seedingSeverity(settings) == ERROR : f.getSeverity(settings) == ERROR)
 				.collect(Collectors.toCollection(() -> EnumSet.noneOf(PreconditionFailure.class)));
 	}	
 
@@ -376,6 +376,33 @@ public enum PreconditionFailure {
 		return this.message;
 	}
 
+	public int seedingSeverity(RefactoringSettings settings) {
+		switch (this) {
+		case CAST_EXPRESSION:
+			return settings.refactorThruOperators() ? INFO : ERROR;
+		case REFERENCE_EQUALITY_OP:
+			return settings.refactorThruOperators() ? INFO : ERROR;
+		case ENHANCED_FOR:
+			return settings.refactorThruOperators() ? INFO : ERROR;
+		case EXCLUDED_ENTITY:
+			return ERROR;
+		case INSTANCEOF_OP:
+			return settings.refactorThruOperators() ? INFO : ERROR;
+		case JAVA_MODEL_ERROR:
+			return FATAL;
+		case MISSING_BINDING:
+			return FATAL;
+		case NON_SOURCE_CODE:
+			return ERROR;
+		case OBJECT_TYPE:
+			return ERROR;
+		case PRIMITIVE_TYPE:
+		case ARRAY_TYPE:
+			return ERROR;
+		default: return OK;
+		}
+	}
+	
 	public int getSeverity(RefactoringSettings settings) {
 		switch (this) {
 		case CAST_EXPRESSION:

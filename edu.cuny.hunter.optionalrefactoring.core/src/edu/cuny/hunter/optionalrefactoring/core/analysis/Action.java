@@ -40,8 +40,15 @@ public enum Action {
 	 * with the body of any subsequent statement (if used in an {@link org.eclipse.jdt.core.dom.IfStatement} 
 	 * or a {@link org.eclipse.jdt.core.dom.ConditionalExpression} as an appropriate lambda or method reference.
 	 */
-	APPLY_IFPRESENT,
-	APPLY_ISPRESENT, 
+	CONVERT_TO_IF_PRESENT,
+	/**
+	 * 
+	 */
+	CONVERT_TO_IS_PRESENT,
+	/**
+	 * 
+	 */
+	CONVERT_TO_NOT_PRESENT,
 	/**
 	 * Transform an uninitialized field declaration into an empty optional.
 	 */

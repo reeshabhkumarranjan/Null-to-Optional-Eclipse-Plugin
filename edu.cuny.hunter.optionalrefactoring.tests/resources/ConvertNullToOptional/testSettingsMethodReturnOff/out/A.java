@@ -2,5 +2,7 @@ package p;
 
 public class A {
 	
-	List<Integer> x;
+	String m() {
+		return null;
+	}
 }
