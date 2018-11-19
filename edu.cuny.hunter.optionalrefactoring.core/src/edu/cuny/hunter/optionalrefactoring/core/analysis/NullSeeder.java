@@ -1,11 +1,8 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -13,18 +10,13 @@ import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.FieldAccess;
-import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.SuperConstructorInvocation;
@@ -51,19 +43,22 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
  */
 class NullSeeder extends N2ONodeProcessor {
 
-	private ASTNode currentNull;
+	private final CompilationUnit compilationUnit;
 
-	public NullSeeder(final IJavaElement element, final ASTNode node, final RefactoringSettings settings, 
+	public NullSeeder(final IJavaElement element, final ASTNode node, final CompilationUnit cu, final RefactoringSettings settings, 
 			final IProgressMonitor monitor, final IJavaSearchScope scope) throws HarvesterException {
 		super(element, node, settings, monitor, scope);
+		this.compilationUnit = cu;
 	}
 	
 	/**
-	 * @return RefactoringStatus.WARNING if no seeding done, otherwise returns appropriate RefactoringStatus
+	 * @return RefactoringStatus.WARNING if no seeding done but no Errors or Info statusentries generated, 
+	 * otherwise returns appropriate RefactoringStatus
 	 */
-	public RefactoringStatus getErrors() {
+	public RefactoringStatus getStatus() {
 		return this.status.isOK() && this.candidates.isEmpty() ? 
-				RefactoringStatus.createWarningStatus(Messages.NoNullsHaveBeenFound) : 
+				RefactoringStatus.createWarningStatus(Messages.Harvester_NullLiteralFailed, 
+						new N2ORefactoringStatusContext(this.rootElement, Util.getSourceRange(this.rootNode), null, null)) : 
 					status;
 	}
 
@@ -71,11 +66,11 @@ class NullSeeder extends N2ONodeProcessor {
 	@Override
 	void ascend(final ClassInstanceCreation node) throws CoreException {
 		if (this.settings.refactorsParameters()) {
-			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
+			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.rootNode);
 			final IMethod method = this.resolveElement(node, argPos);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
-				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
+				this.endProcessing(method, this.rootNode, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
 
 			this.findFormalsForVariable(top, argPos);
 		}
@@ -85,11 +80,11 @@ class NullSeeder extends N2ONodeProcessor {
 	@Override
 	void ascend(final ConstructorInvocation node) throws CoreException {
 		if (this.settings.refactorsParameters()) {
-			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
+			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.rootNode);
 			final IMethod method = this.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
-				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
+				this.endProcessing(method, this.rootNode, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
 
 			this.findFormalsForVariable(top, argPos);
 		}
@@ -109,7 +104,7 @@ class NullSeeder extends N2ONodeProcessor {
 		if (pf.getSeverity(this.settings) >= RefactoringStatus.ERROR)
 			this.endProcessing(null, node, EnumSet.of(pf));
 		Action action = Action.APPLY_ISPRESENT;
-		Expression t = N2ONodeProcessor.containedIn(node.getLeftOperand(), (Expression)this.currentNull) ?
+		Expression t = N2ONodeProcessor.containedIn(node.getLeftOperand(), (Expression)this.rootNode) ?
 				node.getRightOperand() : node.getLeftOperand();
 		this.addInstance(null, node, EnumSet.of(pf), action);
 		this.processDescent(t);
@@ -119,11 +114,11 @@ class NullSeeder extends N2ONodeProcessor {
 	@Override
 	void ascend(final MethodInvocation node) throws CoreException {
 		if (this.settings.refactorsParameters()) {
-			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
+			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.rootNode);
 			final IMethod method = this.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
-				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
+				this.endProcessing(method, this.rootNode, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
 
 			this.findFormalsForVariable(top, argPos);
 		}
@@ -142,11 +137,11 @@ class NullSeeder extends N2ONodeProcessor {
 	@Override
 	void ascend(final SuperConstructorInvocation node) throws CoreException {
 		if (this.settings.refactorsParameters()) {
-			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
+			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.rootNode);
 			final IMethod method = this.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
-				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
+				this.endProcessing(method, this.rootNode, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
 
 			this.findFormalsForVariable(top, argPos);
 		}
@@ -156,11 +151,11 @@ class NullSeeder extends N2ONodeProcessor {
 	@Override
 	void ascend(final SuperMethodInvocation node) throws CoreException {
 		if (this.settings.refactorsParameters()) {
-			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.currentNull);
+			final int argPos = Util.getParamNumber(node.arguments(), (Expression) this.rootNode);
 			final IMethod method = this.resolveElement(node);
 			final IMethod top = Util.getTopMostSourceMethod(method, this.monitor);
 			if (top == null)
-				this.endProcessing(method, this.currentNull, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
+				this.endProcessing(method, this.rootNode, EnumSet.of(PreconditionFailure.NON_SOURCE_CODE));
 
 			this.findFormalsForVariable(top, argPos);
 		}
@@ -188,93 +183,18 @@ class NullSeeder extends N2ONodeProcessor {
 	@Override
 	Object process() throws CoreException {
 
-		
-
-		final List<NullLiteral> nll = new ArrayList<>();
-		final List<VariableDeclarationFragment> infdl = new ArrayList<>();
-
-		final ASTVisitor visitor = new ASTVisitor() {
-			@Override
-			public boolean visit(final NullLiteral node) {
-				nll.add(node);
-				return super.visit(node);
-			}
-
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core. dom.
-			 * VariableDeclarationFragment) here we are just processing to find
-			 * potentially un-initialized (implicitly null) Field declarations.
-			 */
-			@Override
-			public boolean visit(final VariableDeclarationFragment node) {
-				if (node.getParent().getNodeType() == ASTNode.FIELD_DECLARATION)
-					if (node.getInitializer() == null)
-						if (NullSeeder.this.settings.refactorsFields())
-							if (NullSeeder.this.settings.seedsImplicit())
-								infdl.add(node);
-				return super.visit(node);
-			}
-		};
-
-		this.rootNode.accept(visitor);
-
-		for (NullLiteral node : nll) {
-			try {
-				this.currentNull = node;
-				this.processAscent(node.getParent());
-			} catch (HarvesterException e) {
-				if (e.getFailure() > RefactoringStatus.ERROR)
-					throw e;
-			}
-		}
-
-		for (VariableDeclarationFragment node : infdl) {
-			this.currentNull = node;
-			final IVariableBinding binding = this.resolveBinding(node);
-			final IField element = (IField) this.resolveElement(node);
-			final List<Boolean> fici = new LinkedList<>();
-			this.rootNode.accept(new ASTVisitor() {
-				@Override
-				public boolean visit(final MethodDeclaration node) {
-					if (node.isConstructor()) {
-						final Set<Boolean> initialized = new LinkedHashSet<>();
-						node.accept(new ASTVisitor() {
-							@Override
-							public boolean visit(final Assignment node) {
-								final Expression expr = node.getLeftHandSide();
-								IVariableBinding targetField = null;
-								switch (expr.getNodeType()) {
-								case ASTNode.FIELD_ACCESS:
-									targetField = ((FieldAccess) expr).resolveFieldBinding();
-									break;
-								case ASTNode.SIMPLE_NAME:
-								case ASTNode.QUALIFIED_NAME:
-									targetField = (IVariableBinding) ((Name) expr).resolveBinding();
-								}
-								if (binding.isEqualTo(targetField))
-									initialized.add(Boolean.TRUE);
-								return super.visit(node);
-							}
-						});
-						if (initialized.contains(Boolean.TRUE))
-							fici.add(Boolean.TRUE);
-						else
-							fici.add(Boolean.FALSE);
-					}
-					return super.visit(node);
-				}
-			});
-			final boolean fieldIsConstructorInitialized = fici.isEmpty() ? false
-					: fici.stream().reduce(Boolean.TRUE, Boolean::logicalAnd);
-			if (!fieldIsConstructorInitialized)
-				/*
-				 * this element gets added to the Map candidates with boolean true indicating an
-				 * implicit null also, if the type of the declaration is primitive, we ignore it
-				 */
-				if (!binding.getVariableDeclaration().getType().isPrimitive())
-					this.addCandidate(element, node, EnumSet.noneOf(PreconditionFailure.class), Action.INIT_VAR_DECL_FRAGMENT);
+		if (this.rootNode instanceof VariableDeclarationFragment) {
+			VariableDeclarationFragment vdf = (VariableDeclarationFragment)this.rootNode;
+			IField element = (IField) this.resolveElement(vdf);
+			EnumSet<PreconditionFailure> pfInfo = PreconditionFailure.info(vdf, element, this.settings);
+			EnumSet<PreconditionFailure> pfError = PreconditionFailure.error(vdf, element, this.settings);
+			if (pfError.isEmpty())
+				this.addCandidate(element, vdf, pfInfo, 
+					Action.INIT_VAR_DECL_FRAGMENT);
+			else
+				this.endProcessing(element, vdf, pfError);
+		} else {
+			this.processAscent(this.rootNode.getParent());
 		}
 		return !this.candidates.isEmpty();
 	}

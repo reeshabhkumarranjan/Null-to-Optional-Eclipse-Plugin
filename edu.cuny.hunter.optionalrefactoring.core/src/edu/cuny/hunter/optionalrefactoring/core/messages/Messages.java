@@ -16,7 +16,6 @@ public class Messages extends NLS {
 
 	public static String Conditional_Op;
 	public static String Member_Access_Op;
-	public static String Main_Method;
 	public static String Enhanced_For;
 	public static String Name;
 	public static String CategoryName;
@@ -46,6 +45,8 @@ public class Messages extends NLS {
 	public static String Reference_Equality_Op;
 	public static String Transformer_FailedToWriteDocument;
 	public static String Array_Element_Encountered;
+	public static String Collection_Entity_Encountered;
+	public static String Primitive_Type;
 
 	static {
 		// initialize resource bundle

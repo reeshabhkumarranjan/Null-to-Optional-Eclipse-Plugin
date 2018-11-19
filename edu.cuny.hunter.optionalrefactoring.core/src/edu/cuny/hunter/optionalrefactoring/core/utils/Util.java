@@ -227,7 +227,7 @@ public interface Util {
 			return top;
 	}
 
-	static boolean isBinaryCode(final IJavaElement element) throws HarvesterException {
+	static boolean isBinaryCode(final IJavaElement element) {
 		switch (element.getElementType()) {
 		case IJavaElement.LOCAL_VARIABLE: {
 			final ILocalVariable ilv = (ILocalVariable) element;
@@ -250,8 +250,7 @@ public interface Util {
 			return ii.getDeclaringType().isBinary();
 		}
 		default:
-			throw new HarvesterException(RefactoringStatus
-					.createFatalErrorStatus(Messages.Harvester_JavaModelError));
+			return false;
 		}
 	}
 
