@@ -2,6 +2,7 @@ package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.eclipse.jdt.core.IField;
@@ -19,6 +20,7 @@ import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.InstanceofExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -177,23 +179,27 @@ public enum PreconditionFailure {
 	 * {@link org.eclipse.jdt.core.dom.ArrayCreation}: We cannot refactor arrays to Optional types.
 	 */
 	ARRAY_TYPE(13, Messages.Array_Element_Encountered,
-			(n, e, s) -> n instanceof ArrayCreation || n instanceof ArrayInitializer || n instanceof ArrayAccess),
+			(n, e, s) -> n instanceof ArrayCreation || n instanceof ArrayInitializer 
+			|| n instanceof ArrayAccess || (n instanceof VariableDeclaration && ((VariableDeclaration)n).resolveBinding().getType().isArray())),
 	/**
 	 * {@link java.util.Collections}: We don't want to wrap a collection in an Optional, nor its elements
 	 */
 	COLLECTION_TYPE(14, Messages.Collection_Entity_Encountered,
-			(n, e, s) -> {
-				if (n instanceof Expression) {
-					return Arrays.stream(((Expression)n).resolveTypeBinding().getInterfaces())
-							.anyMatch(itb -> itb.getQualifiedName().equals("java.util.Collection"));
-				}
-				if (n instanceof VariableDeclaration) {
-					return Arrays.stream(((VariableDeclaration)n).resolveBinding().getType().getInterfaces())
-							.anyMatch(itb -> itb.getQualifiedName().equals("java.util.Collection"));
-				}
-				return false;
-			})
+			(n, e, s) ->
+				n instanceof Expression
+				? implementsCollection(((Expression)n).resolveTypeBinding())
+				: n instanceof VariableDeclaration 
+					? implementsCollection(((VariableDeclaration)n).resolveBinding().getType())
+					: false)
 	;
+	
+	private static boolean implementsCollection(ITypeBinding itb) {
+		List<ITypeBinding> i = Arrays.stream(itb.getInterfaces()).collect(Collectors.toList());
+		if (i.isEmpty()) return false;
+		return i.stream().anyMatch(_itb -> itb.getErasure().getQualifiedName().equals("java.util.Collection"))
+		? true
+		: i.stream().map(_itb -> implementsCollection(_itb)).reduce(Boolean.TRUE, Boolean::logicalAnd);
+	}
 
 	public static EnumSet<PreconditionFailure> check(final ArrayAccess node, final RefactoringSettings settings) {
 		final EnumSet<PreconditionFailure> value = EnumSet.noneOf(PreconditionFailure.class);
@@ -398,6 +404,7 @@ public enum PreconditionFailure {
 			return ERROR;
 		case PRIMITIVE_TYPE:
 		case ARRAY_TYPE:
+		case COLLECTION_TYPE:
 			return ERROR;
 		default: return OK;
 		}
@@ -429,6 +436,7 @@ public enum PreconditionFailure {
 			return settings.refactorsObjects() ? INFO : ERROR;
 		case PRIMITIVE_TYPE:
 		case ARRAY_TYPE:
+		case COLLECTION_TYPE:
 			return ERROR;
 		default: return OK;
 		}
