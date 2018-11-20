@@ -282,7 +282,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	
 	public void testArrayCreation() throws Exception {
 		this.transformationHelper(EnumSet.noneOf(Choice.class), this.createExpectedStatus(new MockEntryData[] {
-				new MockEntryData(RefactoringStatus.ERROR, PreconditionFailure.ARRAY_TYPE)	
+				new MockEntryData(RefactoringStatus.ERROR, PreconditionFailure.ARRAY_TYPE),
+				new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.OBJECT_TYPE)
 			}));
 	}
 	
@@ -374,11 +375,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 
 	public void testAssignmentParameters() throws Exception {
 		this.transformationHelper(null, new RefactoringStatus());
-	}
-
-	public void testBridgeEnhancedForStatementExpression() throws Exception {
-		this.transformationHelper(null, this.createExpectedStatus(new MockEntryData[] {
-				new MockEntryData(RefactoringStatus.INFO, ENHANCED_FOR) }));
 	}
 
 	public void testCastExpressionBridgeOffMethod() throws Exception {

@@ -6,8 +6,11 @@ public class A {
 	
 	LinkedList<Integer> x = new LinkedList<>();
 	
-	void m() {
-		Integer z = null;
-		x.add(z);
+	void m(LinkedList<Integer> arg) {
+		arg.clear();
+	}
+	
+	void n() {
+		m(null);
 	}
 }

@@ -32,10 +32,11 @@ import org.eclipse.jdt.core.dom.SuperFieldAccess;
 import org.eclipse.jdt.core.dom.SuperMethodInvocation;
 import org.eclipse.jdt.core.dom.VariableDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import static org.eclipse.ltk.core.refactoring.RefactoringStatus.ERROR;
-import static org.eclipse.ltk.core.refactoring.RefactoringStatus.INFO;
-import static org.eclipse.ltk.core.refactoring.RefactoringStatus.FATAL;
 import static org.eclipse.ltk.core.refactoring.RefactoringStatus.OK;
+import static org.eclipse.ltk.core.refactoring.RefactoringStatus.INFO;
+import static org.eclipse.ltk.core.refactoring.RefactoringStatus.WARNING;
+import static org.eclipse.ltk.core.refactoring.RefactoringStatus.ERROR;
+import static org.eclipse.ltk.core.refactoring.RefactoringStatus.FATAL;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
@@ -129,7 +130,7 @@ public enum PreconditionFailure {
 					return !s.refactorsMethods();
 				if (n instanceof SingleVariableDeclaration)
 					return !s.refactorsParameters();
-				if (n instanceof Name)
+				if (e.map(_e -> _e.getElementType() == IJavaElement.LOCAL_VARIABLE).orElse(false))
 					return !s.refactorsLocalVariables();
 				return false;
 			}),
@@ -182,23 +183,25 @@ public enum PreconditionFailure {
 			(n, e, s) -> n instanceof ArrayCreation || n instanceof ArrayInitializer 
 			|| n instanceof ArrayAccess || (n instanceof VariableDeclaration && ((VariableDeclaration)n).resolveBinding().getType().isArray())),
 	/**
-	 * {@link java.util.Collections}: We don't want to wrap a collection in an Optional, nor its elements
+	 * {@link java.util.Collection}: We don't want to wrap a collection in an Optional, nor its elements
 	 */
 	COLLECTION_TYPE(14, Messages.Collection_Entity_Encountered,
 			(n, e, s) ->
 				n instanceof Expression
-				? implementsCollection(((Expression)n).resolveTypeBinding())
+				? implementsCollection(((Expression)n).resolveTypeBinding().getInterfaces())
 				: n instanceof VariableDeclaration 
-					? implementsCollection(((VariableDeclaration)n).resolveBinding().getType())
+					? implementsCollection(((VariableDeclaration)n).resolveBinding().getType().getInterfaces())
 					: false)
 	;
 	
-	private static boolean implementsCollection(ITypeBinding itb) {
-		List<ITypeBinding> i = Arrays.stream(itb.getInterfaces()).collect(Collectors.toList());
+	private static boolean implementsCollection(ITypeBinding[] itb) {
+		List<ITypeBinding> i = Arrays.stream(itb).collect(Collectors.toList());
 		if (i.isEmpty()) return false;
-		return i.stream().anyMatch(_itb -> itb.getErasure().getQualifiedName().equals("java.util.Collection"))
+		return i.stream().anyMatch(_itb -> _itb.getErasure().getQualifiedName().equals("java.util.Collection"))
 		? true
-		: i.stream().map(_itb -> implementsCollection(_itb)).reduce(Boolean.TRUE, Boolean::logicalAnd);
+		: i.stream().map(_itb -> implementsCollection(Optional.ofNullable(_itb.getInterfaces())
+				.orElseGet(() -> new ITypeBinding[0])))
+			.reduce(Boolean.FALSE, Boolean::logicalOr);
 	}
 
 	public static EnumSet<PreconditionFailure> check(final ArrayAccess node, final RefactoringSettings settings) {
@@ -349,6 +352,15 @@ public enum PreconditionFailure {
 		return value;
 	}
 
+	/**
+	 * @param node
+	 * @param element
+	 * @param settings
+	 * @param seeding
+	 * @return The precondition failures of the current ASTNode under evaluation which evaluate to an INFO severity under the current refactoring settings.
+	 * These are precondition failures which generally do not affect program semantics and the relevant nodes can be automatically transformed in accordance with
+	 * optional semantics.
+	 */
 	static EnumSet<PreconditionFailure> info(ASTNode node, IJavaElement element, RefactoringSettings settings, boolean seeding) {
 		return Arrays.stream(PreconditionFailure.values())
 				.filter(f -> f.precondition.test(node, Optional.ofNullable(element), settings))
@@ -356,6 +368,31 @@ public enum PreconditionFailure {
 				.collect(Collectors.toCollection(() -> EnumSet.noneOf(PreconditionFailure.class)));
 	}
 	
+	/**
+	 * @param node
+	 * @param element
+	 * @param settings
+	 * @param seeding
+	 * @return The precondition failures of the current ASTNode under evaluation which evaluate to an WARNING severity under the current refactoring settings.
+	 * These are precondition failures which will affect program semantics and the relevant nodes must be automatically transformed to remove optional type semantics
+	 * in that case. The potential refactoring done up to that point in the type dependent set can be performed, but type dependency linkage will not be propagated further.
+	 */
+	static EnumSet<PreconditionFailure> warn(ASTNode node, IJavaElement element, RefactoringSettings settings, boolean seeding) {
+		return Arrays.stream(PreconditionFailure.values())
+				.filter(f -> f.precondition.test(node, Optional.ofNullable(element), settings))
+				.filter(f -> seeding ? f.seedingSeverity(settings) == WARNING : f.getSeverity(settings) == WARNING)
+				.collect(Collectors.toCollection(() -> EnumSet.noneOf(PreconditionFailure.class)));
+	}
+	
+	/**
+	 * @param node
+	 * @param element
+	 * @param settings
+	 * @param seeding
+	 * @return The precondition failures of the current ASTNode under evaluation which evaluate to an ERROR severity under the current refactoring settings.
+	 * These are precondition failures which will affect program semantics and in an unrecoverable way. The potential refactoring done up to that point will be ignored,
+	 * and the type dependency linkage will not be propagated further.
+	 */	
 	static EnumSet<PreconditionFailure> error(ASTNode node, IJavaElement element, RefactoringSettings settings, boolean seeding) {
 		return Arrays.stream(PreconditionFailure.values())
 				.filter(f -> f.precondition.test(node, Optional.ofNullable(element), settings))
@@ -385,27 +422,22 @@ public enum PreconditionFailure {
 	public int seedingSeverity(RefactoringSettings settings) {
 		switch (this) {
 		case CAST_EXPRESSION:
-			return settings.refactorThruOperators() ? INFO : ERROR;
 		case REFERENCE_EQUALITY_OP:
-			return settings.refactorThruOperators() ? INFO : ERROR;
 		case ENHANCED_FOR:
-			return settings.refactorThruOperators() ? INFO : ERROR;
-		case EXCLUDED_ENTITY:
-			return ERROR;
 		case INSTANCEOF_OP:
+		case CONDITIONAL_OP:
 			return settings.refactorThruOperators() ? INFO : ERROR;
-		case JAVA_MODEL_ERROR:
-			return FATAL;
-		case MISSING_BINDING:
-			return FATAL;
-		case NON_SOURCE_CODE:
-			return ERROR;
 		case OBJECT_TYPE:
-			return ERROR;
+			return settings.refactorsObjects() ? INFO : ERROR;
+		case EXCLUDED_ENTITY:
+		case NON_SOURCE_CODE:
 		case PRIMITIVE_TYPE:
 		case ARRAY_TYPE:
 		case COLLECTION_TYPE:
 			return ERROR;
+		case JAVA_MODEL_ERROR:
+		case MISSING_BINDING:
+			return FATAL;
 		default: return OK;
 		}
 	}
@@ -438,6 +470,50 @@ public enum PreconditionFailure {
 		case ARRAY_TYPE:
 		case COLLECTION_TYPE:
 			return ERROR;
+		default: return OK;
+		}
+	}
+
+	public int getSeverity(RefactoringSettings settings, boolean seeding) {
+		switch (this) {
+		case CAST_EXPRESSION:
+		case REFERENCE_EQUALITY_OP:
+		case ENHANCED_FOR:
+		case INSTANCEOF_OP:
+		case CONDITIONAL_OP:
+			return settings.refactorThruOperators() 
+					? INFO 
+					: seeding
+						? ERROR
+						: settings.bridgesExcluded()
+							? WARNING
+							: ERROR;
+		case OBJECT_TYPE:
+			return settings.refactorsObjects() 
+					? INFO 
+					: seeding
+						? ERROR
+						: settings.bridgesExcluded()
+							? WARNING
+							: ERROR;
+		case NON_SOURCE_CODE:
+			return seeding
+					? ERROR
+					: settings.bridgeExternalCode()
+						? WARNING
+						: ERROR;
+		case EXCLUDED_ENTITY:
+		case PRIMITIVE_TYPE:
+		case ARRAY_TYPE:
+		case COLLECTION_TYPE:
+			return seeding
+					? ERROR
+					: settings.bridgesExcluded()
+						? WARNING
+						: ERROR;
+		case JAVA_MODEL_ERROR:
+		case MISSING_BINDING:
+			return FATAL;
 		default: return OK;
 		}
 	}

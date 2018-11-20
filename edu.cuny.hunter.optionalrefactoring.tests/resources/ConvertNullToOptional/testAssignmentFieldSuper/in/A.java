@@ -1,12 +1,12 @@
 package p;
 
 class Super {
-	Object a = new Object();
+	String a = "Hi";
 }
 
 public class A extends Super {
 
-	Object b = new Object();
+	String b = "Hi";
 
 	void fieldAssignmentTest() {
 		super.a = null;
