@@ -377,11 +377,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		this.transformationHelper(null, new RefactoringStatus());
 	}
 
-	public void testBridgeEnhancedForStatementExpression() throws Exception {
-		this.transformationHelper(null, this.createExpectedStatus(new MockEntryData[] {
-				new MockEntryData(RefactoringStatus.INFO, ENHANCED_FOR) }));
-	}
-
 	public void testCastExpressionBridgeOffMethod() throws Exception {
 		this.propagationHelper(setOf(), setOf(), EnumSet.of(Choice.REFACTOR_THROUGH_JAVA_OPERATORS, Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS),
 				this.createExpectedStatus(new MockEntryData[] { 

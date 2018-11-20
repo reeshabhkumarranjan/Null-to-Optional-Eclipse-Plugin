@@ -130,7 +130,7 @@ public enum PreconditionFailure {
 					return !s.refactorsMethods();
 				if (n instanceof SingleVariableDeclaration)
 					return !s.refactorsParameters();
-				if (n instanceof Name)
+				if (e.map(_e -> _e.getElementType() == IJavaElement.LOCAL_VARIABLE).orElse(false))
 					return !s.refactorsLocalVariables();
 				return false;
 			}),

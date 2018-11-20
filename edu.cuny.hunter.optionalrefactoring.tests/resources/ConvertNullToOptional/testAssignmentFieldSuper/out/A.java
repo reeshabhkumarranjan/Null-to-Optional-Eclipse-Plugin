@@ -3,12 +3,12 @@ package p;
 import java.util.Optional;
 
 class Super {
-	Optional<String> a = Optional.ofNullable("Hi");
+	Optional<String> a = Optional.of("Hi");
 }
 
 public class A extends Super {
 
-	Optional<String> b = Optional.ofNullable("Hi");
+	Optional<String> b = Optional.of("Hi");
 
 	void fieldAssignmentTest() {
 		super.a = Optional.empty();

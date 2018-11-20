@@ -1,9 +1,9 @@
 package edu.cuny.hunter.optionalrefactoring.eval.handlers;
 
-import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.candidatePrinter;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOptionalRefactoringProcessor;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,7 +31,8 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOption
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
-import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;;
+import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -83,7 +84,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 													 * for now
 													 */,
 							Optional.of(monitor));
-					processor.settings().createFromEnv();
 					resultsTimeCollector.stop();
 
 					// run the precondition checking.
@@ -96,7 +96,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 
 					System.out.print("{");
 					passingSets.forEach(set -> {
-						candidatePrinter(set);
 						System.out.print(", ");
 					});
 					System.out.println("}");
@@ -104,7 +103,8 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					for (Entities set : passingSets) {
 						// Let's print some information about what's inside
 						setSummaryPrinter.printRecord(set.hashCode(), set.status());
-						for (IJavaElement element : set)
+						for (Map.Entry<IJavaElement, Set<Instance<?>>> entry : set) {
+							IJavaElement element = entry.getKey();
 							elementResultsPrinter.printRecord(element.getJavaProject().getElementName(), set.hashCode(),
 									element.getElementName(), element.getClass().getSimpleName(),
 									element.getElementType() == IJavaElement.LOCAL_VARIABLE
@@ -113,6 +113,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 															.getAncestor(IJavaElement.TYPE).getElementName()
 											: element.getAncestor(IJavaElement.TYPE).getElementName(),
 									element.isReadOnly(), element.getResource().isDerived());
+						}
 					}
 					setSummaryPrinter.println();
 					elementResultsPrinter.println();
