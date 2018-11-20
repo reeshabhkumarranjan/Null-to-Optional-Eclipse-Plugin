@@ -182,23 +182,25 @@ public enum PreconditionFailure {
 			(n, e, s) -> n instanceof ArrayCreation || n instanceof ArrayInitializer 
 			|| n instanceof ArrayAccess || (n instanceof VariableDeclaration && ((VariableDeclaration)n).resolveBinding().getType().isArray())),
 	/**
-	 * {@link java.util.Collections}: We don't want to wrap a collection in an Optional, nor its elements
+	 * {@link java.util.Collection}: We don't want to wrap a collection in an Optional, nor its elements
 	 */
 	COLLECTION_TYPE(14, Messages.Collection_Entity_Encountered,
 			(n, e, s) ->
 				n instanceof Expression
-				? implementsCollection(((Expression)n).resolveTypeBinding())
+				? implementsCollection(((Expression)n).resolveTypeBinding().getInterfaces())
 				: n instanceof VariableDeclaration 
-					? implementsCollection(((VariableDeclaration)n).resolveBinding().getType())
+					? implementsCollection(((VariableDeclaration)n).resolveBinding().getType().getInterfaces())
 					: false)
 	;
 	
-	private static boolean implementsCollection(ITypeBinding itb) {
-		List<ITypeBinding> i = Arrays.stream(itb.getInterfaces()).collect(Collectors.toList());
+	private static boolean implementsCollection(ITypeBinding[] itb) {
+		List<ITypeBinding> i = Arrays.stream(itb).collect(Collectors.toList());
 		if (i.isEmpty()) return false;
-		return i.stream().anyMatch(_itb -> itb.getErasure().getQualifiedName().equals("java.util.Collection"))
+		return i.stream().anyMatch(_itb -> _itb.getErasure().getQualifiedName().equals("java.util.Collection"))
 		? true
-		: i.stream().map(_itb -> implementsCollection(_itb)).reduce(Boolean.TRUE, Boolean::logicalAnd);
+		: i.stream().map(_itb -> implementsCollection(Optional.ofNullable(_itb.getSuperclass())
+				.map(ITypeBinding::getInterfaces).orElseGet(() -> new ITypeBinding[0])))
+			.reduce(Boolean.TRUE, Boolean::logicalOr);
 	}
 
 	public static EnumSet<PreconditionFailure> check(final ArrayAccess node, final RefactoringSettings settings) {

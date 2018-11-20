@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -272,8 +273,10 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	@Override
 	void ascend(final VariableDeclarationFragment node) throws CoreException {
 		final IVariableBinding binding = node.resolveBinding();
-		EnumSet<PreconditionFailure> pf = binding.isField() ? PreconditionFailure.check(node, (IField)binding.getJavaElement(), this.settings) :
-			PreconditionFailure.check(node, binding.getJavaElement(), this.settings);
+		EnumSet<PreconditionFailure> 
+		pfError = PreconditionFailure.error(node, binding.getJavaElement(), settings, this instanceof NullSeeder),
+		pfInfo = PreconditionFailure.info(node, binding.getJavaElement(), settings, this instanceof NullSeeder),
+		pf = Stream.concat(pfError.stream(), pfInfo.stream()).collect(Collectors.toCollection(() -> EnumSet.noneOf(PreconditionFailure.class)));
 		Action action = pf.contains(PreconditionFailure.EXCLUDED_ENTITY) ? Action.UNWRAP : Action.NIL;
 		if (pf.isEmpty()) {
 			this.addCandidate(binding.getJavaElement(), node, pf, action);
