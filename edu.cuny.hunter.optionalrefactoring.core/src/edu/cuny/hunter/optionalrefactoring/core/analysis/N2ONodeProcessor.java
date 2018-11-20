@@ -5,8 +5,10 @@ import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toCollection;
+import static java.util.EnumSet.noneOf;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -58,12 +60,14 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
-import com.google.common.collect.Streams;
-
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
+
+import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.info;
+import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.warn;
+import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.error;
 
 /**
  * @author oren
@@ -273,18 +277,23 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	@Override
 	void ascend(final VariableDeclarationFragment node) throws CoreException {
 		final IVariableBinding binding = node.resolveBinding();
+		final IJavaElement element = binding.getJavaElement();
 		EnumSet<PreconditionFailure> 
-		pfError = PreconditionFailure.error(node, binding.getJavaElement(), settings, this instanceof NullSeeder),
-		pfInfo = PreconditionFailure.info(node, binding.getJavaElement(), settings, this instanceof NullSeeder),
-		pf = Stream.concat(pfError.stream(), pfInfo.stream()).collect(Collectors.toCollection(() -> EnumSet.noneOf(PreconditionFailure.class)));
+			pfError = error(node, element, settings, this instanceof NullSeeder),
+			pfWarn = warn(node, element, settings, this instanceof NullSeeder),
+			pfInfo = info(node, element, settings, this instanceof NullSeeder),
+			pf = Stream.concat(pfInfo.stream(), pfWarn.stream())
+				.collect(toCollection(() -> noneOf(PreconditionFailure.class)));
 		Action action = pf.contains(PreconditionFailure.EXCLUDED_ENTITY) ? Action.UNWRAP : Action.NIL;
-		if (pf.isEmpty()) {
-			this.addCandidate(binding.getJavaElement(), node, pf, action);
+		if (!pfError.isEmpty())
+			this.endProcessing(element, node, Stream.concat(pf.stream(), pfError.stream())
+					.collect(toCollection(() -> noneOf(PreconditionFailure.class))));
+		else if (!pfWarn.isEmpty())
+			this.addInstance(element, node.getInitializer(), pf, Action.UNWRAP);
+		else {
+			this.addCandidate(element, node, pf, action);
 			this.processAscent(node.getParent());
-		} else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
-			this.endProcessing(binding.getJavaElement(), node.getInitializer(), pf);
-		else
-			this.addInstance(binding.getJavaElement(), node.getInitializer(), pf, action);
+		}
 	}
 
 	/**
@@ -354,7 +363,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 				Arrays.stream(node.getType().resolveBinding().getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable"))) &&
 				this.candidateInstances.stream().anyMatch(i -> i.action().equals(Action.CONVERT_ITERABLE_VAR_DECL_TYPE)) ?
 				Action.CONVERT_ITERABLE_VAR_DECL_TYPE : Action.CONVERT_VAR_DECL_TYPE;
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), action);
+		this.addInstance(null, node, noneOf(PreconditionFailure.class), action);
 		@SuppressWarnings("unchecked")
 		List<VariableDeclarationFragment> list = node.fragments();
 		for (final VariableDeclarationFragment vdf : list) {
@@ -391,7 +400,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 				Arrays.stream(node.getType().resolveBinding().getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable"))) &&
 				this.candidateInstances.stream().anyMatch(i -> i.action().equals(Action.CONVERT_ITERABLE_VAR_DECL_TYPE)) ?
 				Action.CONVERT_ITERABLE_VAR_DECL_TYPE : Action.CONVERT_VAR_DECL_TYPE;
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), 
+		this.addInstance(null, node, noneOf(PreconditionFailure.class), 
 				action);
 		@SuppressWarnings("unchecked")
 		final List<VariableDeclarationFragment> list = node.fragments();
@@ -418,35 +427,35 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 
 	@Override
 	void descend(final NumberLiteral node) throws CoreException {
-		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		EnumSet<PreconditionFailure> pf = noneOf(PreconditionFailure.class);
 		Action action = this.infer(node, pf, this.settings);
 		this.addInstance(null, node, pf, action);
 	}
 
 	@Override
 	void descend(final CharacterLiteral node) throws CoreException {
-		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		EnumSet<PreconditionFailure> pf = noneOf(PreconditionFailure.class);
 		Action action = this.infer(node, pf, this.settings);
 		this.addInstance(null, node, pf, action);
 	}
 
 	@Override
 	void descend(final StringLiteral node) throws CoreException {
-		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		EnumSet<PreconditionFailure> pf = noneOf(PreconditionFailure.class);
 		Action action = this.infer(node, pf, this.settings);
 		this.addInstance(null, node, pf, action);
 	}
 
 	@Override
 	void descend(final NullLiteral node) throws CoreException {
-		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		EnumSet<PreconditionFailure> pf = noneOf(PreconditionFailure.class);
 		Action action = this.infer(node, pf, this.settings);
 		this.addInstance(null, node, pf, action);
 	}
 
 	@Override
 	void descend(final TypeLiteral node) throws CoreException {
-		EnumSet<PreconditionFailure> pf = EnumSet.noneOf(PreconditionFailure.class);
+		EnumSet<PreconditionFailure> pf = noneOf(PreconditionFailure.class);
 		Action action = this.infer(node, pf, this.settings);
 		this.addInstance(null, node, pf, action);
 	}
@@ -462,7 +471,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		for (final VariableDeclarationFragment vdf : list) {
 			this.descend(vdf);
 		}
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), action);
+		this.addInstance(null, node, noneOf(PreconditionFailure.class), action);
 	}
 
 	void findFormalsForVariable(final IMethod correspondingMethod, final int paramNumber) throws CoreException {
@@ -490,7 +499,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 						final EnumSet<PreconditionFailure> 
 						pfError = PreconditionFailure.error(svd, element, settings, N2ONodeProcessor.this instanceof NullSeeder),
 						pfInfo = PreconditionFailure.info(svd, element, settings, N2ONodeProcessor.this instanceof NullSeeder),
-						pf = EnumSet.noneOf(PreconditionFailure.class);
+						pf = noneOf(PreconditionFailure.class);
 						pf.addAll(pfError);
 						pf.addAll(pfInfo);
 						final Action action = N2ONodeProcessor.this.infer(svd, element, pf, N2ONodeProcessor.this.settings);
@@ -852,7 +861,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			// if coming up from the index.
 			if (containedIn(dimension, (Expression)this.rootNode)) {
 				notIndex = false;
-				this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.UNWRAP);
+				this.addInstance(null, node, noneOf(PreconditionFailure.class), Action.UNWRAP);
 			}
 		}
 		if (notIndex)
@@ -881,14 +890,14 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	protected void descend(final ClassInstanceCreation node) throws CoreException {
 		// if we descend into a ClassInstanceCreation we can't refactor it to Optional,
 		// so we just bridge it
-		this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.WRAP);
+		this.addInstance(null, node, noneOf(PreconditionFailure.class), Action.WRAP);
 	}
 
 	@Override
 	protected void ascend(final ArrayAccess node) throws CoreException {
 		// if coming up from the index.
 		if (containedIn(node.getIndex(), (Expression)this.rootNode)) {
-			this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.UNWRAP);
+			this.addInstance(null, node, noneOf(PreconditionFailure.class), Action.UNWRAP);
 		} else
 			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.ARRAY_TYPE));
 	}

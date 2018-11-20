@@ -5,7 +5,7 @@ import java.util.Optional;
 public class A {
 	
 	boolean m() {
-		Optional<Object> x = Optional.empty();
+		Optional<String> x = Optional.empty();
 		return true;
 	}
 }

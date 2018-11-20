@@ -4,7 +4,7 @@ import java.util.Optional;
 
 public class A {
 	
-	Optional<Object> m() {
+	Optional<String> m() {
 		return Optional.empty();
 	}
 }

@@ -2,5 +2,5 @@ package p;
 
 public class A {
 
-	Object o = null; // this is my comment
+	String o = null; // this is my comment
 }

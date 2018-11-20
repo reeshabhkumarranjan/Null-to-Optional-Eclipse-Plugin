@@ -2,10 +2,10 @@ package p;
 
 public class A {
 
-	Object a = new Object();
-	Object b = new Object();
-	Object nullControl = new Object();
-	Object control = new Object();
+	String a = "Hi";
+	String b = "Hi";
+	String nullControl = "Hi";
+	String control = "Hi";
 
 	void fieldAssignmentTest() {
 

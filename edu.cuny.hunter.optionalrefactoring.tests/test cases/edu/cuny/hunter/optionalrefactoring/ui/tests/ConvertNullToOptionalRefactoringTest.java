@@ -282,7 +282,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	
 	public void testArrayCreation() throws Exception {
 		this.transformationHelper(EnumSet.noneOf(Choice.class), this.createExpectedStatus(new MockEntryData[] {
-				new MockEntryData(RefactoringStatus.ERROR, PreconditionFailure.ARRAY_TYPE)	
+				new MockEntryData(RefactoringStatus.ERROR, PreconditionFailure.ARRAY_TYPE),
+				new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.OBJECT_TYPE)
 			}));
 	}
 	

@@ -2,7 +2,7 @@ package p;
 
 class A {
 	void m() {
-		Object o1 = null;
-		Object o2 = o1;
+		String o1 = null;
+		String o2 = o1;
 	}
 }

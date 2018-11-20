@@ -2,7 +2,7 @@ package p;
 
 public class A {
 	
-	Object m() {
+	String m() {
 		return null;
 	}
 }
