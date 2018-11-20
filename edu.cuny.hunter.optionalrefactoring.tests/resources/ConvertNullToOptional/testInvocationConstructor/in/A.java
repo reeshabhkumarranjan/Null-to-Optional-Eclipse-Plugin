@@ -12,22 +12,22 @@ public class A {
 			this(null);
 		}
 
-		public B(Object a) {
-			this(a, new Object());
+		public B(String a) {
+			this(a, "Hi");
 		}
 
-		public B(Object b, Object c) {	
+		public B(String b, String c) {	
 			this(b, c, null);
 		}
 
-		public B(Object d, Object e, Object f) {	
-			this(d, e, f, new Object());
+		public B(String d, String e, String f) {	
+			this(d, e, f, "Hi");
 		}
 
-		public B(Object g, Object h, Object i, Object j) {	
+		public B(String g, String h, String i, String j) {	
 			this(g, h, i, j, null);
 		}
 
-		public B(Object k, Object l, Object m, Object n, Object o) {	}
+		public B(String k, String l, String m, String n, String o) {	}
 	}	
 }

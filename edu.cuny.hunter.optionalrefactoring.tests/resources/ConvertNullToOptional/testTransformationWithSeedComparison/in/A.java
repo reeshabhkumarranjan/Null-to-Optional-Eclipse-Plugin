@@ -2,6 +2,6 @@ package p;
 
 public class A {
 
-    Object o = new Object();
+    String o = "Hi";
     boolean b = o == null;
 }

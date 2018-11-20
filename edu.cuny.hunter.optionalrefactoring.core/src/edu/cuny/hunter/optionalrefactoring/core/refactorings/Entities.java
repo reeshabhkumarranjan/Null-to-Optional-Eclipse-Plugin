@@ -8,22 +8,14 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
-import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
-import org.eclipse.jface.text.Document;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import com.google.common.collect.Streams;
 
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
-@SuppressWarnings("restriction")
 public class Entities implements Collection<Entry<IJavaElement, Set<Instance<? extends ASTNode>>>> {
 
 	public static Entities create(final Set<IJavaElement> elements, final Set<Instance<? extends ASTNode>> instances, 
@@ -37,7 +29,7 @@ public class Entities implements Collection<Entry<IJavaElement, Set<Instance<? e
 				.filter(instance -> elements.contains(instance.element()))
 				.flatMap(instance -> instance.failures().stream()
 						.map(failure -> Util.createStatusEntry(settings, 
-								failure, instance.element(), instance.node(), instance.action())))
+								failure, instance.element(), instance.node(), instance.action(), false)))
 				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
 		return new Entities(status, mappedInstances);
 	}
@@ -46,9 +38,7 @@ public class Entities implements Collection<Entry<IJavaElement, Set<Instance<? e
 
 	private final RefactoringStatus status;
 	
-	private final Map<ICompilationUnit, Set<IJavaElement>> icuMap = new LinkedHashMap<>();
-
-	private final Map<ICompilationUnit, CompilationUnitRewrite> rewrites = new LinkedHashMap<>();
+	private final Map<CompilationUnit, Set<IJavaElement>> cuMap = new LinkedHashMap<>();
 
 	private Entities(final RefactoringStatus status, final Map<IJavaElement, Set<Instance<? extends ASTNode>>> mappedInstances) {
 		this.status = status;
@@ -71,31 +61,18 @@ public class Entities implements Collection<Entry<IJavaElement, Set<Instance<? e
 	}
 	
 	public void transform() throws CoreException {
-		IProgressMonitor monitor = new NullProgressMonitor();
-		for (final ICompilationUnit icu : this.icuMap.keySet()) {
-			final CompilationUnit cu = Util.getCompilationUnit(icu, monitor);
-			final Set<IJavaElement> elements = this.icuMap.get(icu);
-			final N2ONodeTransformer n2ont = new N2ONodeTransformer(icu, cu, elements, this.elementToInstancesMap);
-			final Document doc = (Document) n2ont.process();
-			String name = icu.getElementName();
-			icu.rename("old_"+name, true, monitor);
-			ICompilationUnit rwIcu = ((IPackageFragment)icu.getParent())
-					.createCompilationUnit(name, doc.get(), true, monitor);
-			CompilationUnitRewrite cur = new CompilationUnitRewrite(rwIcu);
-			final ImportRewrite ir = cur.getImportRewrite();
-			ir.addImport("java.util.Optional");
-			this.rewrites.put(rwIcu, cur);
+		for (final CompilationUnit cu : this.cuMap.keySet()) {
+			final Set<IJavaElement> elements = this.cuMap.get(cu);
+			final N2ONodeTransformer n2ont = new N2ONodeTransformer(cu, elements, this.elementToInstancesMap);
+			n2ont.process();
 		}
 	}
 
-	public void addIcu(ICompilationUnit icu, IJavaElement element) {
-		if (this.icuMap.containsKey(icu))
-			this.icuMap.get(icu).add(element);
+	public void addIcu(CompilationUnit cu, IJavaElement element) {
+		if (this.cuMap.containsKey(cu))
+			this.cuMap.get(cu).add(element);
 		else
-			this.icuMap.put(icu, Util.setOf(element));	}
-
-	public Map<ICompilationUnit, CompilationUnitRewrite> getRewrites() {
-		return this.rewrites;
+			this.cuMap.put(cu, Util.setOf(element));	
 	}
 
 	@Override

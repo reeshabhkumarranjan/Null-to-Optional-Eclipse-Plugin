@@ -116,7 +116,7 @@ abstract class ASTNodeProcessor {
 	/**
 	 * This is the <code>ASTNode</code> instance that is the root of our processing.
 	 */
-	final ASTNode rootNode;
+	protected final ASTNode rootNode;
 
 	ASTNodeProcessor(final ASTNode node) {
 		this.rootNode = node;

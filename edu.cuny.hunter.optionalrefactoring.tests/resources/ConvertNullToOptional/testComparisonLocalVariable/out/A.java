@@ -4,14 +4,14 @@ import java.util.Optional;
 
 class A {
 	void m() {
-		Object o1 = new Object();
-		Object o2 = new Object();
+		String o1 = "Hi";
+		String o2 = "Hi";
 
 		boolean b = o2 == o1;
 
-		Optional<Object> o3 = Optional.empty();
-		Optional<Object> o4 = Optional.ofNullable(new Object());
+		Optional<String> o3 = Optional.empty();
+		String o4 = "Hi";
 
-		b = o3.orElse(null) == o4.orElse(null);
+		b = o3.orElse(null) == o4;
 	}
 }

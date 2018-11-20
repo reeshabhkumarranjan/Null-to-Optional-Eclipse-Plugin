@@ -4,12 +4,12 @@ import java.util.Optional;
 
 class A {
 	void m() {
-		Object o1 = new Object();
-		Object o2 = new Object();
+		String o1 = "Hi";
+		String o2 = "Hi";
 
 		boolean b = o2 == o1;
 
-		Optional<Object> o3 = Optional.ofNullable(new Object());
+		Optional<String> o3 = Optional.of("Hi");
 
 		b = !o3.isPresent();
 	}

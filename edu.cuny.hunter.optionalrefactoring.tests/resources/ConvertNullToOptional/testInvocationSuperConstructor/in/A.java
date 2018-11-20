@@ -11,26 +11,26 @@ public class A {
 	 */
 
 	public class Root {
-		public Root(Object a) { }
+		public Root(String a) { }
 	}
 
 	public class Child extends Root {
 
-		public Child(Object b, Object c) {
+		public Child(String b, String c) {
 			super(b);
 		}
 	}
 
 	public class Grandchild extends Child {
 
-		public Grandchild(Object d, Object e, Object f) {
+		public Grandchild(String d, String e, String f) {
 			super(d, e);
 		}
 	}
 
 	public class GreatGrandchild extends Grandchild {
 
-		public GreatGrandchild(Object g, Object h, Object i, Object j) {
+		public GreatGrandchild(String g, String h, String i, String j) {
 			super(g, h, i);
 		}
 	}
@@ -38,7 +38,7 @@ public class A {
 	public class NullPropagator extends GreatGrandchild {
 
 		public NullPropagator() {
-			super(null, new Object(), null, new Object());
+			super(null, "Hi", null, "There");
 		}
 	}
 }

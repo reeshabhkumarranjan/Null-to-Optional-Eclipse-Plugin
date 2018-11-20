@@ -14,6 +14,11 @@ public enum Action {
 	 */
 	CONVERT_VAR_DECL_TYPE,
 	/**
+	 * We need to distinguish transforming the element type of an array or iterable collection
+	 * from simply transforming a variable declaration type in order to handle iteration or streams
+	 */
+	CONVERT_ITERABLE_VAR_DECL_TYPE,
+	/**
 	 * Transform a method's return type to a parameterized optional type
 	 */
 	CONVERT_METHOD_RETURN_TYPE,
@@ -35,8 +40,15 @@ public enum Action {
 	 * with the body of any subsequent statement (if used in an {@link org.eclipse.jdt.core.dom.IfStatement} 
 	 * or a {@link org.eclipse.jdt.core.dom.ConditionalExpression} as an appropriate lambda or method reference.
 	 */
-	APPLY_IFPRESENT,
-	APPLY_ISPRESENT, 
+	CONVERT_TO_IF_PRESENT,
+	/**
+	 * 
+	 */
+	CONVERT_TO_IS_PRESENT,
+	/**
+	 * 
+	 */
+	CONVERT_TO_NOT_PRESENT,
 	/**
 	 * Transform an uninitialized field declaration into an empty optional.
 	 */

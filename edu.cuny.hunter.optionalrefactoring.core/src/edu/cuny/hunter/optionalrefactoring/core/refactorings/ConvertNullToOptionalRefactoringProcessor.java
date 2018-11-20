@@ -5,15 +5,19 @@ import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -29,6 +33,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
@@ -37,6 +42,8 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewr
 import org.eclipse.jdt.internal.corext.refactoring.util.JavaStatusContext;
 import org.eclipse.jdt.internal.corext.refactoring.util.TextEditBasedChangeManager;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.GroupCategory;
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
@@ -46,6 +53,8 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.CheckConditionsContext;
 import org.eclipse.ltk.core.refactoring.participants.RefactoringParticipant;
 import org.eclipse.ltk.core.refactoring.participants.SharableParticipants;
+import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.TextEdit;
 
 import edu.cuny.citytech.refactoring.common.core.RefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
@@ -53,6 +62,7 @@ import edu.cuny.hunter.optionalrefactoring.core.analysis.RefactorableHarvester;
 import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
+import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -222,19 +232,51 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 			final int count = this.entities.stream().map(Entities::size).reduce(Integer::sum).orElse(0);
 
 			pm.beginTask(Messages.CreatingChange, count);
+			
+			final Map<ICompilationUnit, CompilationUnit> icuCuMap = new LinkedHashMap<>();
+			final Function<ICompilationUnit,CompilationUnit> cuGet = icu -> {
+				CompilationUnit _cu = icuCuMap.get(icu); 
+				if (_cu == null) {
+					_cu = Util.getCompilationUnit(icu, pm);
+					_cu.recordModifications();
+					icuCuMap.put(icu, _cu);
+				};
+				return _cu;
+			};
 
 			for (final Entities entity : this.entities) {
 				for (final Map.Entry<IJavaElement, Set<Instance<? extends ASTNode>>> pair : entity) {
 					IJavaElement element = pair.getKey();
 					final ICompilationUnit icu = (ICompilationUnit) element.getAncestor(IJavaElement.COMPILATION_UNIT);
-					entity.addIcu(icu, element);
+					CompilationUnit cu = cuGet.apply(icu);
+					entity.addIcu(cu, element);
 					pm.worked(1);
 				}
 				entity.transform();
-				entity.getRewrites().entrySet().forEach(entry -> 
-					this.compilationUnitToCompilationUnitRewriteMap.put(entry.getKey(), entry.getValue()));
 			}
-
+			
+			for (Map.Entry<ICompilationUnit, CompilationUnit> entry : icuCuMap.entrySet()) {
+				IProgressMonitor m = new NullProgressMonitor();
+				ICompilationUnit icu = entry.getKey();
+				CompilationUnit cu = entry.getValue();
+				Document doc = new Document(icu.getSource());
+				TextEdit edits = cu.rewrite(doc, icu.getJavaProject().getOptions(true));
+				try {
+					edits.apply(doc);
+				} catch (MalformedTreeException | BadLocationException e) {
+					throw new CoreException(new Status(Status.ERROR, ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, 
+							RefactoringStatus.FATAL, Messages.Transformer_FailedToWriteDocument, e));
+				}
+				String name = icu.getElementName();
+				icu.rename("old_"+name, true, m);
+				ICompilationUnit rwIcu = ((IPackageFragment)icu.getParent())
+						.createCompilationUnit(name, doc.get(), true, m);
+				CompilationUnitRewrite cur = new CompilationUnitRewrite(rwIcu);
+				final ImportRewrite ir = cur.getImportRewrite();
+				ir.addImport("java.util.Optional");
+				this.compilationUnitToCompilationUnitRewriteMap.put(rwIcu, cur);
+			}
+			
 			// save the source changes.
 			final ICompilationUnit[] units = this.getCompilationUnitToCompilationUnitRewriteMap().keySet().stream()
 					.filter(cu -> !manager.containsChangesIn(cu)).toArray(ICompilationUnit[]::new);

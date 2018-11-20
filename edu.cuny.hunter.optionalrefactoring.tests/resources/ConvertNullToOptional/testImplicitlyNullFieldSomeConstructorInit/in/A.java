@@ -4,11 +4,11 @@ public class A {
 	/**
 	 * With implicit nulls option by default
 	 */
-	Object a;
+	String a;
 	
 	public A() {
-		this.a = new Object();
+		this.a = "Hi";
 	}
 	
-	public A(Object o) { }
+	public A(String o) { }
 }

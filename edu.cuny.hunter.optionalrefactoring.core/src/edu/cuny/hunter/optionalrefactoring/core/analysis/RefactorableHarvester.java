@@ -1,6 +1,8 @@
 package edu.cuny.hunter.optionalrefactoring.core.analysis;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -11,7 +13,10 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.NullLiteral;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
@@ -22,6 +27,7 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
@@ -47,6 +53,7 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 public class RefactorableHarvester {
 
 	private final IJavaElement element;
+	private final CompilationUnit compilationUnit;
 	private final ASTNode refactoringRootNode;
 	private final IJavaSearchScope scopeRoot;
 	private final RefactoringSettings settings;
@@ -61,6 +68,7 @@ public class RefactorableHarvester {
 	public RefactorableHarvester(final IJavaElement element, final CompilationUnit cu, final IJavaSearchScope scope, 
 			final RefactoringSettings settings, final IProgressMonitor m) throws JavaModelException {
 		this.element = element;
+		this.compilationUnit = cu;
 		this.refactoringRootNode = element instanceof ICompilationUnit ? cu : Util.findASTNode(cu, (IMember)element) ;
 		this.monitor = m;
 		this.scopeRoot = scope;
@@ -74,20 +82,57 @@ public class RefactorableHarvester {
 	public RefactoringStatus process() throws CoreException {
 
 		this.reset();
-		// this worklist starts with the immediate type-dependent entities on
-		// null
-		// expressions.
-		final NullSeeder seeder = new NullSeeder(this.element, this.refactoringRootNode, this.settings, this.monitor, this.scopeRoot);
-		// if no nulls pass the preconditions, return the Seeder status immediately
-		if (!(boolean)seeder.process()) {
-			this.seeds .addAll(seeder.getCandidates());
-			return seeder.getErrors();
+		RefactoringStatus status = new RefactoringStatus();
+		// begin by seeding the program entities that are locally type dependent on null
+		final List<ASTNode> nll = new ArrayList<>();
+
+		final ASTVisitor visitor = new ASTVisitor() {
+			@Override
+			public boolean visit(final NullLiteral node) {
+				nll.add(node);
+				return super.visit(node);
+			}
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core. dom.
+			 * VariableDeclarationFragment) here we are just processing to find
+			 * potentially un-initialized (implicitly null) Field declarations.
+			 */
+			@Override
+			public boolean visit(final VariableDeclarationFragment node) {
+				if (node.getParent().getNodeType() == ASTNode.FIELD_DECLARATION &&
+						node.getInitializer() == null)
+					nll.add(node);
+				return super.visit(node);
+			}
+		};
+
+		this.refactoringRootNode.accept(visitor);
+
+		for (ASTNode node : nll) {
+			NullSeeder ns = new NullSeeder(this.element, node, this.compilationUnit, this.settings, this.monitor, this.scopeRoot);
+			try {
+				ns.process();
+				this.seeds.addAll(ns.getCandidates());
+				this.instances.addAll(ns.getInstances());
+			} catch (HarvesterException e) {
+				if (e.getFailure() > RefactoringStatus.ERROR)
+					throw e;
+			} finally {
+				status.merge(ns.getStatus());
+			}
 		}
-		RefactoringStatus status = seeder.getErrors();
-		// otherwise get the passing null type dependent entities
-		// and put just the IJavaElements into the workList
-		this.workList.addAll(seeder.getCandidates());
-		this.instances.addAll(seeder.getInstances());
+		
+		// if nothing was found but there were no precondition failures, it means no nulls exist in the source or we are not finding any implicitly null fields
+		if (status.isOK() && this.seeds.isEmpty()) 
+				status.merge(RefactoringStatus.createWarningStatus(Messages.NoNullsHaveBeenFound, 
+						new N2ORefactoringStatusContext(this.element, Util.getSourceRange(this.refactoringRootNode), null, null)));
+		
+		// this worklist starts with the immediate type-dependent entities on null expressions.
+		// Put the seed IJavaElements into the workList
+		this.workList.addAll(seeds);
 		// while there's more work to do.
 		while (this.workList.hasNext()) {
 			// grab the next element.
@@ -112,7 +157,7 @@ public class RefactorableHarvester {
 
 						// now we have the ASTNode corresponding to the match.
 						// process the matching ASTNode.
-						final NullPropagator processor = new NullPropagator(searchElement, node,
+						final N2ONodeProcessor processor = new NullPropagator(searchElement, node,
 								RefactorableHarvester.this.scopeRoot, RefactorableHarvester.this.settings,
 								RefactorableHarvester.this.monitor, RefactorableHarvester.this.instances);
 
@@ -175,7 +220,7 @@ public class RefactorableHarvester {
 		this.notRefactorable.clear();
 		this.instances.clear();
 	}
-
+	
 	private Set<ComputationNode> trimForest(final Set<ComputationNode> computationForest,
 			final Set<IJavaElement> nonEnumerizableList) {
 		final Set<ComputationNode> ret = new LinkedHashSet<>(computationForest);
@@ -189,5 +234,4 @@ public class RefactorableHarvester {
 	public int countNotRefactorable() {
 		return this.notRefactorable.size();
 	}
-
 }
