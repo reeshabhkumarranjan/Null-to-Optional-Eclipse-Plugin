@@ -4,5 +4,5 @@ public class A {
 	
 	/* FIELDS excluded from settings, because no elements will be seeded at all, it's an Error status
 	*/
-	Object x = null;
+	String x = null;
 }

@@ -4,6 +4,7 @@ import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOp
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,7 +35,8 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
-import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;;
+import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -104,8 +106,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							new IJavaProject[] { javaProject },
 							RefactoringSettings.userDefaults(), // we inject user defaults for now
 							Optional.of(monitor));
-
-					processor.settings().createFromEnv();
 					resultsTimeCollector.stop();
 
 					// run the precondition checking.

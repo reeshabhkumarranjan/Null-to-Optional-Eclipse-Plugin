@@ -8,5 +8,5 @@ public class A {
 	 * this is a comment
 	 *
 	 */
-	Optional<Object> o = Optional.empty();
+	Optional<String> o = Optional.empty();
 }

@@ -2,7 +2,7 @@ package p;
 
 public class A {
 	
-	Object x = new Object();
+	String x = "Hi";
 	
 	boolean m() {
 		x = null;

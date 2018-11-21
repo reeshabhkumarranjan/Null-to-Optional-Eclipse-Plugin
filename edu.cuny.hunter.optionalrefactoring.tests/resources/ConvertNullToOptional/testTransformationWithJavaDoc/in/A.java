@@ -4,5 +4,5 @@ public class A {
 	/**
 	 * @see ConvertNullToOptionalRefactoringTest.java
 	 */
-	Object o = null;
+	String o = null;
 }

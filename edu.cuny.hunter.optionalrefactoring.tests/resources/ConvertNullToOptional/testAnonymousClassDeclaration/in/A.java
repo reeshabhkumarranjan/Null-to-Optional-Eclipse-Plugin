@@ -2,7 +2,7 @@ package p;
 
 public class A {
 	
-public A(Object o) {	}
+	public A(String o) {	}
 	
 	/*should propagate {{o}}*/
 	A x = new A(null) {

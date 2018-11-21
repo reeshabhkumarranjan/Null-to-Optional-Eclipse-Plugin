@@ -7,8 +7,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.dom.AST;
@@ -17,7 +15,6 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayCreation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.ArrayType;
-import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -25,11 +22,12 @@ import org.eclipse.jdt.core.dom.ConstructorInvocation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.InfixExpression;
-import org.eclipse.jdt.core.dom.InstanceofExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NameQualifiedType;
+import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.PrefixExpression;
 import org.eclipse.jdt.core.dom.QualifiedType;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
@@ -41,36 +39,23 @@ import org.eclipse.jdt.core.dom.VariableDeclarationExpression;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.WildcardType;
-import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.Document;
-import org.eclipse.ltk.core.refactoring.RefactoringStatus;
-import org.eclipse.text.edits.MalformedTreeException;
-import org.eclipse.text.edits.TextEdit;
-
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
-import edu.cuny.hunter.optionalrefactoring.core.descriptors.ConvertNullToOptionalRefactoringDescriptor;
-import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 class N2ONodeTransformer {
 
 	private final ASTNode rootNode;
 	private final Set<Instance<? extends ASTNode>> instances;
-	private final ICompilationUnit icu;
-	private final CompilationUnit rewrite;
 	
-	N2ONodeTransformer(ICompilationUnit icu, CompilationUnit cu, Set<IJavaElement> elements, 
+	N2ONodeTransformer(CompilationUnit cu, Set<IJavaElement> elements, 
 			Map<IJavaElement, Set<Instance<? extends ASTNode>>> instances) {
-		this.icu = icu;
 		this.rootNode = cu;
 		this.instances = elements.stream()
 				.flatMap(element -> instances.get(element).stream())
 				.collect(Collectors.toSet());
-		this.rewrite = cu;
 	}
 
-	Document process() throws CoreException {
-		this.rewrite.recordModifications();
+	void process() throws CoreException {
 		this.rootNode.accept(new ASTVisitor() {
 			@Override
 			public void preVisit(ASTNode node) {
@@ -81,15 +66,6 @@ class N2ONodeTransformer {
 				o.map(instance -> N2ONodeTransformer.this.transform(node, instance.action()));
 			}
 		});
-		Document doc = new Document(this.icu.getSource());
-		TextEdit edits = this.rewrite.rewrite(doc, icu.getJavaProject().getOptions(true));
-		try {
-			edits.apply(doc);
-		} catch (MalformedTreeException | BadLocationException e) {
-			throw new CoreException(new Status(Status.ERROR, ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, 
-					RefactoringStatus.FATAL, Messages.Transformer_FailedToWriteDocument, e));
-		}
-		return doc;
 	}
 
 	private Expression emptyOptional(final AST ast) {
@@ -99,15 +75,18 @@ class N2ONodeTransformer {
 		return empty;
 	}
 
-	@SuppressWarnings("unchecked")
 	private Type getConvertedType(final AST ast, final Type rawType) {
 		switch (rawType.getNodeType()) {
 		case ASTNode.SIMPLE_TYPE: {
 			final ParameterizedType parameterized = ast
 					.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
 			SimpleType r = ast.newSimpleType(ast.newSimpleName(((SimpleType)rawType).getName().toString()));
-			((Map<String, Object>)rawType.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
-			parameterized.typeArguments().add(0, r);
+			@SuppressWarnings("unchecked")
+			Map<String, Object> props = rawType.properties();
+			props.entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			@SuppressWarnings("unchecked")
+			final List<Type> l = parameterized.typeArguments();
+			l.add(0, r);
 			return parameterized;
 		}
 		case ASTNode.QUALIFIED_TYPE: {
@@ -116,8 +95,12 @@ class N2ONodeTransformer {
 			QualifiedType t = (QualifiedType) rawType;
 			QualifiedType r = ast.newQualifiedType(
 					ast.newSimpleType(ast.newSimpleName(((SimpleType)t.getQualifier()).getName().toString())), ast.newSimpleName(t.getName().toString()));
-			((Map<String, Object>)t.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
-			parameterized.typeArguments().add(0, r);
+			@SuppressWarnings("unchecked")
+			Map<String, Object> props = rawType.properties();
+			props.entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			@SuppressWarnings("unchecked")
+			final List<Type> l = parameterized.typeArguments();
+			l.add(0, r);
 			return parameterized;
 		}
 		case ASTNode.NAME_QUALIFIED_TYPE: {
@@ -126,8 +109,12 @@ class N2ONodeTransformer {
 			NameQualifiedType t = (NameQualifiedType) rawType;
 			NameQualifiedType r = ast.newNameQualifiedType(
 					ast.newSimpleName(t.getName().toString()), ast.newSimpleName(t.getName().toString()));
-			((Map<String, Object>)t.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
-			parameterized.typeArguments().add(0, r);
+			@SuppressWarnings("unchecked")
+			Map<String, Object> props = rawType.properties();
+			props.entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			@SuppressWarnings("unchecked")
+			final List<Type> l = parameterized.typeArguments();
+			l.add(0, r);
 			return parameterized;
 		}
 		case ASTNode.WILDCARD_TYPE: {
@@ -135,24 +122,38 @@ class N2ONodeTransformer {
 					.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
 			WildcardType t = (WildcardType) rawType;
 			WildcardType r = ast.newWildcardType();
-			((Map<String, Object>)t.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
-			parameterized.typeArguments().add(0, r);
+			r.setBound(ast.newSimpleType(ast.newSimpleName(t.getBound().toString())), t.isUpperBound());
+			@SuppressWarnings("unchecked")
+			Map<String, Object> props = rawType.properties();
+			props.entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			@SuppressWarnings("unchecked")
+			final List<Type> l = parameterized.typeArguments();
+			l.add(0, r);
 			return parameterized;
 		}
 		case ASTNode.ARRAY_TYPE: {
 			ArrayType t = (ArrayType) rawType;
-			final SimpleType simpleT = ast.newSimpleType(ast.newSimpleName("Optional"));
-			final ArrayType arrayT = ast.newArrayType(simpleT, t.getDimensions());
-			((Map<String, Object>)t.properties()).entrySet().forEach(prop -> arrayT.setProperty(prop.getKey(), prop.getValue()));
-			return arrayT;
+			final ParameterizedType parameterized = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
+			final ArrayType arrayT = ast.newArrayType(ast.newSimpleType(ast.newSimpleName(t.getElementType().toString())), t.getDimensions());
+			@SuppressWarnings("unchecked")
+			final List<Type> l = parameterized.typeArguments();
+			l.add(0, arrayT);
+			@SuppressWarnings("unchecked")
+			Map<String, Object> props = rawType.properties();
+			props.entrySet().forEach(prop -> arrayT.setProperty(prop.getKey(), prop.getValue()));
+			return parameterized;
 		}
 		case ASTNode.PARAMETERIZED_TYPE: {
 			final ParameterizedType parameterized = ast
 					.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
 			ParameterizedType t = (ParameterizedType) rawType;
 			ParameterizedType r = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName(((SimpleType)t.getType()).getName().toString())));
-			((Map<String, Object>)t.properties()).entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
-			parameterized.typeArguments().add(0, r);
+			@SuppressWarnings("unchecked")
+			Map<String, Object> props = rawType.properties();
+			props.entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			@SuppressWarnings("unchecked")
+			final List<Type> l = parameterized.typeArguments();
+			l.add(0, r);
 			return parameterized;
 		}
 		default: return rawType;
@@ -191,6 +192,14 @@ class N2ONodeTransformer {
 
 	private Object transform(final ASTNode node, final Action action) {
 		switch (action) {
+		case CONVERT_TO_IS_PRESENT: {
+			this.isPresent((InfixExpression)node);
+			break;
+		}
+		case CONVERT_TO_NOT_PRESENT: {
+			this.notPresent((InfixExpression)node);
+			break;
+		}
 		case CONVERT_VAR_DECL_TYPE: {
 			if (node instanceof FieldDeclaration)
 				this.transform((FieldDeclaration)node);
@@ -249,6 +258,27 @@ class N2ONodeTransformer {
 			break;
 		}
 		return node;
+	}
+	
+	private void isPresent(InfixExpression node) {
+		Expression expr = node.getLeftOperand() instanceof NullLiteral ? node.getRightOperand() : node.getLeftOperand();
+		Expression cpy = (Expression) ASTNode.copySubtree(node.getAST(), expr);
+		MethodInvocation mi = node.getAST().newMethodInvocation();
+		mi.setName(node.getAST().newSimpleName("isPresent"));
+		mi.setExpression(cpy);
+		this.replace(node, mi);
+	}
+	
+	private void notPresent(InfixExpression node) {
+		Expression expr = node.getLeftOperand() instanceof NullLiteral ? node.getRightOperand() : node.getLeftOperand();
+		Expression cpy = (Expression) ASTNode.copySubtree(node.getAST(), expr);
+		MethodInvocation mi = node.getAST().newMethodInvocation();
+		mi.setName(node.getAST().newSimpleName("isPresent"));
+		mi.setExpression(cpy);
+		PrefixExpression pe = node.getAST().newPrefixExpression();
+		pe.setOperator(PrefixExpression.Operator.NOT);
+		pe.setOperand(mi);
+		this.replace(node, pe);
 	}
 
 	private void replace(ASTNode node, Expression expr) {

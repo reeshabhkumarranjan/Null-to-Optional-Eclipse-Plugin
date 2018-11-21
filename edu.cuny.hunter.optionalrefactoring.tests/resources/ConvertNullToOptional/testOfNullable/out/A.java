@@ -4,6 +4,6 @@ import java.util.Optional;
 
 class A {
 	void m() {
-		Optional<Object> o1 = Optional.empty();
+		Optional<String> o1 = Optional.empty();
 	}
 }

@@ -6,5 +6,5 @@ public class A {
 	/**
 	 * @see ConvertNullToOptionalRefactoringTest.java
 	 */
-	Optional<Object> o = Optional.empty();
+	Optional<String> o = Optional.empty();
 }

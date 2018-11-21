@@ -8,7 +8,6 @@ import org.eclipse.jdt.core.dom.ASTNode;
 
 import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
 import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
-import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 public class Instance<T extends ASTNode> {
 	private final IJavaElement element;

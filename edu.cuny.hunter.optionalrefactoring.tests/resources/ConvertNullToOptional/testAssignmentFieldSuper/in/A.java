@@ -1,22 +1,15 @@
 package p;
 
 class Super {
-	Object a = new Object();
+	String a = "Hi";
 }
 
 public class A extends Super {
 
-	Object b = new Object();
-	Object nullControl = new Object();
-	Object control = new Object();
+	String b = "Hi";
 
 	void fieldAssignmentTest() {
-
-		/** should seed: { "a", "nullControl"}
-		 * 	should propagate: {{"a","b"},{"nullControl"}}
-		 */
 		super.a = null;
 		b = super.a;
-		nullControl = null;		
 	}
 }

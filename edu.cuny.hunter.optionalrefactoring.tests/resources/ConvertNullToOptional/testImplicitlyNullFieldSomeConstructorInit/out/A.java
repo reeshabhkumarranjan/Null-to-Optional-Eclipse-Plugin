@@ -6,11 +6,11 @@ public class A {
 	/**
 	 * With implicit nulls option by default
 	 */
-	Optional<Object> a = Optional.empty();
+	Optional<String> a = Optional.empty();
 	
 	public A() {
-		this.a = Optional.ofNullable(new Object());
+		this.a = Optional.of("Hi");
 	}
 	
-	public A(Object o) { }
+	public A(String o) { }
 }

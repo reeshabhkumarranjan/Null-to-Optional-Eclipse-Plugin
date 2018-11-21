@@ -6,10 +6,10 @@ public class A {
 	 * constructor initialization of all fields detected, no nulls to refactor.
 	 * This should return a Fatal severity RefactoringStatus because nothing can be seeded.
 	 */
-	Object a;
+	String a;
 	
 	public A() {
-		a = new Object();
+		a = "Hi";
 	}
 	
 }

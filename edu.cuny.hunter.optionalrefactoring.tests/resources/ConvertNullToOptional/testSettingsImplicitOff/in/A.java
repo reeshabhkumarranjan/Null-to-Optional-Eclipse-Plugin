@@ -4,5 +4,5 @@ public class A {
 	
 	/* Settings excludes IMPLICIT_FIELDS
 	 * will return an Fatal Error refactoring status because no seeding occurs */
-	Object x;
+	String x;
 }

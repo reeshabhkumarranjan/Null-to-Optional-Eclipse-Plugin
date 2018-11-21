@@ -94,30 +94,7 @@ public class RefactoringSettings {
 	public boolean refactorThruOperators() {
 		return this.settings.contains(Choice.REFACTOR_THROUGH_JAVA_OPERATORS);
 	}
-
-	public void createFromEnv() {
-		final Map<String, String> choices = System.getenv();
-
-		for (final String s : choices.keySet()) {
-			if (s.equalsIgnoreCase("fields"))
-				this.set(true, Choice.REFACTOR_FIELDS);
-			if (s.equalsIgnoreCase("implicitfields"))
-				this.set(true, Choice.CONSIDER_IMPLICITLY_NULL_FIELDS);
-			if (s.equalsIgnoreCase("localvars"))
-				this.set(true, Choice.REFACTOR_LOCAL_VARS);
-			if (s.equalsIgnoreCase("methodparams"))
-				this.set(true, Choice.REFACTOR_METHOD_PARAMS);
-			if (s.equalsIgnoreCase("methodreturns"))
-				this.set(true, Choice.REFACTOR_METHOD_RETURN_TYPES);
-			if (s.equalsIgnoreCase("refactor"))
-				this.set(true, Choice.PERFORM_TRANSFORMATION);
-			if (s.equalsIgnoreCase("bridge external"))
-				this.set(true, Choice.BRIDGE_EXTERNAL);
-			if (s.equalsIgnoreCase("bridge excluded"))
-				this.set(true, Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS);
-		}
-	}
-
+	
 	public boolean doesTransformation() {
 		return this.settings.contains(Choice.PERFORM_TRANSFORMATION);
 	}

@@ -227,7 +227,7 @@ public interface Util {
 			return top;
 	}
 
-	static boolean isBinaryCode(final IJavaElement element) throws HarvesterException {
+	static boolean isBinaryCode(final IJavaElement element) {
 		switch (element.getElementType()) {
 		case IJavaElement.LOCAL_VARIABLE: {
 			final ILocalVariable ilv = (ILocalVariable) element;
@@ -250,8 +250,7 @@ public interface Util {
 			return ii.getDeclaringType().isBinary();
 		}
 		default:
-			throw new HarvesterException(RefactoringStatus
-					.createFatalErrorStatus(Messages.Harvester_JavaModelError));
+			return false;
 		}
 	}
 
@@ -270,8 +269,8 @@ public interface Util {
 	}
 
 	static RefactoringStatusEntry createStatusEntry(final RefactoringSettings settings, PreconditionFailure failure,
-			IJavaElement element, ASTNode node, Action action) {
-		return new RefactoringStatusEntry(failure.getSeverity(settings), 
+			IJavaElement element, ASTNode node, Action action, boolean seeding) {
+		return new RefactoringStatusEntry(seeding ? failure.seedingSeverity(settings) : failure.getSeverity(settings), 
 				failure.getMessage(),
 				new N2ORefactoringStatusContext(element, getSourceRange(node), failure, action), 
 				ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID,

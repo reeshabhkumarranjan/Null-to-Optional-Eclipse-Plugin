@@ -2,14 +2,11 @@ package p;
 
 public class A {
 	
-	/*Settings excludes METHOD_PARAMS
-	passes with m*/
+	/*Settings excludes METHOD_PARAMS */
 
-	Object o = null;
-	
 	{
 		m(null);
 	}
 	
-	void m(Object x) { 	}
+	void m(String x) { 	}
 }

@@ -3,7 +3,7 @@ package p;
 public class A {
 	
 	boolean m() {
-		Object x = null;
+		String x = null;
 		return true;
 	}
 }
