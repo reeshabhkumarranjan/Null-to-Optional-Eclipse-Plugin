@@ -36,8 +36,6 @@ import static org.eclipse.ltk.core.refactoring.RefactoringStatus.OK;
 import static org.eclipse.ltk.core.refactoring.RefactoringStatus.INFO;
 import static org.eclipse.ltk.core.refactoring.RefactoringStatus.WARNING;
 import static org.eclipse.ltk.core.refactoring.RefactoringStatus.ERROR;
-import static org.eclipse.ltk.core.refactoring.RefactoringStatus.FATAL;
-
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
@@ -48,40 +46,6 @@ interface Precondition {
 }
 
 public enum PreconditionFailure {
-
-	/**
-	 * This is most likely our error, but it could also be due to a failure to
-	 * generate bindings for some reason. It needs to be logged for debugging. Our
-	 * plugin generates AST's with bindings by default.
-	 */
-	MISSING_BINDING(1, Messages.Harvester_MissingBinding, 
-			(node, element, settings) -> false),
-	/**
-	 * This is most likely our error, something wrong in the way we're parsing. This
-	 * exception gives us the element we departed from to visit the missing one.
-	 * What we need to do here is log the event because either there's a mistake in
-	 * this plugin or some error in the JDT.
-	 *
-	 * Depending on the type of exception this is contained in, we handle it as
-	 * follows:
-	 *
-	 * (1) HarvesterASTException: we are resolving the element from the AST Node ->
-	 * Binding -> IJavaElement. The cases where a null return should be expected
-	 * from <IJavaElement>.getJavaElement(): -primitive types, including void -null
-	 * type -wildcard types -capture types -array types of any of the above -the
-	 * "length" field of an array type -the default constructor of a source class
-	 * -the constructor of an anonymous class -member value pairs -synthetic
-	 * bindings Otherwise we have an error in the plugin, or potentially something
-	 * in the JDT.
-	 *
-	 * (2) HarvesterJavaModelException: we are resolving this element from the
-	 * JavaModel using JDT internal API, and it's missing. Usually, this will be
-	 * caused by the catching and rethrowing of a
-	 * org.eclipse.jdt.core.JavaModelException.
-	 *
-	 */
-	JAVA_MODEL_ERROR(2, Messages.Harvester_JavaModelError, 
-			(node, element, settings) -> false),
 	/**
 	 * We've hit an entity whose type cannot be refactored to a reference type
 	 */
@@ -364,7 +328,7 @@ public enum PreconditionFailure {
 	static EnumSet<PreconditionFailure> info(ASTNode node, IJavaElement element, RefactoringSettings settings, boolean seeding) {
 		return Arrays.stream(PreconditionFailure.values())
 				.filter(f -> f.precondition.test(node, Optional.ofNullable(element), settings))
-				.filter(f -> seeding ? f.seedingSeverity(settings) == INFO : f.getSeverity(settings) == INFO)
+				.filter(f -> f.getSeverity(settings, seeding) == INFO)
 				.collect(Collectors.toCollection(() -> EnumSet.noneOf(PreconditionFailure.class)));
 	}
 	
@@ -380,7 +344,7 @@ public enum PreconditionFailure {
 	static EnumSet<PreconditionFailure> warn(ASTNode node, IJavaElement element, RefactoringSettings settings, boolean seeding) {
 		return Arrays.stream(PreconditionFailure.values())
 				.filter(f -> f.precondition.test(node, Optional.ofNullable(element), settings))
-				.filter(f -> seeding ? f.seedingSeverity(settings) == WARNING : f.getSeverity(settings) == WARNING)
+				.filter(f -> f.getSeverity(settings, seeding) == WARNING)
 				.collect(Collectors.toCollection(() -> EnumSet.noneOf(PreconditionFailure.class)));
 	}
 	
@@ -396,7 +360,7 @@ public enum PreconditionFailure {
 	static EnumSet<PreconditionFailure> error(ASTNode node, IJavaElement element, RefactoringSettings settings, boolean seeding) {
 		return Arrays.stream(PreconditionFailure.values())
 				.filter(f -> f.precondition.test(node, Optional.ofNullable(element), settings))
-				.filter(f -> seeding ? f.seedingSeverity(settings) == ERROR : f.getSeverity(settings) == ERROR)
+				.filter(f -> f.getSeverity(settings,seeding) == ERROR)
 				.collect(Collectors.toCollection(() -> EnumSet.noneOf(PreconditionFailure.class)));
 	}	
 
@@ -419,59 +383,8 @@ public enum PreconditionFailure {
 		return this.message;
 	}
 
-	public int seedingSeverity(RefactoringSettings settings) {
-		switch (this) {
-		case CAST_EXPRESSION:
-		case REFERENCE_EQUALITY_OP:
-		case ENHANCED_FOR:
-		case INSTANCEOF_OP:
-		case CONDITIONAL_OP:
-			return settings.refactorThruOperators() ? INFO : ERROR;
-		case OBJECT_TYPE:
-			return settings.refactorsObjects() ? INFO : ERROR;
-		case EXCLUDED_ENTITY:
-		case NON_SOURCE_CODE:
-		case PRIMITIVE_TYPE:
-		case ARRAY_TYPE:
-		case COLLECTION_TYPE:
-			return ERROR;
-		case JAVA_MODEL_ERROR:
-		case MISSING_BINDING:
-			return FATAL;
-		default: return OK;
-		}
-	}
-	
 	public int getSeverity(RefactoringSettings settings) {
-		switch (this) {
-		case CAST_EXPRESSION:
-			return settings.refactorThruOperators() ? INFO : 
-				settings.bridgesExcluded() ? INFO : ERROR;
-		case REFERENCE_EQUALITY_OP:
-			return settings.refactorThruOperators() ? INFO :
-				settings.bridgesExcluded() ? INFO : ERROR;
-		case ENHANCED_FOR:
-			return settings.refactorThruOperators() ? INFO : 
-				settings.bridgesExcluded() ? INFO : ERROR;
-		case EXCLUDED_ENTITY:
-			return settings.bridgesExcluded() ? INFO : ERROR;
-		case INSTANCEOF_OP:
-			return settings.refactorThruOperators() ? INFO : 
-				settings.bridgesExcluded() ? INFO : ERROR;
-		case JAVA_MODEL_ERROR:
-			return FATAL;
-		case MISSING_BINDING:
-			return FATAL;
-		case NON_SOURCE_CODE:
-			return settings.bridgeExternalCode() ? INFO : ERROR;
-		case OBJECT_TYPE:
-			return settings.refactorsObjects() ? INFO : ERROR;
-		case PRIMITIVE_TYPE:
-		case ARRAY_TYPE:
-		case COLLECTION_TYPE:
-			return ERROR;
-		default: return OK;
-		}
+		return this.getSeverity(settings, false);
 	}
 
 	public int getSeverity(RefactoringSettings settings, boolean seeding) {
@@ -488,6 +401,10 @@ public enum PreconditionFailure {
 						: settings.bridgesExcluded()
 							? WARNING
 							: ERROR;
+		case MEMBER_ACCESS_OP:
+			return settings.bridgesExcluded()
+					? WARNING
+					: ERROR;
 		case OBJECT_TYPE:
 			return settings.refactorsObjects() 
 					? INFO 
@@ -511,9 +428,6 @@ public enum PreconditionFailure {
 					: settings.bridgesExcluded()
 						? WARNING
 						: ERROR;
-		case JAVA_MODEL_ERROR:
-		case MISSING_BINDING:
-			return FATAL;
 		default: return OK;
 		}
 	}

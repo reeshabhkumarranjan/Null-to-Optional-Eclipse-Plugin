@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -25,8 +24,7 @@ public class Entities implements Collection<Entry<IJavaElement, Set<Instance<? e
 						element -> instances.stream().filter(instance -> elements.contains(instance.element()))
 								.filter(instance -> instance.element().equals(element)).collect(Collectors.toSet()),
 						(left, right) -> Streams.concat(left.stream(), right.stream()).collect(Collectors.toSet())));
-		RefactoringStatus status = instances.stream()
-				.filter(instance -> elements.contains(instance.element()))
+		RefactoringStatus status = mappedInstances.values().stream().flatMap(Set::stream)
 				.flatMap(instance -> instance.failures().stream()
 						.map(failure -> Util.createStatusEntry(settings, 
 								failure, instance.element(), instance.node(), instance.action(), false)))
@@ -60,7 +58,7 @@ public class Entities implements Collection<Entry<IJavaElement, Set<Instance<? e
 		return this.status;
 	}
 	
-	public void transform() throws CoreException {
+	public void transform() {
 		for (final CompilationUnit cu : this.cuMap.keySet()) {
 			final Set<IJavaElement> elements = this.cuMap.get(cu);
 			final N2ONodeTransformer n2ont = new N2ONodeTransformer(cu, elements, this.elementToInstancesMap);

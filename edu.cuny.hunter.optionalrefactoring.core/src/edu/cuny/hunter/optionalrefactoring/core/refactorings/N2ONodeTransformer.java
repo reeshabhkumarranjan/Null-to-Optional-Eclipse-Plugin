@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.dom.AST;
@@ -24,11 +23,14 @@ import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NameQualifiedType;
 import org.eclipse.jdt.core.dom.NullLiteral;
 import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.PrefixExpression;
+import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.QualifiedType;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
@@ -55,7 +57,7 @@ class N2ONodeTransformer {
 				.collect(Collectors.toSet());
 	}
 
-	void process() throws CoreException {
+	void process() {
 		this.rootNode.accept(new ASTVisitor() {
 			@Override
 			public void preVisit(ASTNode node) {
@@ -76,20 +78,7 @@ class N2ONodeTransformer {
 	}
 
 	private Type getConvertedType(final AST ast, final Type rawType) {
-		switch (rawType.getNodeType()) {
-		case ASTNode.SIMPLE_TYPE: {
-			final ParameterizedType parameterized = ast
-					.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
-			SimpleType r = ast.newSimpleType(ast.newSimpleName(((SimpleType)rawType).getName().toString()));
-			@SuppressWarnings("unchecked")
-			Map<String, Object> props = rawType.properties();
-			props.entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
-			@SuppressWarnings("unchecked")
-			final List<Type> l = parameterized.typeArguments();
-			l.add(0, r);
-			return parameterized;
-		}
-		case ASTNode.QUALIFIED_TYPE: {
+		if (rawType instanceof QualifiedType) {
 			final ParameterizedType parameterized = ast
 					.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
 			QualifiedType t = (QualifiedType) rawType;
@@ -103,7 +92,7 @@ class N2ONodeTransformer {
 			l.add(0, r);
 			return parameterized;
 		}
-		case ASTNode.NAME_QUALIFIED_TYPE: {
+		if (rawType instanceof NameQualifiedType) {
 			final ParameterizedType parameterized = ast
 					.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
 			NameQualifiedType t = (NameQualifiedType) rawType;
@@ -117,7 +106,25 @@ class N2ONodeTransformer {
 			l.add(0, r);
 			return parameterized;
 		}
-		case ASTNode.WILDCARD_TYPE: {
+		if (rawType instanceof SimpleType) {
+			Name name = ((SimpleType) rawType).getName();
+			final ParameterizedType parameterized = ast
+					.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
+			Type r = name instanceof SimpleName 
+					? ast.newSimpleType(
+							ast.newSimpleName(((SimpleType)rawType).getName().toString()))
+					: ast.newQualifiedType(
+							ast.newSimpleType(ast.newSimpleName(((QualifiedName)name).getQualifier().toString())), 
+							ast.newSimpleName(((QualifiedName)name).getName().toString()));
+			@SuppressWarnings("unchecked")
+			Map<String, Object> props = rawType.properties();
+			props.entrySet().forEach(prop -> r.setProperty(prop.getKey(), prop.getValue()));
+			@SuppressWarnings("unchecked")
+			final List<Type> l = parameterized.typeArguments();
+			l.add(0, r);
+			return parameterized;
+		}
+		if (rawType instanceof WildcardType) {
 			final ParameterizedType parameterized = ast
 					.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
 			WildcardType t = (WildcardType) rawType;
@@ -131,7 +138,7 @@ class N2ONodeTransformer {
 			l.add(0, r);
 			return parameterized;
 		}
-		case ASTNode.ARRAY_TYPE: {
+		if (rawType instanceof ArrayType) {
 			ArrayType t = (ArrayType) rawType;
 			final ParameterizedType parameterized = ast.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
 			final ArrayType arrayT = ast.newArrayType(ast.newSimpleType(ast.newSimpleName(t.getElementType().toString())), t.getDimensions());
@@ -143,7 +150,7 @@ class N2ONodeTransformer {
 			props.entrySet().forEach(prop -> arrayT.setProperty(prop.getKey(), prop.getValue()));
 			return parameterized;
 		}
-		case ASTNode.PARAMETERIZED_TYPE: {
+		if (rawType instanceof ParameterizedType) {
 			final ParameterizedType parameterized = ast
 					.newParameterizedType(ast.newSimpleType(ast.newSimpleName("Optional")));
 			ParameterizedType t = (ParameterizedType) rawType;
@@ -156,8 +163,7 @@ class N2ONodeTransformer {
 			l.add(0, r);
 			return parameterized;
 		}
-		default: return rawType;
-		}
+		return rawType;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -224,9 +230,7 @@ class N2ONodeTransformer {
 			break;
 		}
 		case UNWRAP: {
-			ASTNode parent = node.getParent();
-			StructuralPropertyDescriptor spd = node.getLocationInParent();
-			parent.setStructuralProperty(spd, this.orElseOptional(node.getAST(), (Expression)node));
+			this.replace(node, this.orElseOptional(node.getAST(), (Expression)node));
 			break;
 		}
 		case WRAP: {
@@ -244,6 +248,7 @@ class N2ONodeTransformer {
 			case ASTNode.CHARACTER_LITERAL:
 			case ASTNode.NUMBER_LITERAL:
 			case ASTNode.STRING_LITERAL:
+			case ASTNode.INFIX_EXPRESSION:
 			case ASTNode.TYPE_LITERAL: {
 				this.replace(node, this.ofOptional(node.getAST(), (Expression)node));
 				break;

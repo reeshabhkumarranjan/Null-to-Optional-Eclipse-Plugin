@@ -4,7 +4,6 @@
 package edu.cuny.hunter.optionalrefactoring.ui.tests;
 
 import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.CAST_EXPRESSION;
-import static edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure.ENHANCED_FOR;
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.setOf;
 
 import java.io.File;
@@ -71,13 +70,6 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			this.message = f.getMessage();
 			this.pf = Optional.ofNullable(f);
 			this.code = f.getCode();
-		}
-		
-		MockEntryData(final Integer s, final String msg) {
-			this.severity = s;
-			this.message = msg;
-			this.pf = Optional.empty();
-			this.code = RefactoringStatusEntry.NO_CODE;
 		}
 	}
 
@@ -201,10 +193,10 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 			final RefactoringStatusEntry expected) {
 		return actual.getSeverity() == expected.getSeverity() && 
 				actual.getMessage().equals(expected.getMessage()) && 
-				actual.getSeverity() == RefactoringStatus.WARNING ? 
-						actual.getMessage().equals(expected.getMessage()) 
+				actual.getSeverity() == RefactoringStatus.WARNING 
+						? actual.getMessage().equals(expected.getMessage()) 
 						: ((N2ORefactoringStatusContext) actual.getContext()).getPreconditionFailure()
-						.equals(((N2ORefactoringStatusContext) expected.getContext()).getPreconditionFailure()) && 
+							.equals(((N2ORefactoringStatusContext) expected.getContext()).getPreconditionFailure()) && 
 				actual.getPluginId().equals(expected.getPluginId()) && 
 				actual.getCode() == expected.getCode();
 	}
@@ -281,7 +273,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 	
 	public void testArrayCreation() throws Exception {
-		this.transformationHelper(EnumSet.noneOf(Choice.class), this.createExpectedStatus(new MockEntryData[] {
+		this.transformationHelper(EnumSet.of(Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS), this.createExpectedStatus(new MockEntryData[] {
 				new MockEntryData(RefactoringStatus.ERROR, PreconditionFailure.ARRAY_TYPE),
 				new MockEntryData(RefactoringStatus.INFO, PreconditionFailure.OBJECT_TYPE)
 			}));
@@ -313,7 +305,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testArrayAccessDescendRHS() throws Exception {
-		this.transformationHelper(EnumSet.noneOf(Choice.class), this.createExpectedStatus(
+		this.transformationHelper(EnumSet.of(Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS), this.createExpectedStatus(
 				new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.ERROR, PreconditionFailure.ARRAY_TYPE)
 				}));
@@ -367,7 +359,7 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 	}
 
 	public void testArrayInitializerAscend() throws Exception {
-		this.transformationHelper(EnumSet.noneOf(Choice.class), this.createExpectedStatus(
+		this.transformationHelper(EnumSet.of(Choice.BRIDGE_ENTITIES_EXCLUDED_BY_SETTINGS), this.createExpectedStatus(
 				new MockEntryData[] {
 						new MockEntryData(RefactoringStatus.ERROR, PreconditionFailure.ARRAY_TYPE)
 				}));
@@ -470,6 +462,13 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 				}));
 	}
 
+	public void testMemberAccess() throws Exception {
+		this.transformationHelper(EnumSet.noneOf(Choice.class), this.createExpectedStatus(
+				new MockEntryData[] {
+						new MockEntryData(RefactoringStatus.WARNING, PreconditionFailure.MEMBER_ACCESS_OP)
+				}));
+	}
+	
 	public void testInvocationConstructor() throws Exception {
 		this.propagationHelper(setOf(setOf("a", "b", "d", "g", "k"), setOf("f", "i", "m"), setOf("o")), setOf(), EnumSet.noneOf(Choice.class),
 				new RefactoringStatus());
@@ -626,8 +625,8 @@ public class ConvertNullToOptionalRefactoringTest extends RefactoringTest {
 		final RefactoringStatus finalStatus = refactoring.checkAllConditions(new NullProgressMonitor());
 		LOGGER.info("Final status: " + finalStatus);
 
-		assertTrue("Precondition checking returned the expected RefactoringStatus: " + expectedStatus + 
-				": "+finalStatus+".",
+		assertTrue("Precondition checking returned the RefactoringStatus: "+finalStatus+ 
+				", equal to the expected: "+ expectedStatus +".",
 				this.equivalentRefactoringStatus(finalStatus, expectedStatus));
 
 		if (!finalStatus.hasFatalError())
