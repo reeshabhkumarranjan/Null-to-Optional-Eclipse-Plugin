@@ -61,6 +61,7 @@ import org.eclipse.jdt.core.search.SearchRequestor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
+import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
@@ -123,7 +124,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		this.rootElement = element;
 		if (!node.getAST().hasResolvedBindings())
 			throw new HarvesterException(RefactoringStatus
-					.createFatalErrorStatus(PreconditionFailure.MISSING_BINDING.toString()));
+					.createFatalErrorStatus(Messages.Harvester_MissingBinding));
 			this.settings = settings;
 			this.monitor = monitor;
 			this.scope = scope;
@@ -136,7 +137,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 		this.rootElement = element;
 		if (!node.getAST().hasResolvedBindings())
 			throw new HarvesterException(RefactoringStatus
-					.createFatalErrorStatus(PreconditionFailure.MISSING_BINDING.toString()));
+					.createFatalErrorStatus(Messages.Harvester_MissingBinding));
 			this.settings = settings;
 			this.monitor = monitor;
 			this.scope = scope;
@@ -348,7 +349,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	void descend(final FieldAccess node) throws HarvesterException {
 		final IField element = this.resolveElement(node);
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
-		final Action action = this.infer(node, element, pf, this.settings);
+		final Action action = Action.NIL;
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
@@ -385,7 +386,7 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	void descend(final SuperFieldAccess node) throws HarvesterException {
 		final IField element = this.resolveElement(node);
 		final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node, element, this.settings);
-		final Action action = this.infer(node, element, pf, this.settings);
+		final Action action = Action.NIL;
 		if (pf.isEmpty())
 			this.addCandidate(element, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
@@ -428,35 +429,42 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 	@Override
 	void descend(final NumberLiteral node) throws CoreException {
 		EnumSet<PreconditionFailure> pf = noneOf(PreconditionFailure.class);
-		Action action = this.infer(node, pf, this.settings);
+		Action action = Action.WRAP;
 		this.addInstance(null, node, pf, action);
 	}
 
 	@Override
 	void descend(final CharacterLiteral node) throws CoreException {
 		EnumSet<PreconditionFailure> pf = noneOf(PreconditionFailure.class);
-		Action action = this.infer(node, pf, this.settings);
+		Action action = Action.WRAP;
 		this.addInstance(null, node, pf, action);
 	}
 
 	@Override
+	void descend(final InfixExpression node) throws CoreException {
+		// check if this is an instance of String concatenation
+		if (node.getLeftOperand().resolveTypeBinding().getQualifiedName().equals("java.lang.String"))
+			this.addInstance(null, node, EnumSet.noneOf(PreconditionFailure.class), Action.WRAP);
+	}
+	
+	@Override
 	void descend(final StringLiteral node) throws CoreException {
 		EnumSet<PreconditionFailure> pf = noneOf(PreconditionFailure.class);
-		Action action = this.infer(node, pf, this.settings);
+		Action action = Action.WRAP;
 		this.addInstance(null, node, pf, action);
 	}
 
 	@Override
 	void descend(final NullLiteral node) throws CoreException {
 		EnumSet<PreconditionFailure> pf = noneOf(PreconditionFailure.class);
-		Action action = this.infer(node, pf, this.settings);
+		Action action = Action.WRAP;
 		this.addInstance(null, node, pf, action);
 	}
 
 	@Override
 	void descend(final TypeLiteral node) throws CoreException {
 		EnumSet<PreconditionFailure> pf = noneOf(PreconditionFailure.class);
-		Action action = this.infer(node, pf, this.settings);
+		Action action = Action.WRAP;
 		this.addInstance(null, node, pf, action);
 	}
 	
@@ -544,99 +552,20 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 			this.addInstance(element, node, pf, action);
 	}
 
-	IMethodBinding resolveBinding(final ClassInstanceCreation node) throws HarvesterException {
-		final IMethodBinding binding = node.resolveConstructorBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
-	IMethodBinding resolveBinding(final ConstructorInvocation node) throws HarvesterException {
-		final IMethodBinding binding = node.resolveConstructorBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
-	IVariableBinding resolveBinding(final FieldAccess node) throws HarvesterException {
-		final IVariableBinding binding = node.resolveFieldBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
-	IMethodBinding resolveBinding(final MethodDeclaration node) throws HarvesterException {
-		final IMethodBinding binding = node.resolveBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
-	IMethodBinding resolveBinding(final MethodInvocation node) throws HarvesterException {
-		final IMethodBinding binding = node.resolveMethodBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
-	IBinding resolveBinding(final Name node) throws HarvesterException {
-		final IBinding binding = node.resolveBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
-	IVariableBinding resolveBinding(final SingleVariableDeclaration node) throws HarvesterException {
-		final IVariableBinding binding = node.resolveBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
-	IMethodBinding resolveBinding(final SuperConstructorInvocation node) throws HarvesterException {
-		final IMethodBinding binding = node.resolveConstructorBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
-	IVariableBinding resolveBinding(final SuperFieldAccess node) throws HarvesterException {
-		final IVariableBinding binding = node.resolveFieldBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
-	IMethodBinding resolveBinding(final SuperMethodInvocation node) throws HarvesterException {
-		final IMethodBinding binding = node.resolveMethodBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
-	IVariableBinding resolveBinding(final VariableDeclarationFragment node) throws HarvesterException {
-		final IVariableBinding binding = node.resolveBinding();
-		if (binding == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-		return binding;
-	}
-
 	IMethod resolveElement(final ClassInstanceCreation node) throws HarvesterException {
-		final IMethodBinding constructorBinding = this.resolveBinding(node);
+		final IMethodBinding binding = node.resolveConstructorBinding();
+		final IMethodBinding constructorBinding = binding;
 		IMethod element = (IMethod) constructorBinding.getJavaElement();
 		if (element == null) { // possibly an AnonymousClassDeclaration
 			final AnonymousClassDeclaration acd = node.getAnonymousClassDeclaration();
-			if (acd != null)
-				element = (IMethod) acd.resolveBinding().getJavaElement();
-			else // something's wrong
-				this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
+			element = (IMethod) acd.resolveBinding().getJavaElement();
 		}
 		return element;
 	}
 
-	IMethod resolveElement(final ClassInstanceCreation node, final int paramNumber)
-			throws HarvesterException {
-		final IMethodBinding constructorBinding = this.resolveBinding(node);
+	IMethod resolveElement(final ClassInstanceCreation node, final int paramNumber) {
+		final IMethodBinding binding1 = node.resolveConstructorBinding();
+		final IMethodBinding constructorBinding = binding1;
 		IMethod element = (IMethod) constructorBinding.getJavaElement();
 		if (element == null) { // it might be an anonymous class declaration
 			final AnonymousClassDeclaration acd = node.getAnonymousClassDeclaration();
@@ -656,144 +585,79 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 							}
 						}
 					}
-			} else // it's not an anonymous class declaration and we have an error
-				this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
+			}
 		} // we have the element and we can return it
 		return element;
 	}
 
-	IMethod resolveElement(final ConstructorInvocation node) throws HarvesterException {
-		final IMethodBinding binding = this.resolveBinding(node);
+	IMethod resolveElement(final ConstructorInvocation node) {
+		final IMethodBinding binding1 = node.resolveConstructorBinding();
+		final IMethodBinding binding = binding1;
 		final IMethod element = (IMethod) binding.getJavaElement();
-		if (element == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		return element;
 	}
 
-	IField resolveElement(final FieldAccess node) throws HarvesterException {
-		final IVariableBinding binding = this.resolveBinding(node);
+	IField resolveElement(final FieldAccess node) {
+		final IVariableBinding binding1 = node.resolveFieldBinding();
+		final IVariableBinding binding = binding1;
 		final IField element = (IField) binding.getJavaElement();
-		if (element == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		return element;
 	}
 
-	IMethod resolveElement(final MethodDeclaration node) throws HarvesterException {
-		final IMethodBinding binding = this.resolveBinding(node);
+	IMethod resolveElement(final MethodDeclaration node) {
+		final IMethodBinding binding1 = node.resolveBinding();
+		final IMethodBinding binding = binding1;
 		final IMethod element = (IMethod) binding.getJavaElement();
-		if (element == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		return element;
 	}
 
-	IMethod resolveElement(final MethodInvocation node) throws HarvesterException {
-		final IMethodBinding binding = this.resolveBinding(node);
+	IMethod resolveElement(final MethodInvocation node) {
+		final IMethodBinding binding1 = node.resolveMethodBinding();
+		final IMethodBinding binding = binding1;
 		final IMethod element = (IMethod) binding.getJavaElement();
-		if (element == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		return element;
 	}
 
-	IJavaElement resolveElement(final Name node) throws HarvesterException {
-		final IBinding binding = this.resolveBinding(node);
+	IJavaElement resolveElement(final Name node) {
+		final IBinding binding1 = node.resolveBinding();
+		final IBinding binding = binding1;
 		final IJavaElement element = binding.getJavaElement();
-		if (element == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		return element;
 	}
 
-	IJavaElement resolveElement(final SingleVariableDeclaration node) throws HarvesterException {
-		final IVariableBinding binding = this.resolveBinding(node);
+	IJavaElement resolveElement(final SingleVariableDeclaration node) {
+		final IVariableBinding binding1 = node.resolveBinding();
+		final IVariableBinding binding = binding1;
 		final IJavaElement element = binding.getJavaElement();
-		if (element == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		return element;
 	}
 
-	IMethod resolveElement(final SuperConstructorInvocation node) throws HarvesterException {
-		final IMethodBinding binding = this.resolveBinding(node);
+	IMethod resolveElement(final SuperConstructorInvocation node) {
+		final IMethodBinding binding1 = node.resolveConstructorBinding();
+		final IMethodBinding binding = binding1;
 		final IMethod element = (IMethod) binding.getJavaElement();
-		if (element == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		return element;
 	}
 
-	IField resolveElement(final SuperFieldAccess node) throws HarvesterException {
-		final IVariableBinding binding = this.resolveBinding(node);
+	IField resolveElement(final SuperFieldAccess node) {
+		final IVariableBinding binding1 = node.resolveFieldBinding();
+		final IVariableBinding binding = binding1;
 		final IField element = (IField) binding.getJavaElement();
-		if (element == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		return element;
 	}
 
-	IMethod resolveElement(final SuperMethodInvocation node) throws HarvesterException {
-		final IMethodBinding binding = this.resolveBinding(node);
+	IMethod resolveElement(final SuperMethodInvocation node) {
+		final IMethodBinding binding1 = node.resolveMethodBinding();
+		final IMethodBinding binding = binding1;
 		final IMethod element = (IMethod) binding.getJavaElement();
-		if (element == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		return element;
 	}
 
-	IJavaElement resolveElement(final VariableDeclarationFragment node) throws HarvesterException {
-		final IVariableBinding binding = this.resolveBinding(node);
+	IJavaElement resolveElement(final VariableDeclarationFragment node) {
+		final IVariableBinding binding1 = node.resolveBinding();
+		final IVariableBinding binding = binding1;
 		final IJavaElement element = binding.getJavaElement();
-		if (element == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		return element;
-	}
-
-	/**
-	 * Determines appropriate action for ClassInstanceCreation (we just wrap it with
-	 * Optional::ofNullable)
-	 *
-	 * @param node
-	 * @param element
-	 * @param pf
-	 * @param settings
-	 * @return
-	 */
-	Action infer(final ClassInstanceCreation node, final IMethod element,
-			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.WRAP;
-	}
-
-	/**
-	 * Determines appropriate action for a method receiver
-	 *
-	 * @param expression
-	 * @param element
-	 * @param pf
-	 * @param settings
-	 * @return
-	 */
-	Action infer(final Expression expression, final IMethod element,
-			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.UNWRAP;
-	}
-
-	Action infer(final FieldAccess node, final IField element, final EnumSet<PreconditionFailure> pf,
-			final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
-	Action infer(final InfixExpression node, final EnumSet<PreconditionFailure> pf,
-			final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
-	Action infer(final MethodDeclaration node, final IMethod element,
-			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
-	Action infer(final MethodInvocation node, final IMethod element,
-			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
-	Action infer(final Name node, final IJavaElement element, final EnumSet<PreconditionFailure> pf,
-			final RefactoringSettings settings) {
-		return Action.NIL;
 	}
 
 	Action infer(final SingleVariableDeclaration node, final IJavaElement element,
@@ -803,52 +667,6 @@ abstract class N2ONodeProcessor extends ASTNodeProcessor {
 							.getInterfaces()).anyMatch(i -> i.getErasure().getName().equals("Iterable")) ?
 									Action.CONVERT_ITERABLE_VAR_DECL_TYPE 
 									: Action.CONVERT_VAR_DECL_TYPE;
-	}
-
-	Action infer(final SuperFieldAccess node, final IField element, final EnumSet<PreconditionFailure> pf,
-			final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
-	Action infer(final SuperMethodInvocation node, final IMethod element,
-			final EnumSet<PreconditionFailure> pf, final RefactoringSettings settings) {
-		return Action.NIL;
-	}
-
-	Action infer(final VariableDeclarationFragment node) {
-		Expression initializer = node.getInitializer();
-		IJavaElement e = this.elementGetter(initializer);
-		return e != null ? this.existingInstances.stream().anyMatch(i -> i.element().equals(e)) ?
-				Action.NIL : Action.CONVERT_VAR_DECL_TYPE :
-					Action.CONVERT_VAR_DECL_TYPE;
-	}
-
-	IJavaElement elementGetter(Expression initializer) {
-		return initializer instanceof Name ? ((Name)initializer).resolveBinding().getJavaElement() :
-			initializer instanceof FieldAccess ? ((FieldAccess)initializer).resolveFieldBinding().getJavaElement() :
-				initializer instanceof MethodInvocation ? ((MethodInvocation)initializer).resolveMethodBinding().getJavaElement() :
-					initializer instanceof SuperMethodInvocation ? ((SuperMethodInvocation)initializer).resolveMethodBinding().getJavaElement() :
-							null;
-	}
-	
-	Action infer(NumberLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
-		return Action.WRAP;
-	}
-
-	Action infer(CharacterLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
-		return Action.WRAP;
-	}
-
-	Action infer(StringLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
-		return Action.WRAP;
-	}
-
-	Action infer(TypeLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
-		return Action.WRAP;
-	}
-
-	Action infer(NullLiteral node, EnumSet<PreconditionFailure> pf, RefactoringSettings settings) {
-		return Action.WRAP;
 	}
 
 	@Override

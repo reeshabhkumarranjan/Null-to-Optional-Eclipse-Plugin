@@ -4,6 +4,7 @@ import static org.eclipse.jdt.ui.JavaElementLabels.ALL_FULLY_QUALIFIED;
 import static org.eclipse.jdt.ui.JavaElementLabels.getElementLabel;
 
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -34,6 +35,7 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
+import org.eclipse.jdt.core.refactoring.CompilationUnitChange;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
@@ -91,10 +93,10 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	private final RefactoringSettings settings;
 
-	private final Set<Entities> entities = new LinkedHashSet<>();
+	private final Set<Entities> entitiesSet = new LinkedHashSet<>();
 
 	private final Set<IJavaElement> seeds = new LinkedHashSet<>();
-
+	
 	private int countNotRefactorable;
 
 	public ConvertNullToOptionalRefactoringProcessor() throws JavaModelException {
@@ -112,7 +114,8 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		super(settings);
 		try {
 			this.javaElements = javaElements;
-			this.refactoringScope = SearchEngine.createJavaSearchScope(javaElements);
+			IJavaProject[] scopes = Arrays.stream(javaElements).map(element -> element.getJavaProject()).collect(Collectors.toList()).toArray(new IJavaProject[javaElements.length]);
+			this.refactoringScope = SearchEngine.createJavaSearchScope(scopes);
 			this.settings = refactoringSettings;
 		} finally {
 			monitor.ifPresent(IProgressMonitor::done);
@@ -221,71 +224,69 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 
 	@Override
 	public Change createChange(final IProgressMonitor pm) throws CoreException, OperationCanceledException {
+		final Map<ICompilationUnit,CompilationUnit> rewriteMap = new LinkedHashMap<>();
 		try {
 
 			final TextEditBasedChangeManager manager = new TextEditBasedChangeManager();
 
-			if (this.entities.stream().filter(entity -> !entity.status().hasError()).collect(Collectors.toSet())
+			if (this.entitiesSet.stream().filter(entity -> !entity.status().hasError()).collect(Collectors.toSet())
 					.isEmpty())
 				return new NullChange(Messages.NoNullsHaveBeenFound);
 
-			final int count = this.entities.stream().map(Entities::size).reduce(Integer::sum).orElse(0);
+			final int count = this.entitiesSet.stream().map(Entities::size).reduce(Integer::sum).orElse(0);
 
 			pm.beginTask(Messages.CreatingChange, count);
 			
-			final Map<ICompilationUnit, CompilationUnit> icuCuMap = new LinkedHashMap<>();
-			final Function<ICompilationUnit,CompilationUnit> cuGet = icu -> {
-				CompilationUnit _cu = icuCuMap.get(icu); 
+			final Function<ICompilationUnit,CompilationUnit> getOrCreateCompilationUnit = icu -> {
+				CompilationUnit _cu = rewriteMap.get(icu); 
 				if (_cu == null) {
 					_cu = Util.getCompilationUnit(icu, pm);
 					_cu.recordModifications();
-					icuCuMap.put(icu, _cu);
+					rewriteMap.put(icu, _cu);
 				};
 				return _cu;
 			};
 
-			for (final Entities entity : this.entities) {
-				for (final Map.Entry<IJavaElement, Set<Instance<? extends ASTNode>>> pair : entity) {
-					IJavaElement element = pair.getKey();
+			this.entitiesSet.forEach(entities -> {
+				entities.forEach(entityInstancesPair -> {
+					IJavaElement element = entityInstancesPair.getKey();
 					final ICompilationUnit icu = (ICompilationUnit) element.getAncestor(IJavaElement.COMPILATION_UNIT);
-					CompilationUnit cu = cuGet.apply(icu);
-					entity.addIcu(cu, element);
+					CompilationUnit cu = getOrCreateCompilationUnit.apply(icu);
+					entities.addIcu(cu, element);
 					pm.worked(1);
-				}
-				entity.transform();
-			}
+				});
+				entities.transform();
+			});
 			
-			for (Map.Entry<ICompilationUnit, CompilationUnit> entry : icuCuMap.entrySet()) {
-				IProgressMonitor m = new NullProgressMonitor();
-				ICompilationUnit icu = entry.getKey();
-				CompilationUnit cu = entry.getValue();
-				Document doc = new Document(icu.getSource());
-				TextEdit edits = cu.rewrite(doc, icu.getJavaProject().getOptions(true));
+			rewriteMap.entrySet().forEach(icuCuPair -> {
+				ICompilationUnit icu = icuCuPair.getKey();
+				CompilationUnit cu = icuCuPair.getValue();
 				try {
+					Document doc = new Document(icu.getSource());
+					TextEdit edits = cu.rewrite(doc, icu.getJavaProject().getOptions(true));
 					edits.apply(doc);
-				} catch (MalformedTreeException | BadLocationException e) {
-					throw new CoreException(new Status(Status.ERROR, ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID, 
-							RefactoringStatus.FATAL, Messages.Transformer_FailedToWriteDocument, e));
+					ICompilationUnit replacement = ((IPackageFragment)icu.getParent())
+							.createCompilationUnit(icu.getElementName(), doc.get(), true, pm);
+					CompilationUnitRewrite rewrite = new CompilationUnitRewrite(replacement);
+					final ImportRewrite ir = rewrite.getImportRewrite();
+					ir.addImport("java.util.Optional");
+					this.compilationUnitToCompilationUnitRewriteMap.put(icuCuPair.getKey(), rewrite);
+				} catch (MalformedTreeException | BadLocationException | CoreException e) {
+					throw new Error(e);
 				}
-				String name = icu.getElementName();
-				icu.rename("old_"+name, true, m);
-				ICompilationUnit rwIcu = ((IPackageFragment)icu.getParent())
-						.createCompilationUnit(name, doc.get(), true, m);
-				CompilationUnitRewrite cur = new CompilationUnitRewrite(rwIcu);
-				final ImportRewrite ir = cur.getImportRewrite();
-				ir.addImport("java.util.Optional");
-				this.compilationUnitToCompilationUnitRewriteMap.put(rwIcu, cur);
-			}
+			});
 			
 			// save the source changes.
-			final ICompilationUnit[] units = this.getCompilationUnitToCompilationUnitRewriteMap().keySet().stream()
-					.filter(cu -> !manager.containsChangesIn(cu)).toArray(ICompilationUnit[]::new);
-
-			for (final ICompilationUnit cu : units) {
-				final CompilationUnit compilationUnit = this.getCompilationUnit(cu, pm);
-				this.manageCompilationUnit(manager, this.getCompilationUnitRewrite(cu, compilationUnit),
-						Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
-			}
+			this.compilationUnitToCompilationUnitRewriteMap.entrySet().stream()
+				.filter(entry -> !manager.containsChangesIn(entry.getKey()))
+				.forEach(entry -> {
+					try {
+						this.manageCompilationUnit(manager, entry.getValue(),
+								Optional.of(new SubProgressMonitor(pm, IProgressMonitor.UNKNOWN)));
+					} catch (CoreException e) {
+						throw new Error(e);
+					}
+				});
 
 			final Map<String, String> arguments = new HashMap<>();
 			final int flags = RefactoringDescriptor.STRUCTURAL_CHANGE | RefactoringDescriptor.MULTI_CHANGE;
@@ -329,7 +330,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 	}
 
 	public Set<Entities> getEntities() {
-		return this.entities;
+		return this.entitiesSet;
 	}
 	
 	public Set<IJavaElement> getSeeds() {
@@ -387,7 +388,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactoringStatus status = harvester.process();
 		this.seeds .addAll(harvester.getSeeds());
 		this.countNotRefactorable = harvester.countNotRefactorable();
-		this.entities.addAll(harvester.getEntities());
+		this.entitiesSet.addAll(harvester.getEntities());
 
 		return status;
 	}
@@ -405,7 +406,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactoringStatus status = harvester.process();
 		this.seeds .addAll(harvester.getSeeds());
 		this.countNotRefactorable = harvester.countNotRefactorable();
-		this.entities.addAll(harvester.getEntities());
+		this.entitiesSet.addAll(harvester.getEntities());
 		return status;
 	}
 
@@ -423,7 +424,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactoringStatus status = harvester.process();
 		this.seeds .addAll(harvester.getSeeds());
 		this.countNotRefactorable = harvester.countNotRefactorable();
-		this.entities.addAll(harvester.getEntities());
+		this.entitiesSet.addAll(harvester.getEntities());
 		return status;
 	}
 
@@ -455,7 +456,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactoringStatus status = harvester.process();
 		this.seeds .addAll(harvester.getSeeds());
 		this.countNotRefactorable = harvester.countNotRefactorable();
-		this.entities.addAll(harvester.getEntities());
+		this.entitiesSet.addAll(harvester.getEntities());
 		return status;
 	}
 
@@ -503,7 +504,7 @@ public class ConvertNullToOptionalRefactoringProcessor extends RefactoringProces
 		final RefactoringStatus status = harvester.process();
 		this.seeds .addAll(harvester.getSeeds());
 		this.countNotRefactorable = harvester.countNotRefactorable();
-		this.entities.addAll(harvester.getEntities());
+		this.entitiesSet.addAll(harvester.getEntities());
 		return status;
 	}
 

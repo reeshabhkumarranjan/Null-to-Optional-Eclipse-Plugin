@@ -3,7 +3,12 @@ package edu.cuny.hunter.optionalrefactoring.core.analysis;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Stream.concat;
+import static java.util.EnumSet.noneOf;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -125,19 +130,26 @@ class NullPropagator extends N2ONodeProcessor {
 	@SuppressWarnings("unchecked")
 	@Override
 	void ascend(final MethodInvocation node) throws CoreException {
-		final IMethod element = this.resolveElement(node);
+		final Optional<Expression> receiver = ofNullable(node.getExpression());
 		if (containedIn(node.arguments(), (Expression)this.rootNode))
 			this.findFormalsForVariable(node);
-		else if (node.getExpression() != null && containedIn(node.getExpression(), (Expression)this.rootNode)) {
-				final EnumSet<PreconditionFailure> pf = PreconditionFailure.check(node.getExpression(), element,
-						this.settings);
-				final Action action = this.infer(node.getExpression(), element, pf, this.settings);
-				if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR)) 
-					this.endProcessing(element, node, pf);
-				else {
-					this.addInstance(element, node, pf, action);
-					this.processAscent(node.getParent());
-				}
+		else if (receiver.map(r -> containedIn(r, (Expression)this.rootNode)).orElse(Boolean.FALSE)) {
+			final EnumSet<PreconditionFailure>
+				pfInfo = PreconditionFailure.info(receiver.get(), null, settings, false),
+				pfWarn = PreconditionFailure.warn(receiver.get(), null, settings, false),
+				pfError = PreconditionFailure.error(receiver.get(), null, settings, false);
+			final Action action = Action.UNWRAP;
+			if (!pfError.isEmpty()) { 
+					this.endProcessing(this.rootElement, receiver.get(), 
+							concat(concat(pfError.stream(), pfWarn.stream()), pfInfo.stream())
+							.collect(toCollection(()->noneOf(PreconditionFailure.class))));
+			} else if (!pfWarn.isEmpty()) {
+				this.addInstance(this.rootElement, receiver.get(), concat(pfInfo.stream(), pfWarn.stream())
+						.collect(toCollection(()-> noneOf(PreconditionFailure.class))), action);
+			} else {
+				this.addInstance(this.rootElement, receiver.get(), pfInfo, action);
+				this.processAscent(node.getParent());
+			}
 		} else
 			this.processAscent(node.getParent());
 	}
@@ -154,7 +166,7 @@ class NullPropagator extends N2ONodeProcessor {
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 		final EnumSet<PreconditionFailure> pf = top == null ? 
 				EnumSet.of(PreconditionFailure.NON_SOURCE_CODE) : PreconditionFailure.check(methDecl, top, this.settings);
-		final Action action = this.infer(methDecl, top, pf, this.settings);
+		final Action action = Action.NIL;
 		if (pf.isEmpty())
 			this.addCandidate(top, methDecl, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
@@ -212,7 +224,9 @@ class NullPropagator extends N2ONodeProcessor {
 
 		final EnumSet<PreconditionFailure> pf = top == null ? 
 				EnumSet.of(PreconditionFailure.NON_SOURCE_CODE) : PreconditionFailure.check(node, top, this.settings);
-		final Action action = this.infer(node, top, pf, this.settings);
+		final Action action = pf.contains(PreconditionFailure.NON_SOURCE_CODE) 
+				? Action.WRAP
+				: Action.NIL;
 		if (pf.isEmpty())
 			this.addCandidate(top, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
@@ -245,7 +259,7 @@ class NullPropagator extends N2ONodeProcessor {
 
 		final EnumSet<PreconditionFailure> pf = top == null ? 
 				EnumSet.of(PreconditionFailure.NON_SOURCE_CODE) : PreconditionFailure.check(node, top, this.settings);
-		final Action action = this.infer(node, top, pf, this.settings);
+		final Action action = Action.NIL;
 		if (pf.isEmpty())
 			this.addCandidate(top, node, pf, action);
 		else if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
@@ -264,13 +278,10 @@ class NullPropagator extends N2ONodeProcessor {
 			}
 	}
 
-	private void findFormalsForVariable(final ClassInstanceCreation node) throws JavaModelException, CoreException {
+	private void findFormalsForVariable(final ClassInstanceCreation node) throws CoreException {
 		@SuppressWarnings("unchecked")
 		final int paramNumber = Util.getParamNumber(node.arguments(), (Expression)this.rootNode);
 		final IMethodBinding b = node.resolveConstructorBinding();
-		if (b == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-
 		IMethod meth = (IMethod) b.getJavaElement();
 		if (meth == null && node.getAnonymousClassDeclaration() != null) {
 			// most likely an anonymous class.
@@ -290,8 +301,6 @@ class NullPropagator extends N2ONodeProcessor {
 					}
 				}
 		}
-		if (meth == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
@@ -299,28 +308,24 @@ class NullPropagator extends N2ONodeProcessor {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(meth, (Expression)this.rootNode, pf);
-			this.addInstance(meth, (Expression)this.rootNode, pf, this.infer((Expression)this.rootNode, meth, pf, this.settings));
+			final IMethod element = meth;
+			this.addInstance(meth, (Expression)this.rootNode, pf, Action.UNWRAP);
 		} else
 			this.findFormalsForVariable(top, paramNumber);
 	}
 
 	@SuppressWarnings("unchecked")
-	private void findFormalsForVariable(final ConstructorInvocation node) throws JavaModelException, CoreException {
+	private void findFormalsForVariable(final ConstructorInvocation node) throws CoreException {
 		final IMethodBinding b = node.resolveConstructorBinding();
-		if (b == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
-
 		final IMethod meth = (IMethod) b.getJavaElement();
 
-		if (meth == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.JAVA_MODEL_ERROR));
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
 
 		if (top == null) {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(meth, (Expression)this.rootNode, pf);
-			this.addInstance(meth, (Expression)this.rootNode, pf, this.infer((Expression)this.rootNode, meth, pf, this.settings));
+			this.addInstance(meth, (Expression)this.rootNode, pf, Action.UNWRAP);
 		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), (Expression)this.rootNode));
 	}
@@ -328,8 +333,6 @@ class NullPropagator extends N2ONodeProcessor {
 	@SuppressWarnings("unchecked")
 	private void findFormalsForVariable(final MethodInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveMethodBinding();
-		if (b == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
 
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
@@ -337,7 +340,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(meth, (Expression)this.rootNode, pf);
-			this.addInstance(meth, (Expression)this.rootNode, pf, this.infer((Expression)this.rootNode, meth, pf, this.settings));
+			this.addInstance(this.rootElement, (Expression)this.rootNode, pf, Action.UNWRAP);
 		}
 
 		else
@@ -348,8 +351,6 @@ class NullPropagator extends N2ONodeProcessor {
 	private void findFormalsForVariable(final SuperConstructorInvocation node)
 			throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveConstructorBinding();
-		if (b == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
 
 		final IMethod meth = (IMethod) b.getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
@@ -358,7 +359,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(meth, (Expression)this.rootNode, pf);
-			this.addInstance(meth, node, pf, this.infer((Expression)this.rootNode, meth, pf, this.settings));
+			this.addInstance(meth, node, pf, Action.UNWRAP);
 		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), (Expression)this.rootNode));
 	}
@@ -366,8 +367,6 @@ class NullPropagator extends N2ONodeProcessor {
 	@SuppressWarnings("unchecked")
 	private void findFormalsForVariable(final SuperMethodInvocation node) throws JavaModelException, CoreException {
 		final IMethodBinding b = node.resolveMethodBinding();
-		if (b == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
 
 		final IMethod meth = (IMethod) node.resolveMethodBinding().getJavaElement();
 		final IMethod top = Util.getTopMostSourceMethod(meth, this.monitor);
@@ -376,7 +375,7 @@ class NullPropagator extends N2ONodeProcessor {
 			final EnumSet<PreconditionFailure> pf = EnumSet.of(PreconditionFailure.NON_SOURCE_CODE);
 			if (pf.stream().anyMatch(f -> f.getSeverity(this.settings) >= RefactoringStatus.ERROR))
 				this.endProcessing(meth, (Expression)this.rootNode, pf);
-			this.addInstance(meth, (Expression)this.rootNode, pf, this.infer((Expression)this.rootNode, meth, pf, this.settings));
+			this.addInstance(meth, (Expression)this.rootNode, pf, Action.UNWRAP);
 		} else
 			this.findFormalsForVariable(top, Util.getParamNumber(node.arguments(), (Expression)this.rootNode));
 	}
@@ -385,8 +384,6 @@ class NullPropagator extends N2ONodeProcessor {
 
 		// Find invocations of the corresponding method.
 		final IVariableBinding b = node.resolveBinding();
-		if (b == null)
-			this.endProcessing(null, node, EnumSet.of(PreconditionFailure.MISSING_BINDING));
 
 		final IMethod meth = (IMethod) b.getDeclaringMethod().getJavaElement();
 

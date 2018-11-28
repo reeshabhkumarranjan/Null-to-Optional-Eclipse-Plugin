@@ -6,6 +6,7 @@ package edu.cuny.hunter.optionalrefactoring.core.utils;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,6 +38,7 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.internal.corext.codemanipulation.CodeGenerationSettings;
 import org.eclipse.jdt.internal.corext.dom.ASTNodes;
@@ -58,6 +60,8 @@ import edu.cuny.hunter.optionalrefactoring.core.exceptions.HarvesterException;
 import edu.cuny.hunter.optionalrefactoring.core.messages.Messages;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * @author <a href="mailto:raffi.khatchadourian@hunter.cuny.edu">Raffi
@@ -88,7 +92,7 @@ public interface Util {
 	static ProcessorBasedRefactoring createRefactoring(final IJavaElement[] elements,
 			final Optional<IProgressMonitor> monitor) throws JavaModelException {
 		final ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(elements,
-				RefactoringSettings.userDefaults()/* here user defaults are injected */, monitor);
+				new RefactoringSettings(EnumSet.allOf(RefactoringSettings.Choice.class))/* here user defaults are injected */, monitor);
 		return new ProcessorBasedRefactoring(processor);
 	}
 
@@ -150,18 +154,8 @@ public interface Util {
 	}
 
 	static ASTNode getExactASTNode(final CompilationUnit root, final SearchMatch match) {
-		final ArrayList<ASTNode> ret = new ArrayList<>(1);
-		final ASTVisitor visitor = new ASTVisitor() {
-			@Override
-			public void preVisit(final ASTNode node) {
-				if (node.getStartPosition() == match.getOffset()) {
-					ret.clear();
-					ret.add(node);
-				}
-			}
-		};
-		root.accept(visitor);
-		return ret.get(0);
+		ISourceRange iSr = new SourceRange(match.getOffset(), match.getLength());
+		return org.eclipse.jdt.core.dom.NodeFinder.perform(root, iSr);
 	}
 
 	static ASTNode getExactASTNode(final IJavaElement elem, final SearchMatch match,
@@ -173,7 +167,8 @@ public interface Util {
 
 	static ASTNode getExactASTNode(final SearchMatch match, final IProgressMonitor monitor) {
 		final IJavaElement elem = (IJavaElement) match.getElement();
-		return Util.getExactASTNode(elem, match, monitor);
+		ASTNode node = Util.getExactASTNode(elem, match, monitor);
+		return node;
 	}
 
 	static IMember getIMember(final IJavaElement elem) {
@@ -270,7 +265,7 @@ public interface Util {
 
 	static RefactoringStatusEntry createStatusEntry(final RefactoringSettings settings, PreconditionFailure failure,
 			IJavaElement element, ASTNode node, Action action, boolean seeding) {
-		return new RefactoringStatusEntry(seeding ? failure.seedingSeverity(settings) : failure.getSeverity(settings), 
+		return new RefactoringStatusEntry(failure.getSeverity(settings, seeding), 
 				failure.getMessage(),
 				new N2ORefactoringStatusContext(element, getSourceRange(node), failure, action), 
 				ConvertNullToOptionalRefactoringDescriptor.REFACTORING_ID,
