@@ -72,7 +72,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					"#Infos",
 					"#Fatals");
 			
-			List<String> preconditionNames = Arrays.stream(PreconditionFailure.values()).map(Enum::toString).collect(Collectors.toList());
+			List<String> preconditionNames = Arrays.stream(PreconditionFailure.values()).map(Enum::toString).map(s -> "P_" + s).collect(Collectors.toList());
 			resultsHeader.addAll(preconditionNames);
 			
 			List<String> actionNames = Arrays.stream(Action.values()).map(Enum::toString).collect(Collectors.toList());
