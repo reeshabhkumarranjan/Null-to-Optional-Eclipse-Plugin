@@ -147,7 +147,8 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					
 					// add a column for each.
 					for (PreconditionFailure failureKind : PreconditionFailure.values()) {
-						resultsPrinter.print(codeToCodeCount.get(failureKind.getCode()));
+						Long countCount = codeToCodeCount.get(failureKind.getCode());
+						resultsPrinter.print(countCount == null ? 0 : countCount);
 					}
 					
 					// TODO: Do this for actions.
