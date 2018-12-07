@@ -152,7 +152,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 						summaryResultsPrinter.print(countCount == null ? 0 : countCount);
 					}
 					
-					
 					// extract all instances into a flat set.
 					Set<Instance> allInstances = passingSets
 							.stream()
@@ -160,16 +159,15 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							.map(e -> e.getValue())
 							.flatMap(Set::stream)
 							.collect(Collectors.toSet());
+					
+					// create a map between actions and their count.
+					Map<Action, Long> actionToCount = allInstances.stream().map(Instance::action).
+							collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
 					// add a column for each action type
 					for (Action actionKind : Action.values()) {
-						summaryResultsPrinter.print(
-							allInstances
-								.stream()
-								.map(Instance::action)
-								.filter(e -> e == actionKind)
-								.toArray().length
-						);
+						Long actionCount = actionToCount.get(actionKind);
+						summaryResultsPrinter.print(actionToCount == null ? 0 : actionCount);
 					}
 
 					// add a column for each setting option
