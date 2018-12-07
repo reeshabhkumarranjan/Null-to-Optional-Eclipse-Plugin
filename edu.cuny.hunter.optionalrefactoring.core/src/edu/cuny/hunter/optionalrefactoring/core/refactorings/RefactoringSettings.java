@@ -99,6 +99,11 @@ public class RefactoringSettings {
 		return this.settings.contains(Choice.PERFORM_TRANSFORMATION);
 	}
 
+	/**
+	 * Returns true if the given {@link Choice} is enabled.
+	 * @param setting The {@link Choice} under question.
+	 * @return True if setting is enabled and false otherwise.
+	 */
 	public boolean get(final Choice setting) {
 		return this.settings.contains(setting);
 	}
