@@ -61,7 +61,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 //		TODO: store useful data structures as private members
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
-			List<String> resultsHeader = Lists.newArrayList(
+			List<String> summaryResultsHeader = Lists.newArrayList(
 					"Subject",
 					"#Seed Elements", 
 					"#Candidate Elements", 
@@ -73,16 +73,16 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					"#Fatals");
 			
 			List<String> preconditionNames = Arrays.stream(PreconditionFailure.values()).map(Enum::toString).collect(Collectors.toList());
-			resultsHeader.addAll(preconditionNames);
+			summaryResultsHeader.addAll(preconditionNames);
 			
 			List<String> actionNames = Arrays.stream(Action.values()).map(Enum::toString).collect(Collectors.toList());
-			resultsHeader.addAll(actionNames);
+			summaryResultsHeader.addAll(actionNames);
 			
-			resultsHeader.add("time (s)");
+			summaryResultsHeader.add("time (s)");
 		
-			try (CSVPrinter resultsPrinter = EvaluateRefactoringHandler.createCSVPrinter(
-					"results.csv",
-					resultsHeader.toArray(new String[resultsHeader.size()]));
+			try (CSVPrinter summaryResultsPrinter = EvaluateRefactoringHandler.createCSVPrinter(
+					"summaryResults.csv",
+					summaryResultsHeader.toArray(new String[summaryResultsHeader.size()]));
 				) {
 				if (BUILD_WORKSPACE) {
 					// build the workspace.
@@ -101,9 +101,10 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					TimeCollector resultsTimeCollector = new TimeCollector();
 
 					resultsTimeCollector.start();
+					RefactoringSettings runSettings = RefactoringSettings.userDefaults();
 					ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
 							new IJavaProject[] { javaProject },
-							RefactoringSettings.userDefaults(), // we inject user defaults for now
+							runSettings, // we inject user defaults for now
 							Optional.of(monitor));
 					resultsTimeCollector.stop();
 
@@ -114,32 +115,32 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					resultsTimeCollector.stop();
 
 					// subject name.
-					resultsPrinter.print(javaProject.getElementName());
+					summaryResultsPrinter.print(javaProject.getElementName());
 					
 					// # seeds.
-					resultsPrinter.print(processor.getSeeds().size());
+					summaryResultsPrinter.print(processor.getSeeds().size());
 					
 					// # candidates (should be same as seeds for now).
-					resultsPrinter.print(processor.getSeeds().size());
+					summaryResultsPrinter.print(processor.getSeeds().size());
 					
 					// # refactorable sets.
 					Set<Entities> passingSets = processor.getEntities();
-					resultsPrinter.print(passingSets.size());
+					summaryResultsPrinter.print(passingSets.size());
 
 					// # refactorable elements. 
-					resultsPrinter.print(passingSets.stream().flatMap(Entities::stream).count());
+					summaryResultsPrinter.print(passingSets.stream().flatMap(Entities::stream).count());
 					
 					// # errors.
-					resultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isError()).count());
+					summaryResultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isError()).count());
 
 					// # warnings.
-					resultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isWarning()).count());
+					summaryResultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isWarning()).count());
 
 					// # infos.
-					resultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isInfo()).count());
+					summaryResultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isInfo()).count());
 
 					// # fatals.
-					resultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isFatalError()).count());
+					summaryResultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isFatalError()).count());
 					
 					// create a map between status code and its count.
 					Map<Integer, Long> codeToCodeCount = Arrays.stream(status.getEntries()).map(RefactoringStatusEntry::getCode).
@@ -147,121 +148,41 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					
 					// add a column for each.
 					for (PreconditionFailure failureKind : PreconditionFailure.values()) {
-						resultsPrinter.print(codeToCodeCount.get(failureKind.getCode()));
+						summaryResultsPrinter.print(codeToCodeCount.get(failureKind.getCode()));
 					}
 					
-					// TODO: Do this for actions.
+					
+					// extract all instances into a flat set.
+					Set<Instance> allInstances = passingSets
+							.stream()
+							.flatMap(Entities::stream)
+							.map(e -> e.getValue())
+							.flatMap(Set::stream)
+							.collect(Collectors.toSet());
+
+					// add a column for each action type
 					for (Action actionKind : Action.values()) {
-						resultsPrinter.print("");
+						summaryResultsPrinter.print(
+							allInstances
+								.stream()
+								.map(Instance::action)
+								.filter(e -> e == actionKind)
+								.toArray().length
+						);
 					}
 
-					// TODO: Do this for settings.
+					// add a column for each setting option
 					for (RefactoringSettings.Choice choice : RefactoringSettings.Choice.values()) {
-						
+						summaryResultsPrinter.print(runSettings.get(choice) ? "1": "0");;
 					}
-//					
-//
-////					Actions stats
-//					Set<Instance> allInstances = passingSets
-//							.stream()
-//							.flatMap(Entities::stream)
-//							.map(e -> e.getValue())
-//							.flatMap(Set::stream)
-//							.collect(Collectors.toSet());
-//					
-//					Integer actionTypeCountA1 = allInstances.stream()
-//							.map(Instance::action)
-//							.filter(e -> e == Action.CONVERT_VAR_DECL_TYPE)
-//							.toArray().length;
-//					
-//					Integer actionTypeCountA2 = allInstances.stream()
-//							.map(Instance::action)
-//							.filter(e -> e == Action.CONVERT_METHOD_RETURN_TYPE)
-//							.toArray().length;
-//					
-//					Integer actionTypeCountA3 = allInstances.stream()
-//							.map(Instance::action)
-//							.filter(e -> e == Action.UNWRAP)
-//							.toArray().length;
-//					
-//					Integer actionTypeCountA4 = allInstances.stream()
-//							.map(Instance::action)
-//							.filter(e -> e == Action.WRAP)
-//							.toArray().length;
-//					
-//					Integer actionTypeCountA5 = allInstances.stream()
-//							.map(Instance::action)
-//							.filter(e -> e == Action.APPLY_MAP)
-//							.toArray().length;
-//					
-//					Integer actionTypeCountA6 = allInstances.stream()
-//							.map(Instance::action)
-//							.filter(e -> e == Action.APPLY_IFPRESENT)
-//							.toArray().length;
-//					
-//					Integer actionTypeCountA7 = allInstances.stream()
-//							.map(Instance::action)
-//							.filter(e -> e == Action.APPLY_ISPRESENT)
-//							.toArray().length;
-//					
-//					Integer actionTypeCountA8 = allInstances.stream()
-//							.map(Instance::action)
-//							.filter(e -> e == Action.INIT_VAR_DECL_FRAGMENT)
-//							.toArray().length;
-//					
-////					Print to console
-////					Entities
-//					System.out.println("# A1: " + actionTypeCountA1);
-//					System.out.println("# A2: " + actionTypeCountA2);
-//					System.out.println("# A3: " + actionTypeCountA3);
-//					System.out.println("# A4: " + actionTypeCountA4);
-//					System.out.println("# A5: " + actionTypeCountA5);
-//					System.out.println("# A6: " + actionTypeCountA6);
-//					System.out.println("# A7: " + actionTypeCountA7);
-//					System.out.println("# A8: " + actionTypeCountA8);
-//	
-////					Error Status
-//					System.out.println("Project Name: " + javaProject.getElementName());
-//					System.out.println("# Seed Elements: " + totalSeedElements);
-//					System.out.println("# Candidate Elements: " + totalCandidateElements);
-//					System.out.println("# Refactorable Elements: " + totalRefactorableElements);
-//					System.out.println("# preconditionFailureCount: " + preconditionFailureCount);					
-//					System.out.println("# errorFailureCount: " + errorFailureCount);
-//					System.out.println("# infoFailureCount: " + infoFailureCount);
-//					System.out.println("# preconditionFailureTypeCountP1: " + preconditionFailureTypeCountP1);
-//					System.out.println("# preconditionFailureTypeCountP2: " + preconditionFailureTypeCountP2);	
-//					System.out.println("# preconditionFailureTypeCountP3: " + preconditionFailureTypeCountP3);	
-//					System.out.println("# preconditionFailureTypeCountP4: " + preconditionFailureTypeCountP4);	
-//					System.out.println("# preconditionFailureTypeCountP5: " + preconditionFailureTypeCountP5);	
-//					System.out.println("# preconditionFailureTypeCountP6: " + preconditionFailureTypeCountP6);					
-//					System.out.println("# preconditionFailureTypeCountP7: " + preconditionFailureTypeCountP7);	
-//					System.out.println("# preconditionFailureTypeCountP8: " + preconditionFailureTypeCountP8);					
-//					System.out.println("# preconditionFailureTypeCountP9: " + preconditionFailureTypeCountP9);					
-//					System.out.println("# preconditionFailureTypeCountP10: " + preconditionFailureTypeCountP10);					
-//
-////					print to csv
-//					resultsPrinter.printRecord(
-//							javaProject.getElementName(),
-//							totalSeedElements, totalCandidateElements, totalRefactorableElements,
-//							preconditionFailureCount, infoFailureCount, errorFailureCount,
-//							preconditionFailureTypeCountP1, preconditionFailureTypeCountP2, preconditionFailureTypeCountP3,
-//							preconditionFailureTypeCountP4, preconditionFailureTypeCountP5, preconditionFailureTypeCountP6,
-//							preconditionFailureTypeCountP7, preconditionFailureTypeCountP8, preconditionFailureTypeCountP9,
-//							preconditionFailureTypeCountP10,
-//							actionTypeCountA1, actionTypeCountA2,
-//							actionTypeCountA3, actionTypeCountA4,
-//							actionTypeCountA5, actionTypeCountA6,
-//							actionTypeCountA7, actionTypeCountA8,
-							
-						
-//					);
+
 					
 					// overall results time.
-					resultsPrinter.print((resultsTimeCollector.getCollectedTime() -
+					summaryResultsPrinter.print((resultsTimeCollector.getCollectedTime() -
 							processor.getExcludedTimeCollector().getCollectedTime()) / 1000.0);
 
 					// ends the record.
-					resultsPrinter.println();
+					summaryResultsPrinter.println();
 				}
 			} catch (Exception e) {
 				return new Status(IStatus.ERROR, BUNDLE_SYMBOLIC_NAME,
