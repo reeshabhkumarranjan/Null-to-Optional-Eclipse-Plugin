@@ -197,7 +197,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 		return null;
 	}
 
-	private List<String> extractEnumNames(Enum<?>[] values, String prefix) {
+	private static List<String> extractEnumNames(Enum<?>[] values, String prefix) {
 		List<String> names = Arrays.stream(values).map(Enum::toString).map(s -> prefix + s).collect(Collectors.toList());
 		return names;
 	}
