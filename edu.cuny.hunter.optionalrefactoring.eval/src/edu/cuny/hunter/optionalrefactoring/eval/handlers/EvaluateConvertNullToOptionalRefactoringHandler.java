@@ -22,6 +22,7 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
@@ -38,7 +39,6 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -57,8 +57,6 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 	 */
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-//		TODO: break up precondition & action data collection into separate methods
-//		TODO: store useful data structures as private members
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
 			List<String> summaryResultsHeader = Lists.newArrayList(
@@ -72,11 +70,14 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					"#Infos",
 					"#Fatals");
 			
-			List<String> preconditionNames = Arrays.stream(PreconditionFailure.values()).map(Enum::toString).map(s -> "P_" + s).collect(Collectors.toList());
+			List<String> preconditionNames = extractEnumNames(PreconditionFailure.values(), "P_");
 			summaryResultsHeader.addAll(preconditionNames);
 			
-			List<String> actionNames = Arrays.stream(Action.values()).map(Enum::toString).map(s -> "A_" + s).collect(Collectors.toList());
+			List<String> actionNames = extractEnumNames(Action.values(), "A_");
 			summaryResultsHeader.addAll(actionNames);
+			
+			List<String> settingsNames = extractEnumNames(RefactoringSettings.Choice.values(), "S_");
+			summaryResultsHeader.addAll(settingsNames);
 			
 			summaryResultsHeader.add("time (s)");
 		
@@ -153,7 +154,7 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					}
 					
 					// extract all instances into a flat set.
-					Set<Instance> allInstances = passingSets
+					Set<Instance<? extends ASTNode>> allInstances = passingSets
 							.stream()
 							.flatMap(Entities::stream)
 							.map(e -> e.getValue())
@@ -167,14 +168,15 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					// add a column for each action type
 					for (Action actionKind : Action.values()) {
 						Long actionCount = actionToCount.get(actionKind);
-						summaryResultsPrinter.print(actionToCount == null ? 0 : actionCount);
+						summaryResultsPrinter.print(actionCount == null ? 0 : actionCount);
 					}
 
 					// add a column for each setting option
 					for (RefactoringSettings.Choice choice : RefactoringSettings.Choice.values()) {
-						summaryResultsPrinter.print(runSettings.get(choice) ? "1": "0");;
+						boolean choiceIsEnabled = runSettings.get(choice);
+						String upperCaseChoice = String.valueOf(choiceIsEnabled).toUpperCase();
+						summaryResultsPrinter.print(upperCaseChoice);
 					}
-
 					
 					// overall results time.
 					summaryResultsPrinter.print((resultsTimeCollector.getCollectedTime() -
@@ -193,5 +195,10 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 		}).schedule();
 
 		return null;
+	}
+
+	private List<String> extractEnumNames(Enum<?>[] values, String prefix) {
+		List<String> names = Arrays.stream(values).map(Enum::toString).map(s -> prefix + s).collect(Collectors.toList());
+		return names;
 	}
 }
