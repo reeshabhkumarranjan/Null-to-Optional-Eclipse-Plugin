@@ -17,18 +17,26 @@ import edu.cuny.hunter.optionalrefactoring.core.utils.Util;
 
 public class Entities implements Collection<Entry<IJavaElement, Set<Instance<? extends ASTNode>>>> {
 
-	public static Entities create(final Set<IJavaElement> elements, final Set<Instance<? extends ASTNode>> instances, 
-			final RefactoringSettings settings) {
-		final Map<IJavaElement, Set<Instance<? extends ASTNode>>> mappedInstances = elements.stream()
-				.collect(Collectors.toMap(element -> element,
-						element -> instances.stream().filter(instance -> elements.contains(instance.element()))
-								.filter(instance -> instance.element().equals(element)).collect(Collectors.toSet()),
+	public static Entities create(
+			final Set<IJavaElement> elements,
+			final Set<Instance<? extends ASTNode>> instances, 
+			final RefactoringSettings settings
+	) {
+		final Map<IJavaElement, Set<Instance<? extends ASTNode>>> mappedInstances = elements
+				.stream()
+				.collect(Collectors.toMap(
+						element -> element,
+						element -> instances
+							.stream()
+							.filter(instance -> elements.contains(instance.element()))
+							.filter(instance -> instance.element().equals(element)).collect(Collectors.toSet()),
 						(left, right) -> Streams.concat(left.stream(), right.stream()).collect(Collectors.toSet())));
 		RefactoringStatus status = mappedInstances.values().stream().flatMap(Set::stream)
 				.flatMap(instance -> instance.failures().stream()
 						.map(failure -> Util.createStatusEntry(settings, 
 								failure, instance.element(), instance.node(), instance.action(), false)))
 				.collect(RefactoringStatus::new, RefactoringStatus::addEntry, RefactoringStatus::merge);
+		
 		return new Entities(status, mappedInstances);
 	}
 

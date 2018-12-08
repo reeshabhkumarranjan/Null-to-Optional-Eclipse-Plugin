@@ -2,10 +2,13 @@ package edu.cuny.hunter.optionalrefactoring.eval.handlers;
 
 import static edu.cuny.hunter.optionalrefactoring.core.utils.Util.createNullToOptionalRefactoringProcessor;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVPrinter;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -18,21 +21,24 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.ltk.core.refactoring.participants.ProcessorBasedRefactoring;
 import org.osgi.framework.FrameworkUtil;
 
 import com.google.common.collect.Lists;
 
 import edu.cuny.citytech.refactoring.common.eval.handlers.EvaluateRefactoringHandler;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.Action;
+import edu.cuny.hunter.optionalrefactoring.core.analysis.PreconditionFailure;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.ConvertNullToOptionalRefactoringProcessor;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.Entities;
+import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 import edu.cuny.hunter.optionalrefactoring.core.refactorings.RefactoringSettings;
 import edu.cuny.hunter.optionalrefactoring.core.utils.TimeCollector;
 import edu.cuny.hunter.optionalrefactoring.eval.utils.Util;
-import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 
 /**
  * Our sample handler extends AbstractHandler, an IHandler base class.
@@ -43,6 +49,8 @@ import edu.cuny.hunter.optionalrefactoring.core.refactorings.Instance;
 @SuppressWarnings("deprecation")
 public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRefactoringHandler {
 
+	private final String BUNDLE_SYMBOLIC_NAME = FrameworkUtil.getBundle(this.getClass()).getSymbolicName();
+
 	/**
 	 * the command has been executed, so extract extract the needed information
 	 * from the application context.
@@ -51,15 +59,32 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		Job.create("Evaluating Convert Null To Optional Refactoring ...", monitor -> {
 
-			List<String> setSummaryHeader = Lists.newArrayList("Seed");
-
-			List<String> elementResultsHeader = Lists.newArrayList("Project Name", "Type Dependent Set ID",
-					"Entity Name", "Entity Type", "Containing Entities", "Read Only", "Generated");
-
-			try (CSVPrinter elementResultsPrinter = EvaluateRefactoringHandler.createCSVPrinter("elementResults.csv",
-					elementResultsHeader.toArray(new String[elementResultsHeader.size()]));
-					CSVPrinter setSummaryPrinter = EvaluateRefactoringHandler.createCSVPrinter("setSummary.csv",
-							setSummaryHeader.toArray(new String[setSummaryHeader.size()]))) {
+			List<String> summaryResultsHeader = Lists.newArrayList(
+					"Subject",
+					"#Seed Elements", 
+					"#Candidate Elements", 
+					"#Refactorable Sets",
+					"#Refactorable Elements",
+					"#Errors",
+					"#Warnings",
+					"#Infos",
+					"#Fatals");
+			
+			List<String> preconditionNames = extractEnumNames(PreconditionFailure.values(), "P_");
+			summaryResultsHeader.addAll(preconditionNames);
+			
+			List<String> actionNames = extractEnumNames(Action.values(), "A_");
+			summaryResultsHeader.addAll(actionNames);
+			
+			List<String> settingsNames = extractEnumNames(RefactoringSettings.Choice.values(), "S_");
+			summaryResultsHeader.addAll(settingsNames);
+			
+			summaryResultsHeader.add("time (s)");
+		
+			try (CSVPrinter summaryResultsPrinter = EvaluateRefactoringHandler.createCSVPrinter(
+					"summaryResults.csv",
+					summaryResultsHeader.toArray(new String[summaryResultsHeader.size()]));
+				) {
 				if (BUILD_WORKSPACE) {
 					// build the workspace.
 					monitor.beginTask("Building workspace ...", IProgressMonitor.UNKNOWN);
@@ -77,12 +102,10 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 					TimeCollector resultsTimeCollector = new TimeCollector();
 
 					resultsTimeCollector.start();
+					RefactoringSettings runSettings = RefactoringSettings.userDefaults();
 					ConvertNullToOptionalRefactoringProcessor processor = createNullToOptionalRefactoringProcessor(
-							new IJavaProject[] { javaProject }, RefactoringSettings
-									.userDefaults() /*
-													 * we inject user defaults
-													 * for now
-													 */,
+							new IJavaProject[] { javaProject },
+							runSettings, // we inject user defaults for now
 							Optional.of(monitor));
 					resultsTimeCollector.stop();
 
@@ -92,51 +115,90 @@ public class EvaluateConvertNullToOptionalRefactoringHandler extends EvaluateRef
 							.checkAllConditions(new NullProgressMonitor());
 					resultsTimeCollector.stop();
 
+					// subject name.
+					summaryResultsPrinter.print(javaProject.getElementName());
+					
+					// # seeds.
+					summaryResultsPrinter.print(processor.getSeeds().size());
+					
+					// # candidates (should be same as seeds for now).
+					summaryResultsPrinter.print(processor.getSeeds().size());
+					
+					// # refactorable sets.
 					Set<Entities> passingSets = processor.getEntities();
+					summaryResultsPrinter.print(passingSets.size());
 
-					System.out.print("{");
-					passingSets.forEach(set -> {
-						System.out.print(", ");
-					});
-					System.out.println("}");
+					// # refactorable elements. 
+					summaryResultsPrinter.print(passingSets.stream().flatMap(Entities::stream).count());
+					
+					// # errors.
+					summaryResultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isError()).count());
 
-					for (Entities set : passingSets) {
-						// Let's print some information about what's inside
-						setSummaryPrinter.printRecord(set.hashCode(), set.status());
-						for (Map.Entry<IJavaElement, Set<Instance<?>>> entry : set) {
-							IJavaElement element = entry.getKey();
-							elementResultsPrinter.printRecord(element.getJavaProject().getElementName(), set.hashCode(),
-									element.getElementName(), element.getClass().getSimpleName(),
-									element.getElementType() == IJavaElement.LOCAL_VARIABLE
-											? element.getAncestor(IJavaElement.METHOD).getElementName() + "\n"
-													+ element.getAncestor(IJavaElement.METHOD)
-															.getAncestor(IJavaElement.TYPE).getElementName()
-											: element.getAncestor(IJavaElement.TYPE).getElementName(),
-									element.isReadOnly(), element.getResource().isDerived());
-						}
+					// # warnings.
+					summaryResultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isWarning()).count());
+
+					// # infos.
+					summaryResultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isInfo()).count());
+
+					// # fatals.
+					summaryResultsPrinter.print(Arrays.stream(status.getEntries()).filter(e -> e.isFatalError()).count());
+					
+					// create a map between status code and its count.
+					Map<Integer, Long> codeToCodeCount = Arrays.stream(status.getEntries()).map(RefactoringStatusEntry::getCode).
+							collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+					
+					// add a column for each.
+					for (PreconditionFailure failureKind : PreconditionFailure.values()) {
+						Long countCount = codeToCodeCount.get(failureKind.getCode());
+						summaryResultsPrinter.print(countCount == null ? 0 : countCount);
 					}
-					setSummaryPrinter.println();
-					elementResultsPrinter.println();
+					
+					// extract all instances into a flat set.
+					Set<Instance<? extends ASTNode>> allInstances = passingSets
+							.stream()
+							.flatMap(Entities::stream)
+							.map(e -> e.getValue())
+							.flatMap(Set::stream)
+							.collect(Collectors.toSet());
+					
+					// create a map between actions and their count.
+					Map<Action, Long> actionToCount = allInstances.stream().map(Instance::action).
+							collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-					// Then let's refactor them
-					// TODO: This should refer to a constant in this file as it once did #59.
-//					if (processor.settings().doesTransformation()) {
-//
-//					}
+					// add a column for each action type
+					for (Action actionKind : Action.values()) {
+						Long actionCount = actionToCount.get(actionKind);
+						summaryResultsPrinter.print(actionCount == null ? 0 : actionCount);
+					}
 
-					// Then let's print some more information about the
-					// refactoring
+					// add a column for each setting option
+					for (RefactoringSettings.Choice choice : RefactoringSettings.Choice.values()) {
+						boolean choiceIsEnabled = runSettings.get(choice);
+						String upperCaseChoice = String.valueOf(choiceIsEnabled).toUpperCase();
+						summaryResultsPrinter.print(upperCaseChoice);
+					}
+					
+					// overall results time.
+					summaryResultsPrinter.print((resultsTimeCollector.getCollectedTime() -
+							processor.getExcludedTimeCollector().getCollectedTime()) / 1000.0);
 
+					// ends the record.
+					summaryResultsPrinter.println();
 				}
 			} catch (Exception e) {
-				return new Status(IStatus.ERROR, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
+				return new Status(IStatus.ERROR, BUNDLE_SYMBOLIC_NAME,
 						"Encountered exception during evaluation", e);
 			}
 
-			return new Status(IStatus.OK, FrameworkUtil.getBundle(this.getClass()).getSymbolicName(),
+			return new Status(IStatus.OK, BUNDLE_SYMBOLIC_NAME,
 					"Evaluation successful.");
 		}).schedule();
 
 		return null;
+	}
+
+	private static List<String> extractEnumNames(Enum<?>[] values, String prefix) {
+		List<String> names = Arrays.stream(values).map(Enum::toString).map(s -> prefix + s).collect(Collectors.toList());
+		return names;
 	}
 }
